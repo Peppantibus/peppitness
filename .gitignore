@@ -1,0 +1,46 @@
+# Dipendenze e output di build
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Configurazioni locali e credenziali (conservare solo il template)
+.env
+.env.*
+!.env.example
+*.local
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Cache, log e report dei test
+.npm-cache/
+.browser-profile/
+.vite/
+.cache/
+coverage/
+artifacts/
+playwright-report/
+test-results/
+*.log
+
+# Piani personali, importazioni e backup: mai pubblicarli
+private-imports/
+backups/
+
+# Stato locale degli strumenti e servizi
+.codex/
+.agents/
+.wrangler/
+supabase/.temp/
+supabase/.branches/
+
+# Editor e sistema operativo
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+Desktop.ini
