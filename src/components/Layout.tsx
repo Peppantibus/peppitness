@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
 import { Icon } from './Icon'
 
-export function Layout({ section, children, hasTimer = false }: { section: 'dieta' | 'scheda'; children: ReactNode; hasTimer?: boolean }) {
-  return <div className={`app-shell ${hasTimer ? 'has-timer' : ''}`}>
+/** `focus`: creazione guidata a tutto schermo su mobile, senza barra di navigazione. */
+export function Layout({ section, children, hasTimer = false, focus = false, session = false }: { section: 'dieta' | 'scheda'; children: ReactNode; hasTimer?: boolean; focus?: boolean; session?: boolean }) {
+  return <div className={`app-shell ${hasTimer ? 'has-timer' : ''} ${focus ? 'focus-mode' : ''} ${session ? 'session-mode' : ''}`}>
     <a className="skip-link" href="#main-content" onClick={event => { event.preventDefault(); document.getElementById('main-content')?.focus() }}>Vai al contenuto</a>
     <aside className="sidebar">
       <a href="#/scheda" className="brand" aria-label="peppitness, vai alla scheda"><img className="brand-logo" src="/logo.svg" alt="" width="128" height="104" /></a>

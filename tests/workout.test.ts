@@ -1,13 +1,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { comparable, findPreviousExercise, formatResult, remainingRest, reusePreviousLoads } from '../src/domain/workout.ts'
-import { createDemoState, startDemoSession, updateSessionSet } from '../src/persistence/demo-store.ts'
-import type { DemoSession, ExercisePrescription, RestTimerState, SetResult } from '../src/domain/types.ts'
+import { applyOp, emptyResults, nextRestTimer } from '../src/domain/diary.ts'
+import type { WorkoutSession, ExercisePrescription, RestTimerState, SetResult } from '../src/domain/types.ts'
 
 const exercise: ExercisePrescription = { id: 'p1', exerciseId: 'stable-row', name: 'Rematore', area: 'Schiena', sets: 2, target: '10', mode: 'reps', restSeconds: 90, note: '', comparison: { variant: 'unilaterale', equipment: 'manubrio', loadConvention: 'single-dumbbell', perSide: true } }
 const completed: SetResult = { load: '12,5', amount: '10', completed: true }
 const empty: SetResult = { load: '', amount: '', completed: false }
-function session(id: string, date: string, prescription = exercise, done = true): DemoSession {
+function session(id: string, date: string, prescription = exercise, done = true): WorkoutSession {
   return { id, date, startedAt: `${date}T10:00:00Z`, completedAt: done ? `${date}T11:00:00Z` : undefined, day: { id: id + '-day', label: id, title: 'Seduta ' + id, subtitle: '', exercises: [prescription] }, results: { [prescription.id]: [{ ...completed }, { ...empty }] } }
 }
 
@@ -53,21 +53,27 @@ test('zero, corpo libero, durata e serie non eseguite hanno una resa distinta', 
   assert.equal(formatResult({ load: '0', amount: '0', completed: true }, 'reps'), '0 kg × 0 rip.')
   assert.equal(formatResult({ load: '', amount: '30', completed: true }, 'seconds'), '30 s')
   assert.equal(formatResult({ ...completed, completed: false }, 'reps'), '—')
+  assert.equal(formatResult(completed, 'reps', 'lb'), '12,5 lb × 10 rip.')
 })
 
 test('il recupero parte una sola volta su Fatto e si annulla riaprendo la stessa serie', () => {
-  let state = startDemoSession(createDemoState(), '2026-10-02', session('fixture', '2026-10-02').day)
-  const id = state.sessions[0].id
-  state = updateSessionSet(state, id, exercise.id, 0, completed, 1000)
-  assert.equal(state.restTimer?.deadline, 91000)
-  state = updateSessionSet(state, id, exercise.id, 0, completed, 2000)
-  assert.equal(state.restTimer?.deadline, 91000)
-  state = updateSessionSet(state, id, exercise.id, 1, completed, 5000)
-  assert.equal(state.restTimer?.deadline, 95000)
-  state = updateSessionSet(state, id, exercise.id, 0, empty, 6000)
-  assert.equal(state.restTimer?.setIndex, 1)
-  state = updateSessionSet(state, id, exercise.id, 1, empty, 7000)
-  assert.equal(state.restTimer, null)
+  const day = session('fixture', '2026-10-02').day
+  let data = { sessions: [{ id: 'live', date: '2026-10-02', startedAt: '2026-10-02T10:00:00Z', day, results: emptyResults(day) }], mealLogs: {}, dayTypes: {} }
+  let timer: RestTimerState | null = null
+  const set = (index: number, result: SetResult, now: number) => {
+    timer = nextRestTimer(timer, data.sessions[0]!, exercise.id, index, result, now)
+    data = applyOp(data, { type: 'set', opId: String(now), sessionId: 'live', prescriptionId: exercise.id, index, result })
+  }
+  set(0, completed, 1000)
+  assert.equal(timer!.deadline, 91000)
+  set(0, completed, 2000)
+  assert.equal(timer!.deadline, 91000)
+  set(1, completed, 5000)
+  assert.equal(timer!.deadline, 95000)
+  set(0, empty, 6000)
+  assert.equal(timer!.setIndex, 1)
+  set(1, empty, 7000)
+  assert.equal(timer, null)
 })
 
 test('il timer usa una scadenza assoluta, recupera il tempo passato e rispetta la pausa', () => {

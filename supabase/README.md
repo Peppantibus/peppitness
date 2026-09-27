@@ -1,0 +1,92 @@
+# Database peppitness
+
+La configurazione locale usa PostgreSQL 17 e Supabase CLI 2.118.0, fissata nelle dipendenze npm. I metadati del collegamento al progetto cloud in `.temp/` sono ignorati da Git. `config.toml` configura lo stack locale e non aggiorna automaticamente le impostazioni cloud.
+
+## Primo incremento
+
+`migrations/20260926120000_account_and_exercises.sql` introduce:
+
+- `user_settings`: una riga per account, nome visualizzato, fuso orario valido e giorni abituali ISO (1 = lunedì, 7 = domenica, lista anche vuota).
+- `exercises`: esercizi personali con UUID stabile, nome, variante, attrezzo, convenzione/unità di carico, ripetizioni o secondi, per-lato e note.
+- Proprietà verificata da RLS e permessi espliciti. Un utente autenticato legge/inserisce/modifica solo le proprie righe; il ruolo senza sessione non ha accesso. Le funzioni trigger sono in uno schema privato e usano i privilegi del chiamante.
+- Revisione controllata atomicamente dal server per ogni aggiornamento. Il client manda `revision` uguale alla revisione letta + 1; in caso di `PT409` (HTTP 409, dopo la migrazione correttiva) deve proporre una risoluzione del conflitto, senza ritentare sovrascrivendo automaticamente.
+- Identità di confronto dell'esercizio immutabile. Rinomina e note mantengono l'ID; una variante, macchina o unità diversa richiede un nuovo esercizio. Un esercizio si archivia con `archived_at` insieme alla nuova revisione, e si ripristina rimettendo `archived_at` a `null` con una successiva revisione. Non è esposta la cancellazione fisica dal client.
+
+`(owner_id, id)` è una chiave univoca degli esercizi da usare nelle future relazioni: i figli dovranno riferire entrambi i valori. Timestamp di creazione/aggiornamento sono assegnati dal server. Gli inserimenti iniziano dalla revisione 1. Il default di `owner_id` deriva dalla sessione, ma RLS controlla anche un valore fornito esplicitamente dal client.
+
+Questa migrazione non inserisce utenti o dati demo, non modifica la funzione remota preesistente `public.rls_auto_enable` e non collega ancora il frontend.
+
+## Secondo incremento: programmi
+
+`20260926130000_workout_plans.sql` aggiunge programmi, versioni, giorni e prescrizioni. Due RPC salvano atomicamente le bozze e pubblicano versioni immutabili, con revisioni, chiavi esterne che includono il proprietario e fotografie del catalogo esercizi. I vincoli e i permessi sono definiti nelle migrazioni SQL.
+
+## Quarto incremento: diario e piani seguiti
+
+`20260927190000_active_plans_and_diary.sql` aggiunge `active_plans`, `meal_plans`, `workout_sessions`, `workout_set_logs`, `meal_logs`, `diary_days` e le RPC `activate_workout_version`, `start_workout_session`. Test in `tests/database/003_active_plans_and_diary.test.sql`. Verificata in locale (pgTAP, HTTP, integrazione con l'app) e applicata al cloud dall'utente il 27/09 e verificata con `verify_schema.sql` (tutti i controlli `true`, storico remoto con le quattro versioni).
+
+## Esecuzione dei test locali
+
+La terza migrazione `20260926140000_revision_conflicts_http409.sql` corregge i conflitti applicativi: usa `PT409` al posto di `40001`, che PostgREST 14 ritenta continuamente. Non cambia dati o permessi e conserva le migrazioni già applicate. Il problema si è manifestato nei test HTTP con PostgREST locale 14.5; [riferimento Supabase](https://supabase.com/docs/guides/troubleshooting/high-cpu-and-infinite-transaction-retries-when-using-custom-error-codes-in-rpc-functions-77326b).
+
+Nel terminale PowerShell dell'utente, dentro `peppitness`, con Docker Desktop avviato:
+
+```powershell
+npx.cmd supabase start
+npx.cmd supabase migration up --local
+npx.cmd supabase test db --local
+```
+
+Eseguire un comando alla volta e fermarsi in caso di errore. `start` scarica le immagini e prepara il database locale; al primo avvio applica anche le migrazioni. `migration up --local` applica soltanto quelle locali eventualmente ancora mancanti, utile se il database esisteva già. `test db --local` esegue la suite pgTAP in `tests/database/`.
+
+L'output di `start` può contenere chiavi e credenziali locali: non incollarlo integralmente in chat o nel repository. Per i test comunicare soltanto il riepilogo PASS/FAIL e le eventuali righe di errore, senza credenziali. Non occorre impostare password o token nei file del progetto.
+
+La suite di base usa due account inventati in una transazione che termina con rollback. Controlla ruoli SQL autenticati e anonimi, isolamento di impostazioni/esercizi, proprietario falsificato, identità di confronto, revisioni obsolete, validazione, archiviazione e rifiuto della cancellazione fisica. Sono prove PostgreSQL con identità simulate: **non sostituiscono i test via API con login reali** o la verifica della configurazione Auth cloud.
+
+Il secondo file pgTAP include anche `tests/database/workout_plans_smoke.inc`: prova relazioni padre/figlio, snapshot, salvataggio atomico, versioni immutabili, isolamento e pulizia account. È eseguibile separatamente con `npx.cmd supabase db query --local --file supabase/tests/database/workout_plans_smoke.inc` e in caso di errore annulla l'intero statement. L'include deve restare nella stessa cartella montata dal runner pgTAP.
+
+Per verificare anche le API reali locali:
+
+```powershell
+npm.cmd run test:api:local
+```
+
+Per condividere un riepilogo breve, eseguire `node scripts/test-supabase-api.mjs --summary`: stessi controlli, con la fase in corso, eventuali errori e risultato finale. Attendere la riga `Result` prima di copiare l'output; la riga riporta anche quante fixture sono state eliminate.
+
+Lo script recupera le chiavi locali dalla CLI solo in memoria, crea account inventati tramite Auth e verifica dati e RPC attraverso sessioni utente senza privilegi amministrativi. Controlla anche signup/anonimo disabilitati, rinnovo e logout, concorrenza HTTP e pulizia delle fixture. Rifiuta URL diversi dallo stack su `127.0.0.1:54321`; non è un runner per il cloud. I controlli del runner si eseguono con `npm.cmd run test:infra`.
+
+Configurazione Auth locale corretta: `[auth].enable_signup = false`, `enable_anonymous_sign_ins = false`, `[auth.email].enable_signup = true`, `enable_confirmations = true`. Il parametro della sezione email deve mantenere il provider attivo: impostarlo a false ha impedito anche il login (`email_provider_disabled`). Dopo una modifica a `config.toml`, eseguire `supabase stop` e `supabase start` senza opzioni che eliminino i dati, come previsto dalla [guida CLI](https://supabase.com/docs/guides/local-development/cli/config).
+
+Non usare `db reset --linked`. In questo passaggio non serve neppure un reset locale: si applicano le migrazioni pendenti conservando l'eventuale database di test esistente.
+
+## Stato verificato al 26 settembre 2026
+
+- Ricognizione SQL remota eseguita dall'utente: PostgreSQL 17.6, nessuna relazione `public`, nessuno storico migrazioni, funzione `rls_auto_enable` presente.
+- Prima migrazione applicata localmente e 53 test pgTAP superati secondo il riepilogo fornito dall'utente.
+- Seconda migrazione applicata localmente dall'agente; controllo SQL sui programmi superato. Il controllo Docker resta negato, ma la CLI accede al database locale tramite `migration up --local` e `db query --local`.
+- Quattro test del runner API superati. Primo tentativo HTTP fermato su provider email locale disabilitato; configurazione corretta e login/prime prove di isolamento passate al successivo tentativo dell'utente.
+- Prima esecuzione pgTAP estesa fallita per include fuori dalla cartella montata. File spostato accanto al test: nuova esecuzione confermata dall'utente, **54 test superati in due file**.
+- Primo riepilogo HTTP completo: FAIL dopo 26 controlli, timeout nella scrittura concorrente delle impostazioni, fixture eliminate 2/2. Terza migrazione PT409 applicata localmente; nuova esecuzione confermata dall'utente: **54 test pgTAP PASS, 129 controlli HTTP PASS, fixture eliminate 2/2**.
+- Tre migrazioni applicate anche al cloud: verifica remota fornita dall'utente interamente positiva su sei tabelle, tre funzioni e schema privato. Nessun dato personale caricato; frontend ancora in memoria. Test HTTP cloud ancora da eseguire.
+
+Dopo test locali riusciti, controllare nuovamente il progetto e le migrazioni pendenti; preparare l'anteprima remota prima di qualsiasi applicazione. Conservare separati gli esiti dei test locali, l'applicazione cloud e i successivi test API.
+
+## Primo deploy cloud: applicato e verificato
+
+Verificare che la CLI sia collegata al proprio progetto cloud prima di procedere. Nel terminale autenticato:
+
+```powershell
+npx.cmd supabase migration list --linked
+npx.cmd supabase db push --linked --dry-run --skip-vault
+```
+
+Attese soltanto le migrazioni `20260926120000`, `20260926130000` e `20260926140000`. Se l'elenco è diverso, fermarsi e confrontare lo storico. L'anteprima non applica SQL; `--skip-vault` impedisce l'aggiornamento dei segreti Vault dalla configurazione.
+
+L'utente ha confermato che l'anteprima propone esattamente questi tre file e che lo storico remoto non li contiene ancora. `npx.cmd supabase db push --linked --skip-vault` applica queste migrazioni al cloud. Dopo il successo, eseguire:
+
+```powershell
+npx.cmd supabase db query --linked --file supabase/checks/verify_schema.sql --output-format json
+```
+
+Tutti i controlli devono essere `true` e le tre versioni presenti. La query non legge utenti o dati applicativi. L'utente ha confermato questo risultato anche sul cloud: primo deploy applicato e metadati verificati. Non occorre ripeterlo; questo non sostituisce i successivi test HTTP sul cloud.
+
+Riferimenti: [migrazioni Supabase](https://supabase.com/docs/guides/deployment/database-migrations), [RLS e test](https://supabase.com/docs/guides/database/postgres/row-level-security), [pgTAP](https://supabase.com/docs/guides/local-development/testing/pgtap-extended).

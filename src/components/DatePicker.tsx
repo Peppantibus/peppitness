@@ -1,8 +1,7 @@
 import { formatDate, isLocalDate, localDate, shiftDate, weekDates } from '../domain/dates'
 import { Icon } from './Icon'
 
-export function DatePicker({ date, onChange }: { date: string; onChange: (date: string) => void }) {
-  const today = localDate()
+export function DatePicker({ date, onChange, today = localDate() }: { date: string; onChange: (date: string) => void; today?: string }) {
   return <section className="date-panel" aria-label="Seleziona il giorno">
     <div className="date-topline">
       <div className="month-label"><Icon name="calendar" size={18} /><span>{formatDate(date, { month: 'long', year: 'numeric' })}</span></div>

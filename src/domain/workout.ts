@@ -1,7 +1,7 @@
-import type { DemoSession, ExercisePrescription, RestTimerState, SetResult } from './types.ts'
+import type { WorkoutSession, ExercisePrescription, RestTimerState, SetResult } from './types.ts'
 
 export interface PreviousExercise {
-  session: DemoSession
+  session: WorkoutSession
   exercise: ExercisePrescription
   results: SetResult[]
 }
@@ -16,8 +16,8 @@ export function comparable(a: ExercisePrescription, b: ExercisePrescription): bo
 }
 
 export function findPreviousExercise(
-  sessions: DemoSession[], exercise: ExercisePrescription,
-  before: Pick<DemoSession, 'id' | 'date' | 'startedAt'>,
+  sessions: WorkoutSession[], exercise: ExercisePrescription,
+  before: Pick<WorkoutSession, 'id' | 'date' | 'startedAt'>,
 ): PreviousExercise | undefined {
   const candidates = sessions.filter(session => session.id !== before.id && session.completedAt
     && (session.date < before.date || (session.date === before.date && session.startedAt < before.startedAt)))
@@ -29,10 +29,10 @@ export function findPreviousExercise(
   }
 }
 
-export function formatResult(result: SetResult | undefined, mode: ExercisePrescription['mode']): string {
+export function formatResult(result: SetResult | undefined, mode: ExercisePrescription['mode'], unit: 'kg' | 'lb' = 'kg'): string {
   if (!result?.completed) return '—'
   const amount = `${result.amount}${mode === 'seconds' ? ' s' : ' rip.'}`
-  return result.load.trim() === '' ? amount : `${result.load} kg × ${amount}`
+  return result.load.trim() === '' ? amount : `${result.load} ${unit} × ${amount}`
 }
 
 /** Copia solo i carichi nelle righe ancora vuote, senza segnare risultati eseguiti. */

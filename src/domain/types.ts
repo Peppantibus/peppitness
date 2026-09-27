@@ -11,6 +11,8 @@ export interface Meal {
   items: string[]
   alternative: string
   note: string
+  alternatives?: string[]
+  additions?: string[]
 }
 
 export interface MealLog {
@@ -29,9 +31,14 @@ export interface ExercisePrescription {
   name: string
   area: string
   sets: number
+  /** Serie facoltative separate dalle obbligatorie: non vengono attivate automaticamente. */
+  optionalSets?: number
   target: string
   mode: 'reps' | 'seconds'
   restSeconds: number
+  loadLabel?: string
+  loadUnit?: 'kg' | 'lb'
+  effortLabel?: string
   note: string
   comparison?: {
     variant: string
@@ -46,6 +53,7 @@ export interface WorkoutDay {
   label: string
   title: string
   subtitle: string
+  notes?: string
   exercises: ExercisePrescription[]
 }
 
@@ -55,9 +63,11 @@ export interface SetResult {
   completed: boolean
 }
 
-export interface DemoSession {
+export interface WorkoutSession {
   id: string
+  planId?: string
   date: LocalDate
+  /** Snapshot della seduta: una nuova versione del programma non lo modifica. */
   day: WorkoutDay
   startedAt: string
   completedAt?: string

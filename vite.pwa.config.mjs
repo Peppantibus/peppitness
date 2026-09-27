@@ -1,4 +1,4 @@
-// Attivare dopo `npm run setup:pwa`. Nessun fallback che simuli un service worker.
+// Build distribuibile con service worker (vite-plugin-pwa). Nessuna cache delle API: runtimeCaching vuoto.
 import { mergeConfig } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import base from './vite.config.ts'

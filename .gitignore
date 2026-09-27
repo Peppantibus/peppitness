@@ -25,6 +25,11 @@ playwright-report/
 test-results/
 *.log
 
+# Documentazione di lavoro e dati personali: restano sul dispositivo
+/AGENT.md
+/recap.md
+/docs/
+
 # Piani personali, importazioni e backup: mai pubblicarli
 private-imports/
 backups/

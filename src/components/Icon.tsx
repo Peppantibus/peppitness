@@ -18,6 +18,8 @@ const paths = {
   close: 'm6 6 12 12M6 18 18 6',
   info: 'M12 11v6m0-10v.1M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',
   plus: 'M12 5v14M5 12h14',
+  menu: 'M4 7h16M4 12h16M4 17h10',
+  trend: 'M3 17l6-6 4 4 8-8M15 7h6v6',
   pause: 'M8 5v14M16 5v14',
   play: 'm8 4 12 8-12 8V4Z',
 } satisfies Record<string, string>

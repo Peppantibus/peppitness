@@ -2,10 +2,12 @@
 // Richiede preview su 127.0.0.1:4173 e Chrome di test con debugging su 9223.
 import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
+import { fixtureSession, fixtureStorageKey, fixtureSupabaseOrigin, installAuthFixture } from './lib/browser-auth-fixture.mjs'
+import { sampleMeals, sampleWorkoutDays, seedFollowedPlans } from './lib/diary-fixture.mjs'
 
 const baseUrl = process.env.TEST_BASE_URL ?? 'http://127.0.0.1:4173'
 const debugUrl = process.env.TEST_DEBUG_URL ?? 'http://127.0.0.1:9223'
-const target = await fetch(`${debugUrl}/json/new?${encodeURIComponent(baseUrl)}`, { method: 'PUT' }).then(r => r.json())
+const target = await fetch(`${debugUrl}/json/new?about:blank`, { method: 'PUT' }).then(r => r.json())
 const socket = new WebSocket(target.webSocketDebuggerUrl)
 await new Promise((resolve, reject) => { socket.addEventListener('open', resolve, { once: true }); socket.addEventListener('error', reject, { once: true }) })
 let sequence = 0
@@ -74,6 +76,11 @@ try {
   await send('Runtime.enable')
   await send('Log.enable')
   await send('Network.enable')
+  await send('Storage.clearDataForOrigin', { origin: new URL(baseUrl).origin, storageTypes: 'local_storage,indexeddb' })
+  const authFixture = await installAuthFixture(send, socket, new URL(baseUrl).origin)
+  // Account sintetico con programma e piano alimentare già seguiti (API simulate).
+  seedFollowedPlans(authFixture, fixtureSession().user.id, { workoutDays: sampleWorkoutDays, meals: sampleMeals })
+  await send('Page.addScriptToEvaluateOnNewDocument', { source: `localStorage.setItem(${JSON.stringify(fixtureStorageKey)}, ${JSON.stringify(JSON.stringify(fixtureSession()))})` })
   await viewport(1440, 1150)
   await send('Page.navigate', { url: baseUrl })
   await until(`document.querySelectorAll('.meal-card').length === 4`)
@@ -104,7 +111,7 @@ try {
   const originalDate = await evaluate(`document.querySelector('input[type="date"]').value`)
   await setInput('input[type="date"]', '2025-01-17')
   await until(`document.querySelector('.past-notice')?.textContent.includes('passata')`)
-  assert.equal(await evaluate(`document.querySelector('.meal-card .status').textContent`), 'Da registrare')
+  assert.equal(await evaluate(`document.querySelector('.meal-card .status')`), null)
   await click('.meal-card')
   await click('input[value="followed"]')
   await click('dialog button[type="submit"]')
@@ -121,6 +128,19 @@ try {
     assert.ok(await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`), `Scheda: overflow a ${width}px`)
   }
   await viewport(390, 844, true)
+  await route('/scheda/progressi')
+  assert.ok(await evaluate(`Boolean(document.querySelector('.cycle-card h2'))`))
+  assert.equal(await evaluate(`document.querySelectorAll('.progress-tiles .progress-tile').length`), 2)
+  assert.equal(await evaluate(`document.querySelectorAll('.progress-section > .week-rows li').length`), 1)
+  for (const width of [320, 390, 768, 1440]) {
+    await viewport(width, 844, width < 720)
+    assert.ok(await evaluate(`document.documentElement.scrollWidth <= window.innerWidth`), `Progressi: overflow a ${width}px`)
+  }
+  await viewport(390, 844, true)
+  await screenshot('mobile-progressi')
+  await click('.progress-week-history summary')
+  assert.ok(await evaluate(`document.querySelector('.progress-week-history').open`))
+  await route('/scheda')
   await click('.exercise-card')
   assert.ok(await evaluate(`document.querySelector('dialog').textContent.includes('Goblet squat')`))
   await click('.dialog-close')
@@ -148,6 +168,10 @@ try {
   const nextWeek = new Date(originalDate + 'T12:00:00Z')
   nextWeek.setUTCDate(nextWeek.getUTCDate() + 7)
   await setInput('input[type="date"]', nextWeek.toISOString().slice(0, 10))
+  // Dopo la A la scheda suggerisce la B, senza sceglierla da sola: si torna alla A a mano.
+  assert.ok(await evaluate(`document.querySelector('.workout-day-tabs button[aria-pressed="true"]').textContent.includes('Suggerita')`))
+  assert.ok(await evaluate(`document.querySelector('.workout-day-tabs button[aria-pressed="true"]').textContent.includes('Full body B')`))
+  await click('.workout-day-tabs button:first-child')
   await click('.workout-summary .primary')
   await until(`document.querySelector('.previous-inline')?.textContent.includes('12,5 kg')`)
   assert.equal(await evaluate(`document.querySelector('.set-grid input').value`), '')
@@ -220,15 +244,29 @@ try {
   assert.equal(await evaluate(`document.querySelectorAll('.meal-card').length`), 4)
   await send('Network.emulateNetworkConditions', { offline: false, latency: 0, downloadThroughput: -1, uploadThroughput: -1 })
 
-  // Ricaricamento = reset esplicito della demo, senza fingere persistenza.
+  // Sincronizzazione: pasti, giornate, sedute e serie arrivano al server simulato.
+  await route('/dieta')
+  await until(`document.querySelector('.quiet-note')?.textContent.includes('Sincronizzato')`)
+  const diary = authFixture.diary
+  assert.equal(diary.meal_logs.length, 2, 'Due pasti registrati online')
+  assert.equal(diary.workout_sessions.filter(row => row.status === 'completed').length, 2, 'Due sedute completate online')
+  assert.ok(diary.workout_set_logs.some(row => row.load === 12.5 && row.amount === 10 && row.completed), 'Serie 12,5 × 10 salvata con valori numerici')
+  assert.equal(new Set(diary.workout_set_logs.map(row => `${row.session_id}:${row.prescription_id}:${row.set_index}`)).size, diary.workout_set_logs.length, 'Nessuna serie duplicata')
+
+  // Ricaricamento: il diario persiste; niente dati inventati o reset silenzioso.
   await send('Page.reload')
-  await until(`document.querySelector('.meal-card .status')?.textContent === 'Da registrare'`)
+  await until(`document.querySelector('.meal-card .status')?.textContent === 'Modificato'`)
   await route('/scheda/storico')
-  assert.ok(await evaluate(`Boolean(document.querySelector('.empty-state'))`))
+  await until(`document.querySelectorAll('.history-card').length === 2`)
+  await click('.history-card')
+  await click('.session-correct')
+  assert.equal(await evaluate(`document.querySelector('.set-grid input').readOnly`), false, 'Storico correggibile su richiesta')
   assert.deepEqual(errors, [], 'Errori console')
   const external = requests.filter(url => /^https?:/.test(url) && !url.startsWith(new URL(baseUrl).origin + '/'))
-  assert.deepEqual(external, [], 'Nessuna richiesta esterna dalla demo')
-  const report = { status: 'passed', widths: [320, 390, 768, 1440], runtimeErrors: errors, externalRequests: external, reloadDialogs: browserDialogs, checks: ['navigazione', 'dialog e Escape', 'stati pasti e note', 'isolamento date', 'storico pasti', 'validazione serie', 'ripresa seduta', 'storico sedute', 'precedente dopo una settimana', 'copia solo carichi', 'swipe touch precedente', 'timer pausa/ripresa/incremento/scadenza', 'offline nella pagina già aperta', 'reset al reload'], date: new Date().toISOString() }
+  assert.deepEqual(authFixture.failures, [], 'Nessuna richiesta inattesa nel mock')
+  assert.ok(external.every(value => new URL(value).origin === fixtureSupabaseOrigin), 'Solo richieste Supabase intercettate dal mock')
+  assert.ok(authFixture.requests.every(request => !/^(POST|PATCH|DELETE) \/rest\/v1\/(user_settings|exercises|workout_plans)/.test(request)), 'Nessuna scrittura su preferenze, catalogo o programmi durante la regressione UI')
+  const report = { status: 'passed', widths: [320, 390, 768, 1440], runtimeErrors: errors, mockedApiRequests: authFixture.requests, mode: 'Richieste API intercettate, nessun contatto col cloud', reloadDialogs: browserDialogs, checks: ['navigazione', 'dialog e Escape', 'stati pasti e note', 'isolamento date', 'storico pasti', 'validazione serie', 'ripresa seduta', 'storico sedute', 'precedente dopo una settimana', 'copia solo carichi', 'swipe touch precedente', 'timer pausa/ripresa/incremento/scadenza', 'offline nella pagina già aperta', 'sincronizzazione diario', 'persistenza al reload', 'storico correggibile'], date: new Date().toISOString() }
   await writeFile('artifacts/browser-report.json', JSON.stringify(report, null, 2))
   console.log(JSON.stringify(report, null, 2))
 } finally {
