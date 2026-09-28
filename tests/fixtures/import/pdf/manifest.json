@@ -1,0 +1,115 @@
+{
+  "formatVersion": 1,
+  "description": "PDF sintetici del reader (task 05), generati da scripts/generate-pdf-fixtures.mjs. Golden rivisti a mano blocco per blocco rispetto alla costruzione della fixture.",
+  "readerVersion": "peppitness.pdf-reader.v1",
+  "cases": [
+    {
+      "id": "pdf-simple",
+      "sourceFile": "pdf-simple.pdf",
+      "sha256": "47860dff4ebebac9c549bc543038ac41cc5261157309b96ffb9de4346a9996a8",
+      "expected": "pdf-simple.expected.json",
+      "expectedError": null,
+      "summary": "Testo semplice: titolo e titoli di sezione, elenchi, paragrafo su due righe disegnate in ordine non visivo, segni ′ ″ dal font Symbol uniti al testo, contatto minimizzato.",
+      "tags": ["layout-simple", "headings", "lists", "reading-order", "unicode", "contacts"]
+    },
+    {
+      "id": "pdf-two-columns",
+      "sourceFile": "pdf-two-columns.pdf",
+      "sha256": "87a0678a5c2dcf19d8f8c87f703ecdc457864460725a4554dbaf2bdf2deeb6d1",
+      "expected": "pdf-two-columns.expected.json",
+      "expectedError": null,
+      "summary": "Due colonne con numeri simili: elenchi affiancati riga per riga (tabella a due colonne, stesso valore in entrambe) e testo in colonne non allineate letto colonna per colonna, con riga a tutta pagina.",
+      "tags": ["layout-columns", "same-values", "reading-order"]
+    },
+    {
+      "id": "pdf-table",
+      "sourceFile": "pdf-table.pdf",
+      "sha256": "78fb12701094db655310422aa0b49f0a51f1009f775c7dc58b92d946ac7b9940",
+      "expected": "pdf-table.expected.json",
+      "expectedError": null,
+      "summary": "Tabella con intestazione e numeri simili, numero sollevato fuori riga, cella allineata a destra che tocca la colonna successiva (unita da PDF.js: cella su più colonne con avviso).",
+      "tags": ["layout-table", "misaligned-numbers", "columns-without-gap"]
+    },
+    {
+      "id": "pdf-rotated",
+      "sourceFile": "pdf-rotated.pdf",
+      "sha256": "8f1561ff05d135f19ba74280df95d69cd0913aae66e8b149ca1b1a6f976bbac6",
+      "expected": "pdf-rotated.expected.json",
+      "expectedError": null,
+      "summary": "Pagine ruotate: /Rotate 90 con testo dritto, /Rotate 90 con testo verticale (letto nella sua direzione), pagina orizzontale con riga a due colonne.",
+      "tags": ["rotation", "landscape"]
+    },
+    {
+      "id": "pdf-scan-only",
+      "sourceFile": "pdf-scan-only.pdf",
+      "sha256": "e31d4578a44811ac2b9f890a10ece479d92c75e828c4358f95e3fba8cf134082",
+      "expected": "pdf-scan-only.expected.json",
+      "expectedError": null,
+      "summary": "Solo scansione: due pagine con immagine a pagina intera e nessun testo.",
+      "tags": ["scan", "no-text"]
+    },
+    {
+      "id": "pdf-mixed",
+      "sourceFile": "pdf-mixed.pdf",
+      "sha256": "7993a2227eb4b3a2e2c8c2bf9a2ee418bd44230a2c1a4efcdd037d853c4dd519",
+      "expected": "pdf-mixed.expected.json",
+      "expectedError": null,
+      "summary": "Testo e scansione: immagine senza testo su metà pagina, logo piccolo ignorato, sfondo decorativo sotto il testo.",
+      "tags": ["mixed", "image-without-text", "decorative-image"]
+    },
+    {
+      "id": "pdf-last-page-scan",
+      "sourceFile": "pdf-last-page-scan.pdf",
+      "sha256": "d1bec6103b5f3937ef7f2cc111985c6f0cfdbf0e5e615b783004add2da01ce5d",
+      "expected": "pdf-last-page-scan.expected.json",
+      "expectedError": null,
+      "summary": "Ultima pagina non leggibile: due pagine di testo e l’ultima scansionata.",
+      "tags": ["mixed", "last-page-scan"]
+    },
+    {
+      "id": "pdf-unreadable-text",
+      "sourceFile": "pdf-unreadable-text.pdf",
+      "sha256": "d2e8538c29a8fcdf220241a7debd080f54c1251e4f2ccbe7a0d381f88120ee50",
+      "expected": "pdf-unreadable-text.expected.json",
+      "expectedError": null,
+      "summary": "Font senza mappa Unicode (frammenti esclusi) e testo invisibile sopra una scansione (OCR di terzi).",
+      "tags": ["unreadable-font", "invisible-text"]
+    },
+    {
+      "id": "pdf-ccitt-scan",
+      "sourceFile": "pdf-ccitt-scan.pdf",
+      "sha256": "aee2c66e7a1404064c58648dfb9cf9f5225521b2085bd307a7762ab8f25a0a05",
+      "expected": "pdf-ccitt-scan.expected.json",
+      "expectedError": null,
+      "summary": "Scansione bitonale CCITT a pagina intera (come molti scanner da ufficio): nessun testo; nel browser il rendering usa il decodificatore JavaScript locale.",
+      "tags": ["scan", "ccitt", "no-text"]
+    },
+    {
+      "id": "pdf-damaged-page",
+      "sourceFile": "pdf-damaged-page.pdf",
+      "sha256": "7b0b1468f1690eff921711109b25103bf27506653197dfc40382cc9522a11401",
+      "expected": "pdf-damaged-page.expected.json",
+      "expectedError": null,
+      "summary": "Pagina centrale con flusso di contenuto illeggibile: PDF.js la restituisce vuota, segnalata come vuota o danneggiata.",
+      "tags": ["damaged-page"]
+    },
+    {
+      "id": "pdf-password",
+      "sourceFile": "pdf-password.pdf",
+      "sha256": "3d7469ec0f41ce2d92dec6e49586d3dada1fcca4c4924093da445428255f3e43",
+      "expected": null,
+      "expectedError": "unsupported",
+      "summary": "PDF cifrato con password utente sconosciuta: rifiuto.",
+      "tags": ["rejection", "password"]
+    },
+    {
+      "id": "pdf-corrupt",
+      "sourceFile": "pdf-corrupt.pdf",
+      "sha256": "908a93da8db8b635e85b4ddc1dfecd15bebc9a09fc76061a9b42a32953c4bfbf",
+      "expected": null,
+      "expectedError": "corrupt",
+      "summary": "Intestazione %PDF seguita da dati non validi: rifiuto.",
+      "tags": ["rejection", "corrupt"]
+    }
+  ]
+}

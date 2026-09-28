@@ -77,6 +77,15 @@ export function checkDocxBytes(bytes: Uint8Array, limits: ImportLimits = default
   if (signature !== 'zip') throw new DocumentReaderError('corrupt', 'Il file non è un documento DOCX valido.')
 }
 
+/** Byte coerenti con un PDF prima di interpretarlo: non vuoti, entro il limite, intestazione `%PDF-`. */
+export function checkPdfBytes(bytes: Uint8Array, limits: ImportLimits = defaultImportLimits): void {
+  checkFileSize(bytes.byteLength, limits)
+  const signature = detectSignature(bytes)
+  if (signature === 'zip') throw new DocumentReaderError('unsupported', 'Il file è un documento Word o un archivio con estensione diversa: sceglilo come DOCX.')
+  if (signature === 'cfb') throw new DocumentReaderError('unsupported', 'Il file è un documento Word 97-2003 o protetto con estensione diversa: salvalo come PDF o DOCX e riprova.')
+  if (signature !== 'pdf') throw new DocumentReaderError('corrupt', 'Il file non è un PDF valido.')
+}
+
 /** SHA-256 esadecimale minuscolo dei byte originali, calcolato prima di interpretarli. */
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes as Uint8Array<ArrayBuffer>))

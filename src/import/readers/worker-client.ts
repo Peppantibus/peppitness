@@ -9,6 +9,7 @@
  */
 import { DocumentReaderError, validateDocumentReadResult, type DocumentFormat, type DocumentReader, type DocumentReaderInput, type DocumentReadResult } from '../contracts/reader.ts'
 import { DOCX_READER_VERSION } from './docx-version.ts'
+import { PDF_READER_VERSION } from './pdf-version.ts'
 import { deserializeReaderError, parseWorkerResponse, READER_WORKER_PROTOCOL, type ReaderWorkerRequest } from './worker-protocol.ts'
 
 /** Superficie di `Worker` usata dal client; sostituibile nei test. */
@@ -133,6 +134,16 @@ export function createDocxWorkerReader(options: { cancelGraceMilliseconds?: numb
     format: 'docx',
     readerVersion: DOCX_READER_VERSION,
     createWorker: () => new Worker(new URL('./docx-worker.ts', import.meta.url), { type: 'module' }) as unknown as ReaderWorkerHandle,
+    ...options,
+  })
+}
+
+/** Reader PDF nel worker module same-origin; PDF.js e il motore si scaricano alla prima lettura. */
+export function createPdfWorkerReader(options: { cancelGraceMilliseconds?: number } = {}): WorkerDocumentReader {
+  return createWorkerDocumentReader({
+    format: 'pdf',
+    readerVersion: PDF_READER_VERSION,
+    createWorker: () => new Worker(new URL('./pdf-worker.ts', import.meta.url), { type: 'module' }) as unknown as ReaderWorkerHandle,
     ...options,
   })
 }

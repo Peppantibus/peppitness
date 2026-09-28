@@ -1,0 +1,27 @@
+{
+  "document": {
+    "readerVersion": "peppitness.pdf-reader.v1",
+    "sourceHash": "47860dff4ebebac9c549bc543038ac41cc5261157309b96ffb9de4346a9996a8",
+    "blocks": [
+      {"id": "pdf:1:b:1", "kind": "heading", "text": "Scheda forza – blocco 1", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": 1, "origin": "native", "bbox": [0.0941,0.0546,0.383,0.0238]},
+      {"id": "pdf:1:b:2", "kind": "heading", "text": "Seduta A", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1078,0.102,0.0166]},
+      {"id": "pdf:1:b:3", "kind": "list_item", "text": "• Squat 4 x 8", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1", "pdf:1:b:2"], "page": 1, "origin": "native", "bbox": [0.0941,0.1404,0.1051,0.0131]},
+      {"id": "pdf:1:b:4", "kind": "list_item", "text": "• Panca piana 3 x 10–12", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1", "pdf:1:b:2"], "page": 1, "origin": "native", "bbox": [0.0941,0.1582,0.2007,0.0131]},
+      {"id": "pdf:1:b:5", "kind": "list_item", "text": "• Recupero 1′30″ tra le serie", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1", "pdf:1:b:2"], "page": 1, "origin": "native", "bbox": [0.0941,0.176,0.2313,0.0131]},
+      {"id": "pdf:1:b:6", "kind": "paragraph", "text": "Aumentare il carico di 2,5 kg a settimana\nfino a quando la tecnica resta pulita.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1", "pdf:1:b:2"], "page": 1, "origin": "native", "bbox": [0.0941,0.2057,0.3339,0.0309]},
+      {"id": "pdf:1:b:7", "kind": "heading", "text": "Seduta B", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.2622,0.102,0.0166]},
+      {"id": "pdf:1:b:8", "kind": "list_item", "text": "• Stacco rumeno 3 x 6", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1", "pdf:1:b:7"], "page": 1, "origin": "native", "bbox": [0.0941,0.2948,0.1812,0.0131]},
+      {"id": "pdf:1:b:9", "kind": "list_item", "text": "• Plank 3 x 30″", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1", "pdf:1:b:7"], "page": 1, "origin": "native", "bbox": [0.0941,0.3126,0.1209,0.0131]},
+      {"id": "pdf:1:b:10", "kind": "paragraph", "text": "Coach Luca Verdi – [telefono]", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1", "pdf:1:b:7"], "page": 1, "origin": "native", "bbox": [0.0941,0.9211,0.222,0.0095]}
+    ],
+    "readingIssues": [
+      {"code": "contact_data_removed", "sourceRefs": ["pdf:1:b:10"], "message": "Pagina 1: dati di contatto (1) sostituiti da segnaposto ([email], [telefono], [codice fiscale], [partita IVA]): non servono a interpretare il piano (regola peppitness.contact-minimization.v1)."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.pdf-reader.v1", "format": "pdf", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 1773, "pageCount": 1,
+    "inventory": [
+      {"id": "pdf:page:1", "kind": "page", "page": 1, "status": "read", "blockIds": ["pdf:1:b:1", "pdf:1:b:2", "pdf:1:b:3", "pdf:1:b:4", "pdf:1:b:5", "pdf:1:b:6", "pdf:1:b:7", "pdf:1:b:8", "pdf:1:b:9", "pdf:1:b:10"], "issueCodes": ["contact_data_removed"]}
+    ]
+  }
+}

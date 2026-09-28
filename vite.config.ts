@@ -1,15 +1,41 @@
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import { readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { readSupabaseConfig } from './src/auth/config'
+import { PDFJS_ASSET_DIRECTORY, PDFJS_DECODER_FILES } from './src/import/readers/pdf-assets'
+
+/**
+ * Decodificatori JavaScript di PDF.js (JBIG2, JPEG 2000) come asset same-origin con nomi stabili:
+ * PDF.js compone l'URL dal nome del file, quindi niente hash. Vedi src/import/readers/pdf-assets.ts.
+ * Copiati solo se la build contiene i worker PDF: finché nessuna pagina importa i reader (task 11)
+ * non pesano sul precache della PWA.
+ */
+function pdfjsDecoderAssets(): Plugin {
+  const source = (name: string) => resolve('node_modules', 'pdfjs-dist', 'wasm', name)
+  return {
+    name: 'pdfjs-decoder-assets',
+    async generateBundle(_, bundle) {
+      // Solo nelle build che leggono o mostrano PDF (worker del reader o del rendering).
+      if (!Object.keys(bundle).some(name => /pdf-(render-)?worker/.test(name))) return
+      for (const name of PDFJS_DECODER_FILES) this.emitFile({ type: 'asset', fileName: `${PDFJS_ASSET_DIRECTORY}/${name}`, source: await readFile(source(name)) })
+    },
+    configureServer(server) {
+      server.middlewares.use(`/${PDFJS_ASSET_DIRECTORY}/`, (request, response, next) => {
+        const name = (request.url ?? '').replace(/^\//, '').split('?')[0]
+        if (!(PDFJS_DECODER_FILES as readonly string[]).includes(name ?? '')) { next(); return }
+        readFile(source(name!)).then(body => { response.setHeader('Content-Type', 'text/javascript'); response.end(body) }, next)
+      })
+    },
+  }
+}
 
 let headersPath = ''
 let supabaseOrigin: string | null = null
 let isBuild = false
 
 export default defineConfig({
-  plugins: [react(), {
+  plugins: [react(), pdfjsDecoderAssets(), {
     name: 'validate-public-supabase-config',
     config(_, { command, mode }) {
       isBuild = command === 'build'

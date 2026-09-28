@@ -1,0 +1,18 @@
+{
+  "document": {
+    "readerVersion": "peppitness.pdf-reader.v1",
+    "sourceHash": "aee2c66e7a1404064c58648dfb9cf9f5225521b2085bd307a7762ab8f25a0a05",
+    "blocks": [
+
+    ],
+    "readingIssues": [
+      {"code": "no_text_layer", "sourceRefs": [], "message": "Pagina 1: nessun testo estraibile (immagine a pagina intera: probabile scansione). Serve la lettura da immagine, non disponibile in questa versione: la pagina resta esclusa dall’analisi."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.pdf-reader.v1", "format": "pdf", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 1755, "pageCount": 1,
+    "inventory": [
+      {"id": "pdf:page:1", "kind": "page", "page": 1, "status": "no_text", "blockIds": [], "issueCodes": ["no_text_layer"]}
+    ]
+  }
+}

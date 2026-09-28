@@ -1,0 +1,4 @@
+# Fixture binarie dei reader: byte esatti (hash nel manifest, offset xref dei PDF).
+# Mai conversioni di fine riga, anche con core.autocrlf attivo.
+*.pdf binary
+*.docx binary

@@ -1,0 +1,21 @@
+{
+  "document": {
+    "readerVersion": "peppitness.pdf-reader.v1",
+    "sourceHash": "7b0b1468f1690eff921711109b25103bf27506653197dfc40382cc9522a11401",
+    "blocks": [
+      {"id": "pdf:1:b:1", "kind": "paragraph", "text": "Settimana 1: Squat 4 x 8", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": 1, "origin": "native", "bbox": [0.0941,0.0513,0.2025,0.0131]},
+      {"id": "pdf:3:b:1", "kind": "paragraph", "text": "Settimana 3: Squat 5 x 5", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": 3, "origin": "native", "bbox": [0.0941,0.0513,0.2025,0.0131]}
+    ],
+    "readingIssues": [
+      {"code": "empty_page", "sourceRefs": [], "message": "Pagina 2: nessun contenuto visibile: la pagina è vuota oppure il suo contenuto è danneggiato. Controlla la pagina nel documento originale."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.pdf-reader.v1", "format": "pdf", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2216, "pageCount": 3,
+    "inventory": [
+      {"id": "pdf:page:1", "kind": "page", "page": 1, "status": "read", "blockIds": ["pdf:1:b:1"], "issueCodes": []},
+      {"id": "pdf:page:2", "kind": "page", "page": 2, "status": "no_text", "blockIds": [], "issueCodes": ["empty_page"]},
+      {"id": "pdf:page:3", "kind": "page", "page": 3, "status": "read", "blockIds": ["pdf:3:b:1"], "issueCodes": []}
+    ]
+  }
+}

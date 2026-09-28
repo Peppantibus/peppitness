@@ -1,0 +1,38 @@
+{
+  "document": {
+    "readerVersion": "peppitness.pdf-reader.v1",
+    "sourceHash": "87a0678a5c2dcf19d8f8c87f703ecdc457864460725a4554dbaf2bdf2deeb6d1",
+    "blocks": [
+      {"id": "pdf:1:b:1", "kind": "heading", "text": "Confronto schede", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": 1, "origin": "native", "bbox": [0.0941,0.0347,0.2301,0.019]},
+      {"id": "pdf:1:t:1:r:0", "kind": "table_row", "text": "Scheda A | Scheda B", "tableId": "pdf:1:t:1", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.0869,0.5279,0.0131]},
+      {"id": "pdf:1:t:1:r:0:c:0", "kind": "table_cell", "text": "Scheda A", "tableId": "pdf:1:t:1", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:0", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.0869,0.0842,0.0131]},
+      {"id": "pdf:1:t:1:r:0:c:1", "kind": "table_cell", "text": "Scheda B", "tableId": "pdf:1:t:1", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:0", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.5378,0.0869,0.0842,0.0131]},
+      {"id": "pdf:1:t:1:r:1", "kind": "table_row", "text": "Squat 4 x 8 | Squat 3 x 8", "tableId": "pdf:1:t:1", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1083,0.5372,0.0131]},
+      {"id": "pdf:1:t:1:r:1:c:0", "kind": "table_cell", "text": "Squat 4 x 8", "tableId": "pdf:1:t:1", "row": 1, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:1", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1083,0.0935,0.0131]},
+      {"id": "pdf:1:t:1:r:1:c:1", "kind": "table_cell", "text": "Squat 3 x 8", "tableId": "pdf:1:t:1", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:1", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.5378,0.1083,0.0935,0.0131]},
+      {"id": "pdf:1:t:1:r:2", "kind": "table_row", "text": "Panca 3 x 10 | Panca 4 x 10", "tableId": "pdf:1:t:1", "row": 2, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1297,0.5516,0.0131]},
+      {"id": "pdf:1:t:1:r:2:c:0", "kind": "table_cell", "text": "Panca 3 x 10", "tableId": "pdf:1:t:1", "row": 2, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:2", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1297,0.1079,0.0131]},
+      {"id": "pdf:1:t:1:r:2:c:1", "kind": "table_cell", "text": "Panca 4 x 10", "tableId": "pdf:1:t:1", "row": 2, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:2", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.5378,0.1297,0.1079,0.0131]},
+      {"id": "pdf:1:t:1:r:3", "kind": "table_row", "text": "Stacco 5 x 5 | Stacco 5 x 5", "tableId": "pdf:1:t:1", "row": 3, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1511,0.5454,0.0131]},
+      {"id": "pdf:1:t:1:r:3:c:0", "kind": "table_cell", "text": "Stacco 5 x 5", "tableId": "pdf:1:t:1", "row": 3, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:3", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1511,0.1017,0.0131]},
+      {"id": "pdf:1:t:1:r:3:c:1", "kind": "table_cell", "text": "Stacco 5 x 5", "tableId": "pdf:1:t:1", "row": 3, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:3", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.5378,0.1511,0.1017,0.0131]},
+      {"id": "pdf:1:t:1:r:4", "kind": "table_row", "text": "Recupero 90 s | Recupero 120 s", "tableId": "pdf:1:t:1", "row": 4, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1724,0.5742,0.0131]},
+      {"id": "pdf:1:t:1:r:4:c:0", "kind": "table_cell", "text": "Recupero 90 s", "tableId": "pdf:1:t:1", "row": 4, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:4", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0941,0.1724,0.1202,0.0131]},
+      {"id": "pdf:1:t:1:r:4:c:1", "kind": "table_cell", "text": "Recupero 120 s", "tableId": "pdf:1:t:1", "row": 4, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:1:t:1:r:4", "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.5378,0.1724,0.1305,0.0131]},
+      {"id": "pdf:2:b:1", "kind": "heading", "text": "Piano alimentare – giorno tipo", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": 2, "origin": "native", "bbox": [0.0941,0.0347,0.3855,0.019]},
+      {"id": "pdf:2:b:2", "kind": "paragraph", "text": "Colazione: yogurt greco 170 g con\navena 40 g e frutti di bosco 100 g.\nSpuntino: una mela e 15 g di noci.\nPranzo: riso basmati 80 g, pollo\n150 g e verdure a volontà.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:2:b:1"], "page": 2, "origin": "native", "bbox": [0.0941,0.0869,0.2816,0.0796]},
+      {"id": "pdf:2:b:3", "kind": "paragraph", "text": "Merenda: 2 fette di pane integrale\ncon 30 g di bresaola.\nCena: salmone 150 g, patate\n200 g e insalata con 10 g di olio.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:2:b:1"], "page": 2, "origin": "native", "bbox": [0.521,0.0952,0.2764,0.0736]},
+      {"id": "pdf:2:b:4", "kind": "paragraph", "text": "Bere almeno 2 litri di acqua al giorno, distribuiti fra i pasti principali.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:2:b:1"], "page": 2, "origin": "native", "bbox": [0.0941,0.2295,0.5466,0.0131]}
+    ],
+    "readingIssues": [
+
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.pdf-reader.v1", "format": "pdf", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2284, "pageCount": 2,
+    "inventory": [
+      {"id": "pdf:page:1", "kind": "page", "page": 1, "status": "read", "blockIds": ["pdf:1:b:1", "pdf:1:t:1:r:0", "pdf:1:t:1:r:0:c:0", "pdf:1:t:1:r:0:c:1", "pdf:1:t:1:r:1", "pdf:1:t:1:r:1:c:0", "pdf:1:t:1:r:1:c:1", "pdf:1:t:1:r:2", "pdf:1:t:1:r:2:c:0", "pdf:1:t:1:r:2:c:1", "pdf:1:t:1:r:3", "pdf:1:t:1:r:3:c:0", "pdf:1:t:1:r:3:c:1", "pdf:1:t:1:r:4", "pdf:1:t:1:r:4:c:0", "pdf:1:t:1:r:4:c:1"], "issueCodes": []},
+      {"id": "pdf:page:2", "kind": "page", "page": 2, "status": "read", "blockIds": ["pdf:2:b:1", "pdf:2:b:2", "pdf:2:b:3", "pdf:2:b:4"], "issueCodes": []}
+    ]
+  }
+}

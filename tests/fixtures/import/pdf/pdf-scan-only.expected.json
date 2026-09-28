@@ -1,0 +1,20 @@
+{
+  "document": {
+    "readerVersion": "peppitness.pdf-reader.v1",
+    "sourceHash": "e31d4578a44811ac2b9f890a10ece479d92c75e828c4358f95e3fba8cf134082",
+    "blocks": [
+
+    ],
+    "readingIssues": [
+      {"code": "no_text_layer", "sourceRefs": [], "message": "Pagina 1: nessun testo estraibile (immagine a pagina intera: probabile scansione). Serve la lettura da immagine, non disponibile in questa versione: la pagina resta esclusa dall’analisi."},
+      {"code": "no_text_layer", "sourceRefs": [], "message": "Pagina 2: nessun testo estraibile (immagine a pagina intera: probabile scansione). Serve la lettura da immagine, non disponibile in questa versione: la pagina resta esclusa dall’analisi."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.pdf-reader.v1", "format": "pdf", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 59206, "pageCount": 2,
+    "inventory": [
+      {"id": "pdf:page:1", "kind": "page", "page": 1, "status": "no_text", "blockIds": [], "issueCodes": ["no_text_layer"]},
+      {"id": "pdf:page:2", "kind": "page", "page": 2, "status": "no_text", "blockIds": [], "issueCodes": ["no_text_layer"]}
+    ]
+  }
+}

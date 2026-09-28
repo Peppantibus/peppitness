@@ -33,7 +33,8 @@ let targetId = null
 const cleanup = async () => {
   if (socket) { try { socket.close() } catch { /* già chiuso */ } }
   if (targetId) await fetch(`${debugUrl}/json/close/${targetId}`).catch(() => {})
-  if (server) await new Promise(done => server.close(done))
+  // Le connessioni keep-alive del browser non devono tenere aperto il server.
+  if (server) { server.closeAllConnections(); await new Promise(done => server.close(done)) }
   await rm(harnessDir, { recursive: true, force: true })
 }
 

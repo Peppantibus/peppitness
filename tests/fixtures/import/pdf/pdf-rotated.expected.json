@@ -1,0 +1,29 @@
+{
+  "document": {
+    "readerVersion": "peppitness.pdf-reader.v1",
+    "sourceHash": "8f1561ff05d135f19ba74280df95d69cd0913aae66e8b149ca1b1a6f976bbac6",
+    "blocks": [
+      {"id": "pdf:1:b:1", "kind": "heading", "text": "Settimana 1 – orizzontale", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": 1, "origin": "native", "bbox": [0.0665,0.1062,0.2144,0.0269]},
+      {"id": "pdf:1:b:2", "kind": "paragraph", "text": "Squat 5 x 5", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0665,0.1634,0.0661,0.0185]},
+      {"id": "pdf:1:b:3", "kind": "paragraph", "text": "Panca 5 x 5", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0665,0.197,0.069,0.0185]},
+      {"id": "pdf:1:b:4", "kind": "paragraph", "text": "Recupero 2 minuti tra le serie", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 1, "origin": "native", "bbox": [0.0665,0.2306,0.1706,0.0185]},
+      {"id": "pdf:2:b:1", "kind": "heading", "text": "Pagina ruotata senza compensazione", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1"], "page": 2, "origin": "native", "bbox": [0.923,0.0941,0.0166,0.3937]},
+      {"id": "pdf:2:b:2", "kind": "paragraph", "text": "Stacco 3 x 5\nRematore 3 x 10", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:1:b:1", "pdf:2:b:1"], "page": 2, "origin": "native", "bbox": [0.8703,0.0941,0.0309,0.1367]},
+      {"id": "pdf:3:b:1", "kind": "heading", "text": "Pagina orizzontale", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": 3, "origin": "native", "bbox": [0.0665,0.0709,0.1668,0.0269]},
+      {"id": "pdf:3:t:1:r:0", "kind": "table_row", "text": "Trazioni 4 x 6 | Dip 4 x 8", "tableId": "pdf:3:t:1", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["pdf:3:b:1"], "page": 3, "origin": "native", "bbox": [0.0665,0.1281,0.4957,0.0185]},
+      {"id": "pdf:3:t:1:r:0:c:0", "kind": "table_cell", "text": "Trazioni 4 x 6", "tableId": "pdf:3:t:1", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:3:t:1:r:0", "headingIds": ["pdf:3:b:1"], "page": 3, "origin": "native", "bbox": [0.0665,0.1281,0.0784,0.0185]},
+      {"id": "pdf:3:t:1:r:0:c:1", "kind": "table_cell", "text": "Dip 4 x 8", "tableId": "pdf:3:t:1", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "pdf:3:t:1:r:0", "headingIds": ["pdf:3:b:1"], "page": 3, "origin": "native", "bbox": [0.5107,0.1281,0.0516,0.0185]}
+    ],
+    "readingIssues": [
+
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.pdf-reader.v1", "format": "pdf", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2394, "pageCount": 3,
+    "inventory": [
+      {"id": "pdf:page:1", "kind": "page", "page": 1, "status": "read", "blockIds": ["pdf:1:b:1", "pdf:1:b:2", "pdf:1:b:3", "pdf:1:b:4"], "issueCodes": []},
+      {"id": "pdf:page:2", "kind": "page", "page": 2, "status": "read", "blockIds": ["pdf:2:b:1", "pdf:2:b:2"], "issueCodes": []},
+      {"id": "pdf:page:3", "kind": "page", "page": 3, "status": "read", "blockIds": ["pdf:3:b:1", "pdf:3:t:1:r:0", "pdf:3:t:1:r:0:c:0", "pdf:3:t:1:r:0:c:1"], "issueCodes": []}
+    ]
+  }
+}
