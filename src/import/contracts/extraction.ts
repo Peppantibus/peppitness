@@ -35,6 +35,11 @@ function jsonPointer(allowRoot: boolean) {
   ], { pattern: (allowRoot ? JSON_POINTER : FIELD_POINTER).source })
 }
 
+/** JSON Pointer sulla proposta: radice ammessa (problemi dell'intero documento, mappa degli ID locali). */
+export const proposalPointerSchema = jsonPointer(true)
+/** JSON Pointer a un campo della proposta, mai la radice (evidence, target delle regole). */
+export const fieldPointerSchema = jsonPointer(false)
+
 const text = string({ maxLength: contractLimits.textChars })
 const texts = array(text, { maxItems: contractLimits.items })
 const optionalText = nullable(text)

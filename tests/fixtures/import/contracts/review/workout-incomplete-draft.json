@@ -1,0 +1,767 @@
+{
+  "formatVersion": "peppitness.review-draft.v1",
+  "kind": "workout",
+  "proposal": {
+    "proposalId": "90000000-0000-4000-8000-000000000001",
+    "proposalVersion": 1,
+    "previousProposalId": null,
+    "jobId": "f0000000-0000-4000-8000-000000000001",
+    "source": {
+      "sourceHash": "c5c114fb3df2775b8d5e7828fddc80454843566c207b5fcf38ee07584f31f7a9",
+      "readerVersion": "synthetic-fixture/1",
+      "textNormalizationVersion": "peppitness.text-normalization.v1"
+    },
+    "extraction": {
+      "schemaVersion": "1.0",
+      "kind": "workout",
+      "outcome": "extracted",
+      "title": "Scheda forza base",
+      "guidance": [],
+      "schedule": "unknown",
+      "cycle": {
+        "startDate": null,
+        "weeks": null
+      },
+      "sessions": [
+        {
+          "label": "1",
+          "title": "Seduta 1",
+          "weekday": null,
+          "notes": [
+            "Stretching finale a piacere."
+          ],
+          "exercises": [
+            {
+              "name": "Panca piana",
+              "variant": null,
+              "equipment": null,
+              "measurementMode": "reps",
+              "sets": null,
+              "optionalSets": null,
+              "repetitions": {
+                "min": 8,
+                "max": 8
+              },
+              "durationSeconds": null,
+              "restSeconds": null,
+              "rir": null,
+              "rpe": null,
+              "perSide": null,
+              "loadUnit": null,
+              "loadConvention": null,
+              "loadInstruction": null,
+              "tempoInstruction": null,
+              "prescriptionText": "Panca piana | 3–4 | 8 |",
+              "notes": []
+            },
+            {
+              "name": "Rematore con manubrio",
+              "variant": null,
+              "equipment": "manubrio",
+              "measurementMode": "reps",
+              "sets": 2,
+              "optionalSets": 1,
+              "repetitions": {
+                "min": 10,
+                "max": 10
+              },
+              "durationSeconds": null,
+              "restSeconds": {
+                "min": 90,
+                "max": 90
+              },
+              "rir": null,
+              "rpe": null,
+              "perSide": true,
+              "loadUnit": null,
+              "loadConvention": null,
+              "loadInstruction": null,
+              "tempoInstruction": null,
+              "prescriptionText": "Rematore con manubrio | 2 + 1 facoltativa | 10 per lato | 90\"",
+              "notes": []
+            }
+          ]
+        }
+      ],
+      "complexRules": [],
+      "evidence": [
+        {
+          "path": "/title",
+          "spans": [
+            {
+              "blockId": "p:1",
+              "quote": "Scheda forza base"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/label",
+          "spans": [
+            {
+              "blockId": "p:2",
+              "quote": "Seduta 1"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/title",
+          "spans": [
+            {
+              "blockId": "p:2",
+              "quote": "Seduta 1"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/notes/0",
+          "spans": [
+            {
+              "blockId": "p:3",
+              "quote": "Stretching finale a piacere."
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/0/name",
+          "spans": [
+            {
+              "blockId": "t:1:r:1",
+              "quote": "Panca piana"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/0/measurementMode",
+          "spans": [
+            {
+              "blockId": "t:1:r:0",
+              "quote": "Ripetizioni"
+            },
+            {
+              "blockId": "t:1:r:1",
+              "quote": "8"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/0/repetitions",
+          "spans": [
+            {
+              "blockId": "t:1:r:0",
+              "quote": "Ripetizioni"
+            },
+            {
+              "blockId": "t:1:r:1",
+              "quote": "8"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/0/prescriptionText",
+          "spans": [
+            {
+              "blockId": "t:1:r:1",
+              "quote": "Panca piana | 3–4 | 8 |"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/name",
+          "spans": [
+            {
+              "blockId": "t:1:r:2",
+              "quote": "Rematore con manubrio"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/equipment",
+          "spans": [
+            {
+              "blockId": "t:1:r:2",
+              "quote": "manubrio"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/measurementMode",
+          "spans": [
+            {
+              "blockId": "t:1:r:0",
+              "quote": "Ripetizioni"
+            },
+            {
+              "blockId": "t:1:r:2",
+              "quote": "10 per lato"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/sets",
+          "spans": [
+            {
+              "blockId": "t:1:r:0",
+              "quote": "Serie"
+            },
+            {
+              "blockId": "t:1:r:2",
+              "quote": "2 + 1 facoltativa"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/optionalSets",
+          "spans": [
+            {
+              "blockId": "t:1:r:2",
+              "quote": "2 + 1 facoltativa"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/repetitions",
+          "spans": [
+            {
+              "blockId": "t:1:r:2",
+              "quote": "10 per lato"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/perSide",
+          "spans": [
+            {
+              "blockId": "t:1:r:2",
+              "quote": "per lato"
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/restSeconds",
+          "spans": [
+            {
+              "blockId": "t:1:r:0",
+              "quote": "Recupero"
+            },
+            {
+              "blockId": "t:1:r:2",
+              "quote": "90\""
+            }
+          ]
+        },
+        {
+          "path": "/sessions/0/exercises/1/prescriptionText",
+          "spans": [
+            {
+              "blockId": "t:1:r:2",
+              "quote": "Rematore con manubrio | 2 + 1 facoltativa | 10 per lato | 90\""
+            }
+          ]
+        }
+      ],
+      "issues": [
+        {
+          "code": "ambiguous",
+          "path": "/sessions/0/exercises/0/sets",
+          "sourceRefs": [
+            "t:1:r:1"
+          ],
+          "message": "3–4 serie: numero di serie non univoco, non equivale a 3 più una facoltativa."
+        },
+        {
+          "code": "missing",
+          "path": "/sessions/0/exercises/0/restSeconds",
+          "sourceRefs": [
+            "t:1:r:1"
+          ],
+          "message": "Cella del recupero vuota."
+        }
+      ],
+      "unassigned": []
+    }
+  },
+  "localIds": [
+    {
+      "localId": "root",
+      "pointer": ""
+    },
+    {
+      "localId": "s0",
+      "pointer": "/sessions/0"
+    },
+    {
+      "localId": "s0e0",
+      "pointer": "/sessions/0/exercises/0"
+    },
+    {
+      "localId": "s0e1",
+      "pointer": "/sessions/0/exercises/1"
+    }
+  ],
+  "decisions": [
+    {
+      "op": "set",
+      "decisionId": "d1",
+      "localId": "s0e0",
+      "field": "sets",
+      "before": null,
+      "after": 4,
+      "reason": "user_edit"
+    },
+    {
+      "op": "set",
+      "decisionId": "d2",
+      "localId": "s0e0",
+      "field": "restSeconds",
+      "before": null,
+      "after": {
+        "min": 120,
+        "max": 120
+      },
+      "reason": "user_edit"
+    },
+    {
+      "op": "set",
+      "decisionId": "d3",
+      "localId": "s0e0",
+      "field": "optionalSets",
+      "before": null,
+      "after": 0,
+      "reason": "confirmed_missing"
+    },
+    {
+      "op": "catalog",
+      "decisionId": "d4",
+      "localId": "s0e0",
+      "before": null,
+      "after": {
+        "source": "existing",
+        "personalId": "a0000000-0000-4000-8000-000000000001",
+        "revision": 3,
+        "seen": {
+          "name": "Panca piana",
+          "variant": "",
+          "equipment": "bilanciere",
+          "loadConvention": "total",
+          "loadUnit": "kg",
+          "measurementMode": "reps",
+          "perSide": false,
+          "note": ""
+        }
+      },
+      "reason": "catalog_choice"
+    },
+    {
+      "op": "catalog",
+      "decisionId": "d5",
+      "localId": "s0e1",
+      "before": null,
+      "after": {
+        "source": "new",
+        "localKey": "new-rematore",
+        "values": {
+          "name": "Rematore con manubrio",
+          "variant": "",
+          "equipment": "manubrio",
+          "loadConvention": "single-dumbbell",
+          "loadUnit": "kg",
+          "measurementMode": "reps",
+          "perSide": true,
+          "note": ""
+        }
+      },
+      "reason": "catalog_choice"
+    },
+    {
+      "op": "set",
+      "decisionId": "d6",
+      "localId": "root",
+      "field": "schedule",
+      "before": "unknown",
+      "after": "rotation",
+      "reason": "scope_choice"
+    },
+    {
+      "op": "confirm",
+      "decisionId": "d7",
+      "localId": "root",
+      "field": "schedule",
+      "issueCode": "schedule_unknown",
+      "value": "rotation",
+      "reason": "scope_choice"
+    },
+    {
+      "op": "set",
+      "decisionId": "d8",
+      "localId": "root",
+      "field": "cycle",
+      "before": {
+        "startDate": null,
+        "weeks": null
+      },
+      "after": {
+        "startDate": "2026-10-05",
+        "weeks": 8
+      },
+      "reason": "scope_choice"
+    },
+    {
+      "op": "add",
+      "decisionId": "d9",
+      "localId": "u1",
+      "collection": "sessions",
+      "parentLocalId": "root",
+      "index": 1,
+      "values": {
+        "label": "2",
+        "title": "Seduta 2",
+        "weekday": null,
+        "notes": []
+      },
+      "reason": "user_edit"
+    },
+    {
+      "op": "add",
+      "decisionId": "d10",
+      "localId": "u2",
+      "collection": "exercises",
+      "parentLocalId": "u1",
+      "index": 0,
+      "values": {
+        "name": "Rematore con manubrio",
+        "variant": null,
+        "equipment": "manubrio",
+        "measurementMode": "reps",
+        "sets": 3,
+        "optionalSets": 0,
+        "repetitions": {
+          "min": 12,
+          "max": 15
+        },
+        "durationSeconds": null,
+        "restSeconds": {
+          "min": 0,
+          "max": 0
+        },
+        "rir": null,
+        "rpe": null,
+        "perSide": true,
+        "loadUnit": null,
+        "loadConvention": null,
+        "loadInstruction": null,
+        "tempoInstruction": null,
+        "prescriptionText": "Rematore 3 × 12–15 per lato, senza recupero",
+        "notes": []
+      },
+      "reason": "user_edit"
+    },
+    {
+      "op": "catalog",
+      "decisionId": "d11",
+      "localId": "u2",
+      "before": null,
+      "after": {
+        "source": "new",
+        "localKey": "new-rematore",
+        "values": {
+          "name": "Rematore con manubrio",
+          "variant": "",
+          "equipment": "manubrio",
+          "loadConvention": "single-dumbbell",
+          "loadUnit": "kg",
+          "measurementMode": "reps",
+          "perSide": true,
+          "note": ""
+        }
+      },
+      "reason": "catalog_choice"
+    },
+    {
+      "op": "add",
+      "decisionId": "d12",
+      "localId": "u3",
+      "collection": "exercises",
+      "parentLocalId": "u1",
+      "index": 1,
+      "values": {
+        "name": "Plank",
+        "variant": "frontale",
+        "equipment": null,
+        "measurementMode": "seconds",
+        "sets": 3,
+        "optionalSets": 0,
+        "repetitions": null,
+        "durationSeconds": {
+          "min": 45,
+          "max": 45
+        },
+        "restSeconds": {
+          "min": 60,
+          "max": 60
+        },
+        "rir": null,
+        "rpe": null,
+        "perSide": false,
+        "loadUnit": null,
+        "loadConvention": null,
+        "loadInstruction": null,
+        "tempoInstruction": null,
+        "prescriptionText": "Plank 3 × 45″, recupero 60″",
+        "notes": []
+      },
+      "reason": "user_edit"
+    },
+    {
+      "op": "catalog",
+      "decisionId": "d13",
+      "localId": "u3",
+      "before": null,
+      "after": {
+        "source": "shared",
+        "templateId": "c0000000-0000-4000-8000-000000000001",
+        "seen": {
+          "name": "Plank",
+          "variant": "frontale",
+          "equipment": "",
+          "loadConvention": "bodyweight",
+          "loadUnit": "kg",
+          "measurementMode": "seconds",
+          "perSide": false,
+          "note": "Template comune."
+        }
+      },
+      "reason": "catalog_choice"
+    },
+    {
+      "op": "move",
+      "decisionId": "d14",
+      "localId": "u3",
+      "fromParentLocalId": "u1",
+      "fromIndex": 1,
+      "toParentLocalId": "u1",
+      "toIndex": 0,
+      "reason": "user_edit"
+    }
+  ],
+  "current": [
+    {
+      "collection": "root",
+      "localId": "root",
+      "parentLocalId": null,
+      "values": {
+        "title": "Scheda forza base",
+        "guidance": [],
+        "schedule": "rotation",
+        "cycle": {
+          "startDate": "2026-10-05",
+          "weeks": 8
+        }
+      }
+    },
+    {
+      "collection": "sessions",
+      "localId": "s0",
+      "parentLocalId": "root",
+      "values": {
+        "label": "1",
+        "title": "Seduta 1",
+        "weekday": null,
+        "notes": [
+          "Stretching finale a piacere."
+        ]
+      }
+    },
+    {
+      "collection": "exercises",
+      "localId": "s0e0",
+      "parentLocalId": "s0",
+      "values": {
+        "name": "Panca piana",
+        "variant": null,
+        "equipment": null,
+        "measurementMode": "reps",
+        "sets": 4,
+        "optionalSets": 0,
+        "repetitions": {
+          "min": 8,
+          "max": 8
+        },
+        "durationSeconds": null,
+        "restSeconds": {
+          "min": 120,
+          "max": 120
+        },
+        "rir": null,
+        "rpe": null,
+        "perSide": null,
+        "loadUnit": null,
+        "loadConvention": null,
+        "loadInstruction": null,
+        "tempoInstruction": null,
+        "prescriptionText": "Panca piana | 3–4 | 8 |",
+        "notes": []
+      },
+      "catalog": {
+        "source": "existing",
+        "personalId": "a0000000-0000-4000-8000-000000000001",
+        "revision": 3,
+        "seen": {
+          "name": "Panca piana",
+          "variant": "",
+          "equipment": "bilanciere",
+          "loadConvention": "total",
+          "loadUnit": "kg",
+          "measurementMode": "reps",
+          "perSide": false,
+          "note": ""
+        }
+      }
+    },
+    {
+      "collection": "exercises",
+      "localId": "s0e1",
+      "parentLocalId": "s0",
+      "values": {
+        "name": "Rematore con manubrio",
+        "variant": null,
+        "equipment": "manubrio",
+        "measurementMode": "reps",
+        "sets": 2,
+        "optionalSets": 1,
+        "repetitions": {
+          "min": 10,
+          "max": 10
+        },
+        "durationSeconds": null,
+        "restSeconds": {
+          "min": 90,
+          "max": 90
+        },
+        "rir": null,
+        "rpe": null,
+        "perSide": true,
+        "loadUnit": null,
+        "loadConvention": null,
+        "loadInstruction": null,
+        "tempoInstruction": null,
+        "prescriptionText": "Rematore con manubrio | 2 + 1 facoltativa | 10 per lato | 90\"",
+        "notes": []
+      },
+      "catalog": {
+        "source": "new",
+        "localKey": "new-rematore",
+        "values": {
+          "name": "Rematore con manubrio",
+          "variant": "",
+          "equipment": "manubrio",
+          "loadConvention": "single-dumbbell",
+          "loadUnit": "kg",
+          "measurementMode": "reps",
+          "perSide": true,
+          "note": ""
+        }
+      }
+    },
+    {
+      "collection": "sessions",
+      "localId": "u1",
+      "parentLocalId": "root",
+      "values": {
+        "label": "2",
+        "title": "Seduta 2",
+        "weekday": null,
+        "notes": []
+      }
+    },
+    {
+      "collection": "exercises",
+      "localId": "u3",
+      "parentLocalId": "u1",
+      "values": {
+        "name": "Plank",
+        "variant": "frontale",
+        "equipment": null,
+        "measurementMode": "seconds",
+        "sets": 3,
+        "optionalSets": 0,
+        "repetitions": null,
+        "durationSeconds": {
+          "min": 45,
+          "max": 45
+        },
+        "restSeconds": {
+          "min": 60,
+          "max": 60
+        },
+        "rir": null,
+        "rpe": null,
+        "perSide": false,
+        "loadUnit": null,
+        "loadConvention": null,
+        "loadInstruction": null,
+        "tempoInstruction": null,
+        "prescriptionText": "Plank 3 × 45″, recupero 60″",
+        "notes": []
+      },
+      "catalog": {
+        "source": "shared",
+        "templateId": "c0000000-0000-4000-8000-000000000001",
+        "seen": {
+          "name": "Plank",
+          "variant": "frontale",
+          "equipment": "",
+          "loadConvention": "bodyweight",
+          "loadUnit": "kg",
+          "measurementMode": "seconds",
+          "perSide": false,
+          "note": "Template comune."
+        }
+      }
+    },
+    {
+      "collection": "exercises",
+      "localId": "u2",
+      "parentLocalId": "u1",
+      "values": {
+        "name": "Rematore con manubrio",
+        "variant": null,
+        "equipment": "manubrio",
+        "measurementMode": "reps",
+        "sets": 3,
+        "optionalSets": 0,
+        "repetitions": {
+          "min": 12,
+          "max": 15
+        },
+        "durationSeconds": null,
+        "restSeconds": {
+          "min": 0,
+          "max": 0
+        },
+        "rir": null,
+        "rpe": null,
+        "perSide": true,
+        "loadUnit": null,
+        "loadConvention": null,
+        "loadInstruction": null,
+        "tempoInstruction": null,
+        "prescriptionText": "Rematore 3 × 12–15 per lato, senza recupero",
+        "notes": []
+      },
+      "catalog": {
+        "source": "new",
+        "localKey": "new-rematore",
+        "values": {
+          "name": "Rematore con manubrio",
+          "variant": "",
+          "equipment": "manubrio",
+          "loadConvention": "single-dumbbell",
+          "loadUnit": "kg",
+          "measurementMode": "reps",
+          "perSide": true,
+          "note": ""
+        }
+      }
+    }
+  ]
+}

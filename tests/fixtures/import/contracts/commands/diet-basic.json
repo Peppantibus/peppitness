@@ -1,0 +1,124 @@
+{
+  "requestId": "e0000000-0000-4000-8000-000000000003",
+  "payload": {
+    "protocolVersion": "peppitness.import-commit.v1",
+    "kind": "diet",
+    "mode": "create_new",
+    "resolved": {
+      "plan": {
+        "id": "30000000-0000-4000-8000-000000000001",
+        "name": "Menu esempio",
+        "document": {
+          "guidance": "Regola generale: dopo l’allenamento aggiungere una banana.",
+          "days": [
+            {
+              "id": "30000000-0000-4000-8000-000000000011",
+              "name": "Giorno di allenamento",
+              "dayType": "training",
+              "note": "",
+              "meals": [
+                {
+                  "id": "30000000-0000-4000-8000-000000000021",
+                  "name": "Colazione",
+                  "time": "",
+                  "foods": [
+                    {
+                      "name": "yogurt bianco",
+                      "quantity": "170 g"
+                    }
+                  ],
+                  "alternatives": [
+                    "In alternativa allo yogurt: latte 200 ml."
+                  ],
+                  "additions": [],
+                  "note": ""
+                },
+                {
+                  "id": "30000000-0000-4000-8000-000000000022",
+                  "name": "Pranzo",
+                  "time": "13:00",
+                  "foods": [
+                    {
+                      "name": "riso basmati",
+                      "quantity": "80 g (crudo)"
+                    },
+                    {
+                      "name": "olio EVO",
+                      "quantity": ""
+                    }
+                  ],
+                  "alternatives": [],
+                  "additions": [
+                    "Se allenamento serale: +20 g di riso."
+                  ],
+                  "note": ""
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "provenance": {
+    "formatVersion": "peppitness.import-provenance.v1",
+    "kind": "diet",
+    "analysis": {
+      "jobId": null,
+      "proposalId": "90000000-0000-4000-8000-000000000003",
+      "proposalVersion": 2,
+      "schemaId": "peppitness.diet-extraction.v1",
+      "source": {
+        "sourceHash": "850a7d6b234c630cee7370a72650e66f5aedb899f6e3c5e20fed8c94b01cfebc",
+        "readerVersion": "synthetic-fixture/1",
+        "textNormalizationVersion": "peppitness.text-normalization.v1"
+      }
+    },
+    "items": [
+      {
+        "localId": "root",
+        "targetId": null,
+        "sourcePointer": "",
+        "decisions": []
+      },
+      {
+        "localId": "d0",
+        "targetId": "30000000-0000-4000-8000-000000000011",
+        "sourcePointer": "/days/0",
+        "decisions": []
+      },
+      {
+        "localId": "d0m0",
+        "targetId": "30000000-0000-4000-8000-000000000021",
+        "sourcePointer": "/days/0/meals/0",
+        "decisions": [
+          {
+            "field": "timeText",
+            "reason": "confirmed_missing"
+          }
+        ]
+      },
+      {
+        "localId": "d0m1",
+        "targetId": "30000000-0000-4000-8000-000000000022",
+        "sourcePointer": "/days/0/meals/1",
+        "decisions": []
+      },
+      {
+        "localId": "d0m1f1",
+        "targetId": "30000000-0000-4000-8000-000000000022",
+        "sourcePointer": "/days/0/meals/1/foods/1",
+        "decisions": [
+          {
+            "field": "quantityText",
+            "reason": "confirmed_missing"
+          }
+        ]
+      }
+    ]
+  },
+  "selectionOptions": {
+    "follow": false,
+    "expectedActiveRevision": null
+  }
+}

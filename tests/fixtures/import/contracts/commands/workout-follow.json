@@ -1,0 +1,251 @@
+{
+  "requestId": "e0000000-0000-4000-8000-000000000001",
+  "payload": {
+    "protocolVersion": "peppitness.import-commit.v1",
+    "kind": "workout",
+    "mode": "create_new",
+    "resolved": {
+      "planId": "10000000-0000-4000-8000-000000000001",
+      "versionId": "10000000-0000-4000-8000-000000000002",
+      "title": "Scheda forza base – caffè",
+      "guidance": "Stretching finale a piacere.\nRecupero 90″ tra le serie ½ carico 💪",
+      "cycle": {
+        "start": "2026-10-05",
+        "weeks": 8
+      },
+      "days": [
+        {
+          "id": "10000000-0000-4000-8000-000000000011",
+          "label": "1",
+          "title": "Seduta 1",
+          "note": "",
+          "prescriptions": [
+            {
+              "id": "10000000-0000-4000-8000-000000000021",
+              "exerciseRef": "a0000000-0000-4000-8000-000000000001",
+              "sets": 4,
+              "optionalSets": 0,
+              "repsMin": 8,
+              "repsMax": 8,
+              "durationSeconds": null,
+              "restSeconds": 120,
+              "rir": 2,
+              "rpe": null,
+              "note": "Serie indicate come 3–4: scelte 4."
+            },
+            {
+              "id": "10000000-0000-4000-8000-000000000022",
+              "exerciseRef": "10000000-0000-4000-8000-000000000031",
+              "sets": 2,
+              "optionalSets": 1,
+              "repsMin": 10,
+              "repsMax": 10,
+              "durationSeconds": null,
+              "restSeconds": 90,
+              "rir": null,
+              "rpe": 7.5,
+              "note": "Per lato."
+            }
+          ]
+        },
+        {
+          "id": "10000000-0000-4000-8000-000000000012",
+          "label": "2",
+          "title": "Seduta 2",
+          "note": "Aggiunta in revisione.",
+          "prescriptions": [
+            {
+              "id": "10000000-0000-4000-8000-000000000023",
+              "exerciseRef": "10000000-0000-4000-8000-000000000032",
+              "sets": 3,
+              "optionalSets": 0,
+              "repsMin": null,
+              "repsMax": null,
+              "durationSeconds": 45,
+              "restSeconds": 60,
+              "rir": null,
+              "rpe": null,
+              "note": ""
+            },
+            {
+              "id": "10000000-0000-4000-8000-000000000024",
+              "exerciseRef": "10000000-0000-4000-8000-000000000031",
+              "sets": 3,
+              "optionalSets": 0,
+              "repsMin": 12,
+              "repsMax": 15,
+              "durationSeconds": null,
+              "restSeconds": 0,
+              "rir": null,
+              "rpe": null,
+              "note": ""
+            }
+          ]
+        }
+      ],
+      "catalog": [
+        {
+          "ref": "a0000000-0000-4000-8000-000000000001",
+          "choice": {
+            "source": "existing",
+            "personalId": "a0000000-0000-4000-8000-000000000001",
+            "revision": 3,
+            "seen": {
+              "name": "Panca piana",
+              "variant": "",
+              "equipment": "bilanciere",
+              "loadConvention": "total",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        },
+        {
+          "ref": "10000000-0000-4000-8000-000000000031",
+          "choice": {
+            "source": "new",
+            "localKey": "new-rematore",
+            "values": {
+              "name": "Rematore con manubrio",
+              "variant": "",
+              "equipment": "manubrio",
+              "loadConvention": "single-dumbbell",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": true,
+              "note": ""
+            }
+          }
+        },
+        {
+          "ref": "10000000-0000-4000-8000-000000000032",
+          "choice": {
+            "source": "shared",
+            "templateId": "c0000000-0000-4000-8000-000000000001",
+            "seen": {
+              "name": "Plank",
+              "variant": "frontale",
+              "equipment": "",
+              "loadConvention": "bodyweight",
+              "loadUnit": "kg",
+              "measurementMode": "seconds",
+              "perSide": false,
+              "note": "Template comune."
+            }
+          }
+        }
+      ]
+    }
+  },
+  "provenance": {
+    "formatVersion": "peppitness.import-provenance.v1",
+    "kind": "workout",
+    "analysis": {
+      "jobId": "f0000000-0000-4000-8000-000000000001",
+      "proposalId": "90000000-0000-4000-8000-000000000001",
+      "proposalVersion": 1,
+      "schemaId": "peppitness.workout-extraction.v1",
+      "source": {
+        "sourceHash": "c5c114fb3df2775b8d5e7828fddc80454843566c207b5fcf38ee07584f31f7a9",
+        "readerVersion": "synthetic-fixture/1",
+        "textNormalizationVersion": "peppitness.text-normalization.v1"
+      }
+    },
+    "items": [
+      {
+        "localId": "root",
+        "targetId": null,
+        "sourcePointer": "",
+        "decisions": [
+          {
+            "field": "cycle",
+            "reason": "scope_choice"
+          }
+        ]
+      },
+      {
+        "localId": "s0",
+        "targetId": "10000000-0000-4000-8000-000000000011",
+        "sourcePointer": "/sessions/0",
+        "decisions": []
+      },
+      {
+        "localId": "s0e0",
+        "targetId": "10000000-0000-4000-8000-000000000021",
+        "sourcePointer": "/sessions/0/exercises/0",
+        "decisions": [
+          {
+            "field": "sets",
+            "reason": "user_edit"
+          },
+          {
+            "field": "restSeconds",
+            "reason": "user_edit"
+          },
+          {
+            "field": null,
+            "reason": "catalog_choice"
+          }
+        ]
+      },
+      {
+        "localId": "s0e1",
+        "targetId": "10000000-0000-4000-8000-000000000022",
+        "sourcePointer": "/sessions/0/exercises/1",
+        "decisions": [
+          {
+            "field": null,
+            "reason": "catalog_choice"
+          }
+        ]
+      },
+      {
+        "localId": "u1",
+        "targetId": "10000000-0000-4000-8000-000000000012",
+        "sourcePointer": null,
+        "decisions": [
+          {
+            "field": null,
+            "reason": "user_edit"
+          }
+        ]
+      },
+      {
+        "localId": "u2",
+        "targetId": "10000000-0000-4000-8000-000000000023",
+        "sourcePointer": null,
+        "decisions": [
+          {
+            "field": null,
+            "reason": "user_edit"
+          },
+          {
+            "field": null,
+            "reason": "catalog_choice"
+          }
+        ]
+      },
+      {
+        "localId": "u3",
+        "targetId": "10000000-0000-4000-8000-000000000024",
+        "sourcePointer": null,
+        "decisions": [
+          {
+            "field": null,
+            "reason": "user_edit"
+          },
+          {
+            "field": null,
+            "reason": "catalog_choice"
+          }
+        ]
+      }
+    ]
+  },
+  "selectionOptions": {
+    "follow": true,
+    "expectedActiveRevision": 4
+  }
+}

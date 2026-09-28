@@ -1,0 +1,111 @@
+{
+  "formatVersion": 1,
+  "canonicalization": "peppitness.canonical-json.v1",
+  "description": "Vettori sintetici per l’equivalenza TypeScript/SQL: `json` è il testo da interpretare (anche in jsonb), `canonical` la forma attesa, `sha256` l’impronta dei suoi byte UTF-8. Vettori dello stesso gruppo hanno la stessa forma canonica; gruppi diversi forme diverse.",
+  "vectors": [
+    {
+      "id": "object-order-a",
+      "group": "object-order",
+      "description": "Chiavi in ordine qualsiasi, oggetti annidati.",
+      "json": "{\"b\":1,\"a\":[3,2,1],\"c\":{\"z\":null,\"y\":true}}",
+      "canonical": "{\"a\":[3,2,1],\"b\":1,\"c\":{\"y\":true,\"z\":null}}",
+      "sha256": "abebfca918a9c06d400778d9ef17e4f437dcee8676e2d9ab95561c8202191bea"
+    },
+    {
+      "id": "object-order-b",
+      "group": "object-order",
+      "description": "Stesso significato, altro ordine e spazi.",
+      "json": "{ \"c\" : { \"y\" : true , \"z\" : null } ,\n \"a\" : [ 3 , 2 , 1 ] , \"b\" : 1.0 }",
+      "canonical": "{\"a\":[3,2,1],\"b\":1,\"c\":{\"y\":true,\"z\":null}}",
+      "sha256": "abebfca918a9c06d400778d9ef17e4f437dcee8676e2d9ab95561c8202191bea"
+    },
+    {
+      "id": "array-reordered",
+      "group": "array-reordered",
+      "description": "Liste riordinate: significato diverso.",
+      "json": "{\"a\":[1,2,3],\"b\":1,\"c\":{\"y\":true,\"z\":null}}",
+      "canonical": "{\"a\":[1,2,3],\"b\":1,\"c\":{\"y\":true,\"z\":null}}",
+      "sha256": "b4ee733ff2bdaff665f65ddd32adb756da47a4dd638b81e2c8b5769bc99e99bb"
+    },
+    {
+      "id": "decimals",
+      "group": "decimals",
+      "description": "Zeri finali, esponenti, -0, interi oltre 2^53 e decimali oltre la precisione double.",
+      "json": "[1.50,0.1,1e-7,1E21,-0,100,1.0,2.5e3,123456789.125,-0.000001,0.30000000000000004,12345678901234567890,0.1000000000000000055511151231257827]",
+      "canonical": "[1.5,0.1,0.0000001,1000000000000000000000,0,100,1,2500,123456789.125,-0.000001,0.30000000000000004,12345678901234567000,0.1]",
+      "sha256": "46ebdc3590dee4c3bfe77e3bf0609d37dde61a687b9a3b9400b6a68670916e8f"
+    },
+    {
+      "id": "string-escapes",
+      "group": "string-escapes",
+      "description": "Escape come JSON.stringify ed escape_json: brevi, \\u00xx minuscolo per gli altri controlli, DEL e U+2028 letterali, / non escapato.",
+      "json": "{\"s\":\"q\\\" b\\\\ t\\t n\\n r\\r b\\b f\\f c\\u0001\\u001F d\\u007f l\\u2028 /\"}",
+      "canonical": "{\"s\":\"q\\\" b\\\\ t\\t n\\n r\\r b\\b f\\f c\\u0001\\u001f d l  /\"}",
+      "sha256": "be678f5786c5ea2aaed3ed9367915b0d1709f0cb2185ce6d99212e026f8570af"
+    },
+    {
+      "id": "unicode-nfc",
+      "group": "unicode-nfc",
+      "description": "è precomposto (NFC).",
+      "json": "{\"t\":\"caff\\u00e8 – ½ 💪\"}",
+      "canonical": "{\"t\":\"caffè – ½ 💪\"}",
+      "sha256": "da517d44ffbaa09ca39c3321859c13b7f1d885b5ac64d228d8db0835183deefe"
+    },
+    {
+      "id": "unicode-nfd",
+      "group": "unicode-nfd",
+      "description": "e + accento combinante (NFD): nessuna normalizzazione, hash diverso.",
+      "json": "{\"t\":\"caffe\\u0300 – ½ 💪\"}",
+      "canonical": "{\"t\":\"caffè – ½ 💪\"}",
+      "sha256": "c39a706c22f934d47d4b8321109eefe46d5b4324f37c52f1f955a69a69be5c9d"
+    },
+    {
+      "id": "key-code-points",
+      "group": "key-code-points",
+      "description": "Chiavi per code point (byte UTF-8), non per unità UTF-16: U+FFFF precede U+1F600.",
+      "json": "{\"😀\":4,\"\\uffff\":3,\"é\":2,\"a\":1,\"B\":0}",
+      "canonical": "{\"B\":0,\"a\":1,\"é\":2,\"￿\":3,\"😀\":4}",
+      "sha256": "1abe9e0ae8c34d0ac0f8ee43bcd5c5798d6129a6b4e60b1afc02ef1c39152361"
+    },
+    {
+      "id": "null-member",
+      "group": "null-member",
+      "description": "null esplicito.",
+      "json": "{\"a\":null}",
+      "canonical": "{\"a\":null}",
+      "sha256": "d091f9c83c091f79652fe8786375b3fe4ce0861a56f5bfbafedbe431877ff0e8"
+    },
+    {
+      "id": "missing-member",
+      "group": "missing-member",
+      "description": "Chiave assente: diversa da null.",
+      "json": "{}",
+      "canonical": "{}",
+      "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+    },
+    {
+      "id": "empty-string",
+      "group": "empty-string",
+      "description": "Testo vuoto: diverso da null e da lista vuota.",
+      "json": "{\"a\":\"\"}",
+      "canonical": "{\"a\":\"\"}",
+      "sha256": "258555fe010df3da34b3920945d0fbc59cebbcff1878bfc2e9206f0f495d81b9"
+    },
+    {
+      "id": "empty-list",
+      "group": "empty-list",
+      "description": "Lista vuota.",
+      "json": "{\"a\":[]}",
+      "canonical": "{\"a\":[]}",
+      "sha256": "50e8660084976a10f0b3b9b3a6352d5881cbd219b5587a26224971a60ff2cc55"
+    },
+    {
+      "id": "scalars",
+      "group": "scalars",
+      "description": "Booleani, zero e uno distinti.",
+      "json": "[true,false,0,1,{\"x\":{}}]",
+      "canonical": "[true,false,0,1,{\"x\":{}}]",
+      "sha256": "2a048349e63bf84936f213e85fa708f5301cbc447e83df329120580ec620e97f"
+    }
+  ]
+}

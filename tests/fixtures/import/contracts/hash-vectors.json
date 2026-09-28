@@ -1,0 +1,75 @@
+{
+  "formatVersion": 1,
+  "canonicalization": "peppitness.canonical-json.v1",
+  "hashVersions": {
+    "command": "peppitness.command-hash.v1",
+    "content": "peppitness.content-hash.v1"
+  },
+  "description": "Impronte attese dei comandi sintetici: la futura implementazione SQL (18) deve ottenere gli stessi valori dagli stessi file.",
+  "vectors": [
+    {
+      "id": "workout-basic",
+      "description": "Scheda risolta: esistente, nuovo condiviso da due occorrenze, template, ciclo, decimali, Unicode.",
+      "command": "commands/workout-basic.json",
+      "kind": "workout",
+      "commandHash": "7f8ce52c3b6b885f519738a9f53a30a8be880025ddefc506fa12fb93bf57368d",
+      "contentHash": "8ac11586a131f0af1c682824ca50673ef698aa632d8a957c23a8e48da49c3a6c"
+    },
+    {
+      "id": "workout-same-content",
+      "description": "Come workout-basic con requestId, UUID tecnici, ref provvisori, localKey, ID/revisione personale e proposta diversi: stesso contentHash.",
+      "command": "commands/workout-same-content.json",
+      "kind": "workout",
+      "commandHash": "17220599c6acd7da3bf61e485aa87575c4070c2a515896462339d72e9f185f53",
+      "contentHash": "8ac11586a131f0af1c682824ca50673ef698aa632d8a957c23a8e48da49c3a6c"
+    },
+    {
+      "id": "workout-follow",
+      "description": "Come workout-basic con follow=true: stesso contenuto, comando diverso.",
+      "command": "commands/workout-follow.json",
+      "kind": "workout",
+      "commandHash": "93bfa7031b535370ce0ba9de24a3ce7493aa0356cdd1bb73854187ab5a8d67ab",
+      "contentHash": "8ac11586a131f0af1c682824ca50673ef698aa632d8a957c23a8e48da49c3a6c"
+    },
+    {
+      "id": "workout-reordered",
+      "description": "Prescrizioni della prima seduta scambiate: contenuto diverso.",
+      "command": "commands/workout-reordered.json",
+      "kind": "workout",
+      "commandHash": "4a68bc373f81382918e766e1714607a973b33de3df6bfddf213cf0f6d04a09d9",
+      "contentHash": "5e5cc11665967c201680459156968ccdacdda40a74f339796453b0dbfacf4974"
+    },
+    {
+      "id": "workout-nfd-title",
+      "description": "Titolo in NFD: nessuna normalizzazione, contenuto diverso.",
+      "command": "commands/workout-nfd-title.json",
+      "kind": "workout",
+      "commandHash": "2b206458c575f6a351114f4074a2315d148fbd1d46e29d4b2e40cba4ba71c8c9",
+      "contentHash": "9871a50beb068a1f2e511686eca50a669e7334c9a9c5631f73b5fdc5903391fd"
+    },
+    {
+      "id": "diet-basic",
+      "description": "Dieta risolta con alternative, aggiunta condizionale, quantità vuota confermata.",
+      "command": "commands/diet-basic.json",
+      "kind": "diet",
+      "commandHash": "a0a7ff138bbc6750418998070fe26ae2b36c04d0fbb88ea6dfec5612c25abc90",
+      "contentHash": "b90632a08e810bc812f72d8f719e6cb79e5604483a298523baac3572e91ecc6b"
+    },
+    {
+      "id": "diet-same-content",
+      "description": "Come diet-basic con requestId, UUID tecnici e proposta diversi: stesso contentHash.",
+      "command": "commands/diet-same-content.json",
+      "kind": "diet",
+      "commandHash": "753378862f979cfb567858ab95c79ef64c93711a734116b11e60467112b7a8bd",
+      "contentHash": "b90632a08e810bc812f72d8f719e6cb79e5604483a298523baac3572e91ecc6b"
+    },
+    {
+      "id": "diet-follow-first-selection",
+      "description": "follow=true senza selezione esistente vista (expectedActiveRevision null).",
+      "command": "commands/diet-follow-first-selection.json",
+      "kind": "diet",
+      "commandHash": "330b9a9a07b72ff7bf797e3da73e8ef058171cfe14f9771480f1db47479676b4",
+      "contentHash": "b90632a08e810bc812f72d8f719e6cb79e5604483a298523baac3572e91ecc6b"
+    }
+  ]
+}

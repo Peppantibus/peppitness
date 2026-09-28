@@ -1,0 +1,27 @@
+{
+  "requestId": "e0000000-0000-4000-8000-000000000001",
+  "kind": "workout",
+  "commandHash": "7f8ce52c3b6b885f519738a9f53a30a8be880025ddefc506fa12fb93bf57368d",
+  "contentHash": "8ac11586a131f0af1c682824ca50673ef698aa632d8a957c23a8e48da49c3a6c",
+  "resultState": "committed",
+  "planId": "10000000-0000-4000-8000-000000000001",
+  "versionId": "10000000-0000-4000-8000-000000000002",
+  "exerciseBindings": [
+    {
+      "ref": "a0000000-0000-4000-8000-000000000001",
+      "exerciseId": "a0000000-0000-4000-8000-000000000001",
+      "resolution": "existing"
+    },
+    {
+      "ref": "10000000-0000-4000-8000-000000000031",
+      "exerciseId": "a0000000-0000-4000-8000-000000000010",
+      "resolution": "created"
+    },
+    {
+      "ref": "10000000-0000-4000-8000-000000000032",
+      "exerciseId": "a0000000-0000-4000-8000-000000000011",
+      "resolution": "adopted"
+    }
+  ],
+  "selection": null
+}

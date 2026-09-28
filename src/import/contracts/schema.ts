@@ -32,6 +32,10 @@ export type ContractErrorCode =
   | 'table_coordinates' | 'duplicate_table_row' | 'overlapping_cells'
   | 'duplicate_id' | 'duplicate_ref' | 'dangling_ref' | 'self_ref' | 'parent_cycle' | 'heading_ref'
   | 'non_canonical_text' | 'reader_mismatch' | 'inventory' | 'too_many_errors'
+  // Contratti di revisione, conferma e jobs (task 02).
+  | 'too_deep' | 'not_trimmed' | 'blank_text' | 'invalid_date' | 'too_large' | 'kind_mismatch'
+  | 'unknown_field' | 'parent_mismatch' | 'missing_local_id' | 'no_op_decision' | 'decision_reason'
+  | 'unused_binding' | 'binding_mismatch' | 'mode_mismatch' | 'selection_options' | 'status_mismatch'
 
 /** `path` è un JSON Pointer RFC 6901 sul valore validato; '' indica la radice. */
 export interface ContractError { path: string; code: ContractErrorCode; message: string }
@@ -56,6 +60,8 @@ type Node =
   | { type: 'array'; items: Node; minItems: number; maxItems: number }
   | { type: 'tuple'; items: readonly Node[] }
   | { type: 'object'; properties: Readonly<Record<string, Node>> }
+  | { type: 'union'; key: string; variants: Readonly<Record<string, Node>> }
+  | { type: 'json'; maxDepth: number }
   | { type: 'refine'; inner: Node; rules: readonly Rule<never>[]; json: JsonObject }
 
 /** `__output` esiste solo nel tipo: collega lo schema alla forma inferita. */
@@ -91,6 +97,49 @@ export function object<P extends Record<string, Schema<unknown>>>(properties: P)
 export function refine<T>(inner: Schema<T>, rules: readonly Rule<T>[], json: JsonObject = {}): Schema<T> {
   return schema({ type: 'refine', inner: inner.node, rules: rules as readonly Rule<never>[], json })
 }
+
+function objectNode(target: Schema<unknown>, builder: string) {
+  if (target.node.type !== 'object') throw new TypeError(`${builder}: serve uno schema object() senza refine.`)
+  return target.node
+}
+/** Sottoinsieme chiuso di un oggetto: stesse regole per le chiavi scelte, nessuna copia della definizione. */
+export function pick<T, const K extends keyof T & string>(target: Schema<T>, keys: readonly K[]): Schema<Pick<T, K>> {
+  const { properties } = objectNode(target, 'pick')
+  return schema({ type: 'object', properties: Object.fromEntries(keys.map(key => {
+    if (!Object.hasOwn(properties, key)) throw new TypeError(`pick: chiave assente ${key}.`)
+    return [key, properties[key]!]
+  })) })
+}
+/** Schemi dei singoli campi di un oggetto chiuso, per validare una modifica a un solo campo. */
+export function objectFields(target: Schema<unknown>): ReadonlyMap<string, Schema<unknown>> {
+  return new Map(Object.entries(objectNode(target, 'objectFields').properties).map(([key, node]) => [key, schema<unknown>(node)]))
+}
+/**
+ * Union chiusa con discriminante testuale: ogni variante è un object() con `key` literal.
+ * Un discriminante sconosciuto è un errore `enum`, mai una variante scelta per tentativi.
+ */
+export function taggedUnion<const K extends string, const V extends readonly Schema<{ [P in K]: string }>[]>(key: K, variants: V): Schema<Infer<V[number]>> {
+  const byTag: Record<string, Node> = {}
+  for (const variant of variants) {
+    const tag = objectNode(variant, 'taggedUnion').properties[key]
+    if (!tag || tag.type !== 'enum' || tag.values.length !== 1) throw new TypeError(`taggedUnion: ogni variante dichiara ${key} con literal().`)
+    if (Object.hasOwn(byTag, tag.values[0]!)) throw new TypeError(`taggedUnion: variante ripetuta ${tag.values[0]}.`)
+    byTag[tag.values[0]!] = variant.node
+  }
+  return schema({ type: 'union', key, variants: byTag })
+}
+/**
+ * Qualsiasi valore JSON (null, boolean, numero finito, testo valido, lista, oggetto semplice)
+ * entro una profondità massima: per valori «prima/dopo» validati poi contro lo schema del campo.
+ */
+export function jsonValue(options: { maxDepth: number }): Schema<JsonValue> { return schema({ type: 'json', maxDepth: options.maxDepth }) }
+
+/** UUID in forma canonica minuscola, come `valid_uuid` del database e `crypto.randomUUID()`. */
+export const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+export const uuidSchema = string({ minLength: 36, maxLength: 36, pattern: UUID_PATTERN })
+/** SHA-256 esadecimale minuscolo (sourceHash, normalizedHash, commandHash, contentHash). */
+export const SHA256_HEX_PATTERN = /^[0-9a-f]{64}$/
+export const sha256HexSchema = string({ minLength: 64, maxLength: 64, pattern: SHA256_HEX_PATTERN })
 
 /** Elenco di errori con tetto: un input ostile non produce elenchi illimitati. */
 export function errorList() {
@@ -183,6 +232,19 @@ function check(node: Node, value: unknown, path: string, errors: Errors): boolea
       }
       return ok
     }
+    case 'union': {
+      if (!isPlainObject(value)) return fail('type', `Atteso un oggetto, trovato ${describe(value)}.`)
+      const tagPath = `${path}/${escapePointerToken(node.key)}`
+      if (!Object.hasOwn(value, node.key)) { errors.add(tagPath, 'missing_key', 'Discriminante obbligatorio assente.'); return false }
+      const tag = value[node.key]
+      if (typeof tag !== 'string' || !Object.hasOwn(node.variants, tag)) {
+        errors.add(tagPath, 'enum', `Valori ammessi: ${Object.keys(node.variants).join(', ')}.`)
+        return false
+      }
+      return check(node.variants[tag]!, value, path, errors)
+    }
+    case 'json':
+      return checkJson(value, path, node.maxDepth, errors)
     case 'refine': {
       if (!check(node.inner, value, path, errors)) return false
       let ok = true
@@ -194,6 +256,31 @@ function check(node: Node, value: unknown, path: string, errors: Errors): boolea
       return ok
     }
   }
+}
+
+function checkJson(value: unknown, path: string, depth: number, errors: Errors): boolean {
+  if (errors.full) return false
+  if (value === null || typeof value === 'boolean') return true
+  if (typeof value === 'number') {
+    if (Number.isFinite(value)) return true
+    errors.add(path, 'not_finite', 'Il numero deve essere finito.'); return false
+  }
+  if (typeof value === 'string') {
+    if (invalidText.test(value)) { errors.add(path, 'invalid_text', 'Testo con NUL o surrogati Unicode isolati.'); return false }
+    if (value.length > contractLimits.textChars && [...value].length > contractLimits.textChars) { errors.add(path, 'too_long', `Al massimo ${contractLimits.textChars} caratteri.`); return false }
+    return true
+  }
+  const container = Array.isArray(value) || isPlainObject(value)
+  if (!container) { errors.add(path, 'type', `Atteso un valore JSON, trovato ${describe(value)}.`); return false }
+  if (depth <= 0) { errors.add(path, 'too_deep', 'Valore JSON troppo annidato.'); return false }
+  const entries: [string, unknown][] = Array.isArray(value) ? value.map((item, index) => [String(index), item]) : Object.entries(value)
+  if (entries.length > contractLimits.largeItems) { errors.add(path, 'too_many_items', `Al massimo ${contractLimits.largeItems} elementi.`); return false }
+  let ok = true
+  for (const [key, child] of entries) {
+    if (!Array.isArray(value) && invalidText.test(key)) { errors.add(path, 'invalid_text', 'Chiave con NUL o surrogati Unicode isolati.'); ok = false; continue }
+    ok = checkJson(child, `${path}/${escapePointerToken(key)}`, depth - 1, errors) && ok
+  }
+  return ok
 }
 
 /** Valida senza copiare né convertire: null, 0 e false arrivano intatti al chiamante. */
@@ -240,6 +327,8 @@ function nodeToJson(node: Node): JsonObject {
       required: Object.keys(node.properties),
       additionalProperties: false,
     }
+    case 'union': return { oneOf: Object.values(node.variants).map(nodeToJson) }
+    case 'json': return { $comment: `Qualsiasi valore JSON, profondità massima ${node.maxDepth}.` }
     case 'refine': return { ...nodeToJson(node.inner), ...node.json, $comment: node.rules.map(rule => rule.description).join(' ') }
   }
 }

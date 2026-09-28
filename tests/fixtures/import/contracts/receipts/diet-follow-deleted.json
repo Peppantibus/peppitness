@@ -1,0 +1,15 @@
+{
+  "requestId": "e0000000-0000-4000-8000-000000000003",
+  "kind": "diet",
+  "commandHash": "330b9a9a07b72ff7bf797e3da73e8ef058171cfe14f9771480f1db47479676b4",
+  "contentHash": "b90632a08e810bc812f72d8f719e6cb79e5604483a298523baac3572e91ecc6b",
+  "resultState": "deleted",
+  "planId": "30000000-0000-4000-8000-000000000001",
+  "versionId": null,
+  "exerciseBindings": [],
+  "selection": {
+    "revision": 1,
+    "workoutPlanId": null,
+    "mealPlanId": "30000000-0000-4000-8000-000000000001"
+  }
+}
