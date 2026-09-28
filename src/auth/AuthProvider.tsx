@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
+import { BrandLogo } from '../components/BrandLogo'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getSupabaseClient } from './client'
 import { authErrorMessage } from './errors'
@@ -26,7 +27,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
   if (state.status === 'unconfigured' || state.status === 'signed-in') return children
   return <main className="auth-page" id="main-content">
     <section className="panel auth-card" aria-labelledby="auth-title">
-      <img src="/logo.svg" alt="peppitness" className="auth-logo" width="128" height="104" />
+      <BrandLogo className="auth-logo" title="peppitness" />
       {state.status === 'loading' ? <><h1 id="auth-title">Il tuo spazio</h1><p role="status">Verifica dell’accesso…</p></>
         : state.status === 'error' ? <><h1 id="auth-title">Accesso non disponibile</h1><p role="alert">Non riesco a ripristinare la sessione. Controlla la connessione e riprova.</p><button className="button primary" onClick={() => window.location.reload()}>Riprova</button></>
           : client && <>{logoutUnconfirmed && <p role="status">Sei uscito da questo dispositivo. La chiusura della sessione online non è stata confermata.</p>}<SignIn client={client} /></>}
@@ -40,7 +41,7 @@ function SignIn({ client }: { client: SupabaseClient }) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   return <>
-    <span className="eyebrow">IL TUO SPAZIO</span><h1 id="auth-title">Bentornato.</h1>
+    <span className="eyebrow">Il tuo spazio</span><h1 id="auth-title">Bentornato.</h1>
     <p>Accedi con il tuo account.</p>
     <form className="auth-form" onSubmit={async event => {
       event.preventDefault()

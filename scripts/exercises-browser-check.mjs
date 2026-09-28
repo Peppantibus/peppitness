@@ -28,7 +28,7 @@ async function page() {
   }
   async function evaluate(expression) {
     const response = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })
-    if (response.exceptionDetails) throw new Error('Errore nel test browser catalogo')
+    if (response.exceptionDetails) throw new Error('Errore nel test browser catalogo: ' + expression.slice(0, 200))
     return response.result.value
   }
   async function until(expression) {
@@ -160,7 +160,7 @@ try {
   assert.equal(await a.evaluate('document.querySelector("#exercise-note").value'), 'Bozza da lasciare')
   await a.route('/impostazioni'); await a.until('Boolean(document.querySelector(".account-panel > button:not(:disabled)"))')
   await a.click('.account-panel > button'); await a.until('Boolean(document.querySelector("dialog[open]"))')
-  await a.click('.account-actions .primary'); await a.until('Boolean(document.querySelector("#login-email"))')
+  await a.click('.account-actions .danger'); await a.until('Boolean(document.querySelector("#login-email"))')
   await a.input('#login-email', 'b@example.invalid'); await a.input('#login-password', fixturePassword); await a.click('.auth-form button')
   await a.until('Boolean(document.querySelector(".account-panel"))')
   await a.route('/scheda/catalogo'); await a.until(listReady)

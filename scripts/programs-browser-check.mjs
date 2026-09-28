@@ -190,6 +190,16 @@ try {
   assert.ok(await b.evaluate('document.querySelector(".program-preview").textContent.includes("Bozza senza rete")'))
   checks.push('pubblicata altrove: nuova bozza locale, nuovi ID figli, seconda pubblicazione e prima versione intatta dopo reload')
 
+  await b.click('.program-close'); await b.until(listReady)
+  await b.click('.program-edit'); await b.until(formReady)
+  assert.equal(await b.evaluate('document.querySelector(".program-save").disabled'), true, 'editor avanzato pulito all’apertura')
+  await b.input('#program-guidance', 'Aggiornamento avanzato')
+  const beforeRevision = mock.programTables.workout_plan_versions.length
+  await b.click('.program-save'); await b.until('document.querySelector(".program-message")?.textContent.includes("Programma aggiornato")')
+  assert.equal(mock.programWrites.at(-1).method, 'save_workout_revision')
+  assert.equal(mock.programTables.workout_plan_versions.length, beforeRevision, 'versione non usata aggiornata anche dall’editor avanzato')
+  checks.push('editor avanzato: apertura pulita e salvataggio tramite save_workout_revision')
+
   await a.click('.program-fork'); await a.until(formReady)
   await a.input('#program-title', 'Bozza prima di uscire')
   await a.route('/impostazioni'); await a.until('Boolean(document.querySelector(".account-panel > button:not(:disabled)"))')
@@ -197,7 +207,7 @@ try {
   await a.route('/scheda/programmi'); await a.until(formReady)
   assert.equal(await a.evaluate('document.querySelector("#program-title").value'), 'Bozza prima di uscire')
   await a.route('/impostazioni'); await a.until('Boolean(document.querySelector(".account-panel > button:not(:disabled)"))')
-  await a.click('.account-panel > button'); await a.until('Boolean(document.querySelector("dialog[open]"))'); await a.click('.account-actions .primary')
+  await a.click('.account-panel > button'); await a.until('Boolean(document.querySelector("dialog[open]"))'); await a.click('.account-actions .danger')
   await a.until('Boolean(document.querySelector("#login-email"))'); await a.input('#login-email', 'b@example.invalid'); await a.input('#login-password', fixturePassword); await a.click('.auth-form button')
   await a.until('Boolean(document.querySelector(".account-panel"))'); await a.route('/scheda/programmi'); await a.until(listReady)
   assert.equal(await a.evaluate('document.querySelectorAll(".program-version").length'), 0)

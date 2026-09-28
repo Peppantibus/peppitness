@@ -1,4 +1,5 @@
 import { Icon } from '../components/Icon'
+import { SubpageHeader } from '../components/SubpageHeader'
 import { formatDate, shiftDate } from '../domain/dates'
 import { formatDecimal } from '../domain/diary'
 import { adherence, cycleInfo, exerciseTrends, mondayOf, weeklyProgress } from '../domain/progress'
@@ -38,7 +39,7 @@ function TrendCard({ trend }: { trend: ExerciseTrend }) {
   const volumeUnit = trend.exercise.mode === 'seconds' ? 's' : bestLoad ? `${trend.exercise.loadUnit ?? 'kg'} · rip.` : 'rip.'
   return <article className="trend-card">
     <div className="trend-head"><div><h3>{trend.exercise.name}</h3><small>{caption} · {trend.points.length} {trend.points.length === 1 ? 'seduta' : 'sedute'}</small></div>
-      <span className={`trend-badge is-${trend.change}`}>{trend.change === 'up' ? <Icon name="arrow" size={13} style={{ transform: 'rotate(-45deg)' }} /> : trend.change === 'down' ? <Icon name="arrow" size={13} style={{ transform: 'rotate(45deg)' }} /> : null}{changeText}</span></div>
+      <span className={`trend-badge is-${trend.change}`}>{trend.change === 'up' ? <Icon name="arrow" size={16} style={{ transform: 'rotate(-45deg)' }} /> : trend.change === 'down' ? <Icon name="arrow" size={16} style={{ transform: 'rotate(45deg)' }} /> : null}{changeText}</span></div>
     {trend.last !== null ? <div className="trend-body">
       <div><strong className="trend-value">{formatDecimal(Math.round(trend.last * 10) / 10)}<small> {unit}</small></strong>
         {delta !== null && trend.points.length > 1 && <span className="trend-delta">{delta > 0 ? '+' : delta < 0 ? '−' : '±'}{formatDecimal(Math.round(Math.abs(delta) * 10) / 10)} {unit} dall’inizio</span>}</div>
@@ -49,8 +50,8 @@ function TrendCard({ trend }: { trend: ExerciseTrend }) {
 }
 
 export function Progress({ workout, days, sessions, today }: { workout: SavedProgram | null; days: WorkoutDay[]; sessions: WorkoutSession[]; today: string }) {
-  const back = <a className="back-link" href="#/scheda"><Icon name="back" size={18} />Torna alla scheda</a>
-  if (!workout || !days.length) return <>{back}<section className="panel empty-state"><span className="empty-icon"><Icon name="trend" size={30} /></span><h2>Nessun programma da seguire</h2><p>Scegli o crea un programma: qui vedrai costanza e andamento degli esercizi.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma</a></section></>
+  const header = (subtitle?: string) => <SubpageHeader back="#/scheda" backLabel="Torna alla scheda" title="I tuoi progressi" subtitle={subtitle} />
+  if (!workout || !days.length) return <>{header()}<section className="panel empty-state"><span className="empty-icon"><Icon name="trend" size={32} /></span><h2>Nessun programma da seguire</h2><p>Scegli o crea un programma: qui vedrai costanza e andamento degli esercizi.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma</a></section></>
   const cycle = workout.plan.cycle ?? { start: shiftDate(mondayOf(today), -7 * 7), weeks: 8 }
   const info = cycleInfo(cycle, today)
   const weeks = weeklyProgress(days, sessions, cycle, today)
@@ -62,13 +63,13 @@ export function Progress({ workout, days, sessions, today }: { workout: SavedPro
   const otherWeeks = weeks.filter(week => week !== featuredWeek)
   const weekRow = (week: typeof weeks[number]) => <li key={week.index} className={week.current ? 'is-current' : ''}>
     <div className="week-name"><strong>Settimana {week.index}</strong><small>{short(week.start)} – {short(week.end)}</small></div>
-    <div className="week-slots">{week.slots.map((slot, i) => <span key={`${slot.label}-${i}`} className={`slot is-${slot.state}`} title={`${weekdays.find(day => day.code === slot.label)?.name ?? slot.label} · ${slot.title}: ${stateLabel[slot.state]}`} aria-label={`${slot.label} ${slot.title}: ${stateLabel[slot.state]}`}>{slot.state === 'done' ? <Icon name="check" size={12} /> : slot.state === 'missed' ? '✕' : null}<em>{slot.label.slice(0, 3)}</em></span>)}{week.extra > 0 && <span className="slot-extra">+{week.extra}</span>}</div>
+    <div className="week-slots">{week.slots.map((slot, i) => <span key={`${slot.label}-${i}`} className={`slot is-${slot.state}`} title={`${weekdays.find(day => day.code === slot.label)?.name ?? slot.label} · ${slot.title}: ${stateLabel[slot.state]}`} aria-label={`${slot.label} ${slot.title}: ${stateLabel[slot.state]}`}>{slot.state === 'done' ? <Icon name="check" size={16} /> : slot.state === 'missed' ? '–' : null}<em>{slot.label.slice(0, 3)}</em></span>)}{week.extra > 0 && <span className="slot-extra">+{week.extra}</span>}</div>
   </li>
   return <>
-    {back}
-    <div className="page-heading"><div><span className="eyebrow">LA TUA SCHEDA</span><h1>I tuoi progressi<span className="heading-dot">.</span></h1><p>{workout.plan.name}</p></div></div>
+    {header(workout.plan.name)}
+    <div className="progress-summary">
     <section className="cycle-card" aria-label="Riepilogo del programma">
-      <div><span className="eyebrow">RIEPILOGO DEL CICLO</span><h2>{score.percent === null ? '—' : `${score.percent}%`} <small>di costanza</small></h2><p>{score.done} di {score.due} sedute previste finora</p></div>
+      <div><span className="eyebrow">Riepilogo del ciclo</span><h2>{score.percent === null ? '—' : `${score.percent}%`} <small>di costanza</small></h2><p>{score.done} di {score.due} sedute previste finora</p></div>
       <div className="cycle-meta"><strong>{info.status === 'upcoming' ? `Inizia ${formatDate(info.start, { day: 'numeric', month: 'long' })}` : info.status === 'finished' ? 'Ciclo concluso' : `Settimana ${info.week} di ${info.weeks}`}</strong><span>{short(info.start)} – {short(info.end)}</span></div>
       <div className="cycle-bar" role="progressbar" aria-label="Settimane trascorse" aria-valuemin={0} aria-valuemax={info.weeks} aria-valuenow={Math.min(info.week, info.weeks)}><span style={{ width: `${Math.min(info.week, info.weeks) / info.weeks * 100}%` }} /></div>
     </section>
@@ -76,9 +77,10 @@ export function Progress({ workout, days, sessions, today }: { workout: SavedPro
       <div className="progress-tile"><strong>{score.done + score.extra}</strong><span>Sedute fatte</span><small>{score.extra ? `di cui ${score.extra} in più` : `su ${score.planned} del ciclo`}</small></div>
       <div className="progress-tile"><strong>{setsDone}</strong><span>Serie completate</span><small>{improving ? `${improving} ${improving === 1 ? 'esercizio' : 'esercizi'} in crescita` : 'nel ciclo'}</small></div>
     </div>
+    </div>
     <section className="progress-section" aria-labelledby="weeks-title">
       <div className="section-heading"><h2 id="weeks-title">{info.status === 'upcoming' ? 'Prima settimana' : info.status === 'finished' ? 'Ultima settimana' : 'Questa settimana'}</h2></div>
-      <p className="progress-legend"><span className="slot is-done"><Icon name="check" size={11} /></span>fatta <span className="slot is-missed">✕</span>saltata <span className="slot is-planned" />da fare</p>
+      <p className="progress-legend"><span className="slot is-done"><Icon name="check" size={16} /></span>fatta <span className="slot is-missed">–</span>saltata <span className="slot is-planned" />da fare</p>
       {featuredWeek && <ol className="week-rows">{weekRow(featuredWeek)}</ol>}
       {otherWeeks.length > 0 && <details className="progress-week-history"><summary>Vedi tutte le settimane <Icon name="chevron" size={16} /></summary><ol className="week-rows">{otherWeeks.map(weekRow)}</ol></details>}
     </section>

@@ -2,7 +2,11 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 import { AuthGate, AuthProvider, useAuth } from './auth/AuthProvider'
+import { applyTheme, readThemePreference } from './theme'
 import './styles.css'
+
+// Tema scelto su questo dispositivo, prima del primo render (senza scelta segue il sistema).
+applyTheme(readThemePreference())
 
 function AccountApp() {
   const { state } = useAuth()

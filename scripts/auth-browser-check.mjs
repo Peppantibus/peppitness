@@ -86,7 +86,7 @@ try {
 
   // Registrazione senza rete verso il server: resta sul dispositivo e l'uscita avvisa.
   mock.failDiary = true
-  await click('.meal-card'); await until('Boolean(document.querySelector("dialog[open]"))')
+  await click('.meal-card-link'); await until('Boolean(document.querySelector("dialog[open]"))')
   await click('input[value="followed"]'); await click('dialog button[type="submit"]')
   await until('!document.querySelector("dialog")')
   await until('document.querySelector(".sync-status")?.textContent.includes("Invio appena torna la connessione")')
@@ -99,9 +99,9 @@ try {
   mock.failDiary = false
   await click('.sync-status .text-button')
   for (let i = 0; i < 200 && !mock.diary.meal_logs.length; i++) await new Promise(resolve => setTimeout(resolve, 50))
-  if (!mock.diary.meal_logs.length) console.error('DIAG', JSON.stringify({ requests: mock.requests.filter(r => !r.startsWith('OPTIONS')).slice(-14), failures: mock.failures, sync: await evaluate('document.querySelector(".sync-status")?.textContent ?? document.querySelector(".quiet-note")?.textContent') }))
+  if (!mock.diary.meal_logs.length) console.error('DIAG', JSON.stringify({ requests: mock.requests.filter(r => !r.startsWith('OPTIONS')).slice(-14), failures: mock.failures, sync: await evaluate('document.querySelector(".sync-status")?.textContent ?? document.querySelector(".sync-indicator")?.dataset.sync') }))
   assert.equal(mock.diary.meal_logs.length, 1, 'Pasto inviato dopo il ritorno della connessione')
-  await until('document.querySelector(".quiet-note")?.textContent.includes("Sincronizzato")')
+  await until('document.querySelector(".sync-indicator")?.dataset.sync === "synced"')
   await route('/impostazioni'); await until('Boolean(document.querySelector(".account-panel"))')
   mock.failLogout = true
   // Nulla in sospeso: uscita diretta, senza richiesta di scarto.

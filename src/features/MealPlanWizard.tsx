@@ -32,9 +32,9 @@ function MealCard({ meal, index, count, onChange, onMove, onRemove }: {
       <input ref={position === meal.foods.length - 1 ? food : undefined} id={`${meal.id}-food-${position}`} className="meal-food-name" maxLength={200} placeholder="Alimento" value={item.name} onChange={event => onChange({ ...meal, foods: meal.foods.map((value, i) => i === position ? { ...value, name: event.target.value } : value) })} />
       <label htmlFor={`${meal.id}-qty-${position}`} className="sr-only">Quantità alimento {position + 1}</label>
       <input id={`${meal.id}-qty-${position}`} className="meal-food-quantity" maxLength={60} placeholder="Quantità" value={item.quantity} onChange={event => onChange({ ...meal, foods: meal.foods.map((value, i) => i === position ? { ...value, quantity: event.target.value } : value) })} />
-      <button type="button" className="icon-button" aria-label={`Rimuovi alimento ${position + 1}`} onClick={() => onChange({ ...meal, foods: meal.foods.filter((_, i) => i !== position) })}><Icon name="close" size={15} /></button>
+      <button type="button" className="icon-button" aria-label={`Rimuovi alimento ${position + 1}`} onClick={() => onChange({ ...meal, foods: meal.foods.filter((_, i) => i !== position) })}><Icon name="close" size={16} /></button>
     </li>)}</ul>
-    <button type="button" className="text-button wz-add-food" disabled={meal.foods.length >= mealPlanLimits.foods} onClick={() => { onChange({ ...meal, foods: [...meal.foods, { name: '', quantity: '' }] }); setTimeout(() => food.current?.focus(), 0) }}><Icon name="plus" size={15} />Aggiungi alimento</button>
+    <button type="button" className="text-button wz-add-food" disabled={meal.foods.length >= mealPlanLimits.foods} onClick={() => { onChange({ ...meal, foods: [...meal.foods, { name: '', quantity: '' }] }); setTimeout(() => food.current?.focus(), 0) }}><Icon name="plus" size={16} />Aggiungi alimento</button>
     <details className="wz-more">
       <summary>Alternative, aggiunte e note</summary>
       <label htmlFor={`${meal.id}-alternatives`}>Alternative · una per riga<textarea id={`${meal.id}-alternatives`} rows={2} placeholder="Es. pane e ricotta al posto dello yogurt" value={meal.alternatives.join('\n')} onChange={event => onChange({ ...meal, alternatives: lines(event.target.value) })} /></label>
@@ -53,7 +53,7 @@ function MealsEditor({ day, onChange, disabled }: { day: MealPlanDay; onChange: 
       onMove={direction => onChange({ ...day, meals: moveItem(day.meals, index, direction) })}
       onRemove={() => onChange({ ...day, meals: day.meals.filter(item => item.id !== meal.id) })} />)}
     <div className="wz-add-meal"><span>{day.meals.length ? 'Aggiungi un altro pasto' : 'Da quale pasto parti?'}</span>
-      <div className="wz-chips">{mealNames.map(name => <button key={name} type="button" className="wz-chip" disabled={day.meals.length >= mealPlanLimits.meals} onClick={() => add(name)}><Icon name="plus" size={13} />{name}</button>)}<button type="button" className="wz-chip" disabled={day.meals.length >= mealPlanLimits.meals} onClick={() => add('')}><Icon name="plus" size={13} />Altro</button></div>
+      <div className="chip-row">{mealNames.map(name => <button key={name} type="button" className="chip" disabled={day.meals.length >= mealPlanLimits.meals} onClick={() => add(name)}><Icon name="plus" size={16} />{name}</button>)}<button type="button" className="chip" disabled={day.meals.length >= mealPlanLimits.meals} onClick={() => add('')}><Icon name="plus" size={16} />Altro</button></div>
     </div>
   </fieldset>
 }
@@ -94,9 +94,9 @@ export function MealPlanWizard({ store, state, step, setStep, onAdvanced, onExit
 
   const shell = (content: ReactNode, footer: ReactNode, back?: () => void) => <section className="wizard" aria-labelledby="wizard-heading">
     <header className="wizard-top">
-      {back ? <button type="button" className="icon-button" aria-label="Indietro" onClick={back}><Icon name="back" size={19} /></button> : <span className="wizard-spacer" />}
-      <div className="wizard-top-title"><span className="eyebrow">{editing ? 'MODIFICA PIANO' : 'NUOVO PIANO ALIMENTARE'}</span>{draft.name && step !== 'name' && <strong>{draft.name}</strong>}</div>
-      <button type="button" className="icon-button" aria-label="Chiudi" onClick={exit}><Icon name="close" size={19} /></button>
+      {back ? <button type="button" className="icon-button is-outlined" aria-label="Indietro" onClick={back}><Icon name="back" size={20} /></button> : <span className="wizard-spacer" />}
+      <div className="wizard-top-title"><span className="eyebrow">{editing ? 'Modifica piano' : 'Nuovo piano alimentare'}</span>{draft.name && step !== 'name' && <strong>{draft.name}</strong>}</div>
+      <button type="button" className="icon-button is-outlined" aria-label="Chiudi" onClick={exit}><Icon name="close" size={20} /></button>
     </header>
     {content}
     {editor.message && step !== 'done' && !/salvato online/.test(editor.message) && <p className="wz-message" role="alert">{editor.message}</p>}
@@ -113,22 +113,22 @@ export function MealPlanWizard({ store, state, step, setStep, onAdvanced, onExit
       <details className="wz-more"><summary>Indicazioni generali (facoltative)</summary><label htmlFor="meal-wizard-guidance" className="sr-only">Indicazioni generali</label><textarea id="meal-wizard-guidance" rows={4} maxLength={16000} placeholder="Acqua, integrazioni, regole valide ogni giorno…" value={draft.document.guidance} onChange={event => store.editMealPlan({ ...draft, document: { ...draft.document, guidance: event.target.value } })} /></details>
     </form>
     <button type="button" className="text-button wizard-advanced" onClick={onAdvanced}>Preferisci l’editor avanzato?</button>
-  </>, <button type="submit" form="meal-wizard-name" className="button primary wizard-next" disabled={!draft.name.trim()}>Avanti<Icon name="arrow" size={18} /></button>)
+  </>, <button type="submit" form="meal-wizard-name" className="button primary wizard-next" disabled={!draft.name.trim()}>Avanti<Icon name="arrow" size={20} /></button>)
 
   if (step === 'done') return shell(<div className="wizard-done">
-    <span className="wizard-done-icon" aria-hidden="true"><Icon name="check" size={34} /></span>
+    <span className="wizard-done-icon" aria-hidden="true"><Icon name="check" size={32} /></span>
     <h1 id="wizard-heading" ref={heading} tabIndex={-1}>Piano salvato</h1>
     <p>{followed ? 'È il piano che segui: la Dieta ti mostra i pasti in base al tipo di giornata.' : 'Puoi seguirlo dalla Dieta quando vuoi.'}</p>
     <ul className="wz-summary">{days.map(day => <li key={day.id}><strong>{day.dayType === 'rest' ? 'Riposo' : day.dayType === 'any' ? 'Ogni giorno' : 'Allenamento'}</strong><span>{day.meals.map(meal => meal.name).join(' · ') || 'Nessun pasto'}</span></li>)}</ul>
   </div>, <>
     {!followed && <button type="button" className="button secondary" disabled={state.selecting} onClick={() => void store.choose({ mealPlanId: draft.id })}>Segui questo piano</button>}
-    <a className="button primary wizard-next" href="#/dieta" onClick={() => store.closeMealPlan()}>Vai alla Dieta<Icon name="arrow" size={18} /></a>
+    <a className="button primary wizard-next" href="#/dieta" onClick={() => store.closeMealPlan()}>Vai alla Dieta<Icon name="arrow" size={20} /></a>
   </>)
 
   if (step === 'training') return shell(<>
     <div className="wizard-intro"><span className="wizard-count">Passo 2 di 3</span><h1 id="wizard-heading" ref={heading} tabIndex={-1}>{everyDay ? 'Ogni giorno' : 'Giorni di allenamento'}</h1><p>{everyDay ? 'Gli stessi pasti per tutti i giorni.' : 'I pasti dei giorni in cui ti alleni.'}</p></div>
     <MealsEditor day={trainingDay} disabled={busy} onChange={value => setDay(value)} />
-  </>, <button type="button" className="button primary wizard-next" disabled={busy || !trainingDay.meals.length} onClick={() => setStep('rest')}>Avanti<Icon name="arrow" size={18} /></button>, () => setStep('name'))
+  </>, <button type="button" className="button primary wizard-next" disabled={busy || !trainingDay.meals.length} onClick={() => setStep('rest')}>Avanti<Icon name="arrow" size={20} /></button>, () => setStep('name'))
 
   // ------------------------------------------------------------------ riposo
   return shell(<>
@@ -140,5 +140,5 @@ export function MealPlanWizard({ store, state, step, setStep, onAdvanced, onExit
         <button type="button" className="wz-choice-card" disabled={busy} onClick={() => setDays([trainingDay, { id: crypto.randomUUID(), name: 'Riposo', dayType: 'rest', note: '', meals: [] }])}><Icon name="plus" size={20} /><span><strong>Menu diverso da zero</strong><small>Inserisci i pasti del riposo.</small></span></button>
       </div> : null}
     {!everyDay && restDay && <MealsEditor day={restDay} disabled={busy} onChange={value => setDay(value)} />}
-  </>, <button type="button" className="button primary wizard-save" disabled={busy || (!everyDay && !restDay?.meals.length)} onClick={() => void save()}>{busy ? 'Salvataggio…' : 'Salva piano'}{!busy && <Icon name="check" size={18} />}</button>, () => setStep('training'))
+  </>, <button type="button" className="button primary wizard-save" disabled={busy || (!everyDay && !restDay?.meals.length)} onClick={() => void save()}>{busy ? 'Salvataggio…' : 'Salva piano'}{!busy && <Icon name="check" size={20} />}</button>, () => setStep('training'))
 }

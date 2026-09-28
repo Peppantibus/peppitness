@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { Icon } from '../components/Icon'
+import { SubpageHeader } from '../components/SubpageHeader'
+import { Segmented } from '../components/Segmented'
 import { Modal } from '../components/Modal'
 import { loadLabels, modeLabels, searchExercises } from '../domain/exercises'
 import type { ExerciseValues } from '../domain/exercises'
@@ -26,15 +27,14 @@ export function ExerciseCatalog({ store, state }: { store: ExercisesStore | null
   const rows = searchExercises(scope === 'shared' ? state.sharedRows : state.rows, search, scope === 'shared' ? 'active' : filter)
   const close = () => { store?.close(); setConfirmDiscard(false); newButton.current?.focus() }
   return <>
-    <a className="back-link" href="#/scheda"><Icon name="back" size={18} />Torna alla scheda</a>
-    <div className="page-heading catalog-heading"><div><span className="eyebrow">LA TUA SCHEDA</span><h1>Gli esercizi<span className="heading-dot">.</span></h1><p>Esplora gli esercizi comuni e aggiungi i tuoi.</p></div></div>
+    <SubpageHeader back="#/scheda" backLabel="Torna alla scheda" title="Gli esercizi" subtitle="Esplora gli esercizi comuni e aggiungi i tuoi." />
     {!store ? <section className="panel empty-state"><h2>Accedi per gestire i tuoi esercizi</h2><a className="button secondary" href="#/impostazioni">Vai all’account</a></section>
       : <>
         {['idle', 'loading'].includes(state.phase) ? <section className="panel empty-state" role="status">Caricamento degli esercizi…</section>
           : state.phase === 'error' ? <section className="panel empty-state"><p role="alert">{state.message}</p><button className="button secondary" onClick={() => void store.load()}>Riprova</button></section>
             : <>
               <section className="panel catalog-toolbar" aria-label="Cerca nel catalogo">
-                <div className="catalog-scope" role="group" aria-label="Tipo di esercizi"><button type="button" aria-pressed={scope === 'shared'} onClick={() => { setScope('shared'); setAdoptError('') }}>Esercizi comuni</button><button type="button" aria-pressed={scope === 'personal'} onClick={() => { setScope('personal'); setAdoptError('') }}>I tuoi esercizi</button></div>
+                <Segmented className="catalog-scope" label="Tipo di esercizi" value={scope} onChange={value => { setScope(value); setAdoptError('') }} options={[{ value: 'shared', label: 'Esercizi comuni' }, { value: 'personal', label: 'I tuoi esercizi' }]} />
                 <label htmlFor="exercise-search">Cerca esercizi<input id="exercise-search" type="search" placeholder="Nome, variante o attrezzo" value={search} onChange={event => setSearch(event.target.value)} /></label>
                 {scope === 'personal' && <label htmlFor="exercise-filter">Mostra<select id="exercise-filter" value={filter} onChange={event => setFilter(event.target.value as typeof filter)}><option value="active">Attivi</option><option value="archived">Archiviati</option><option value="all">Tutti</option></select></label>}
                 <div className="catalog-actions"><button ref={newButton} className="button primary" disabled={Boolean(draft)} onClick={() => { setScope('personal'); store.open() }}>Nuovo esercizio</button><button className="button secondary" disabled={Boolean(draft)} onClick={() => void store.load()}>Aggiorna elenco</button></div>
@@ -84,6 +84,6 @@ export function ExerciseCatalog({ store, state }: { store: ExercisesStore | null
                 </article>)}</div>}
             </>}
       </>}
-    {confirmDiscard && <Modal label="Scartare le modifiche all’esercizio?" onClose={() => setConfirmDiscard(false)}><h2>Scartare le modifiche?</h2><p>La bozza non salvata verrà persa. L’esercizio già online rimane nel catalogo.</p><div className="catalog-actions"><button className="button secondary" onClick={() => setConfirmDiscard(false)}>Continua a modificare</button><button className="button primary" onClick={close}>Scarta le modifiche</button></div></Modal>}
+    {confirmDiscard && <Modal label="Scartare le modifiche all’esercizio?" onClose={() => setConfirmDiscard(false)}><h2>Scartare le modifiche?</h2><p>La bozza non salvata verrà persa. L’esercizio già online rimane nel catalogo.</p><div className="catalog-actions"><button className="button secondary" onClick={() => setConfirmDiscard(false)}>Continua a modificare</button><button className="button danger" onClick={close}>Scarta le modifiche</button></div></Modal>}
   </>
 }

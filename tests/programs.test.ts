@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { createClient } from '@supabase/supabase-js'
 import type { Session } from '@supabase/supabase-js'
 import { emptyExercise } from '../src/domain/exercises.ts'
-import { copyProgram, duplicateDay, forkProgram, moveItem, newDay, newPrescription, newProgram, programPayload, sameProgram, validateProgram } from '../src/domain/programs.ts'
+import { copyProgram, duplicateDay, forkProgram, moveItem, newDay, newPrescription, newProgram, programPayload, sameContent, sameCycle, sameProgram, validateProgram } from '../src/domain/programs.ts'
 import type { ProgramDocument, SavedProgram } from '../src/domain/programs.ts'
 import { createProgramsRepository, ProgramsFailure } from '../src/persistence/programs-repository.ts'
 import type { ProgramsRepository } from '../src/persistence/programs-repository.ts'
@@ -41,6 +41,9 @@ function fixture(initial?: SavedProgram) {
       if (current.version.revision !== row.version.revision || current.plan.revision !== row.plan.revision) throw new ProgramsFailure('conflict')
       rows.set(row.version.id, { ...current, version: { ...current.version, status: 'published', revision: current.version.revision + 1 }, plan: { ...current.plan, revision: current.plan.revision + 1, activeVersionId: current.version.id } })
     },
+    revise: async () => { throw new Error('Revision fixture not configured') },
+    activate: async () => { throw new Error('Activation fixture not configured') },
+    setCycle: async () => { throw new Error('Cycle fixture not configured') },
     deletePlans: async planId => {
       let count = 0
       for (const [id, row] of rows) if (planId === null || row.plan.id === planId) { rows.delete(id); count++ }
@@ -195,6 +198,129 @@ test('versione pubblicata sola lettura, nuova bozza con ID figli nuovi; snapshot
   store.fork(); assert.equal(store.dirty, true)
   assert.notEqual(store.getSnapshot().document?.days[0]?.exercises[0]?.id, initial.document.days[0]!.exercises[0]!.id)
   store.stop()
+})
+
+function revisionFixture(used = false) {
+  const initial = saved(); initial.version.status = 'published'; initial.version.revision = 2
+  initial.plan.revision = 2; initial.plan.activeVersionId = initial.version.id
+  initial.plan.cycle = { start: '2026-09-28', weeks: 8 }
+  const f = fixture(initial)
+  const attempts: string[] = []
+  f.repo.list = async () => {
+    const rows = [...f.rows.values()]
+    const current = rows.find(row => row.version.id === rows[0]?.plan.activeVersionId) ?? rows.at(-1)!
+    return [{ plan: structuredClone(current.plan), versions: rows.map(row => structuredClone(row.version)) }]
+  }
+  f.repo.revise = async ({ base, document: doc, cycle, newVersionId }) => {
+    attempts.push(newVersionId)
+    const retried = f.rows.get(newVersionId)
+    if (retried) return { outcome: 'created', versionId: newVersionId, planRevision: retried.plan.revision }
+    const current = f.rows.get(base.version.id)!
+    if (current.plan.revision !== base.plan.revision || current.version.revision !== base.version.revision) throw new ProgramsFailure('conflict')
+    const contentChanged = !sameContent(doc, current.document)
+    const nameChanged = doc.title.trim() !== current.plan.name
+    const cycleChanged = !sameCycle(cycle, current.plan.cycle)
+    if (!contentChanged && !nameChanged && !cycleChanged) return { outcome: 'unchanged', versionId: base.version.id, planRevision: current.plan.revision }
+    const plan = { ...current.plan, name: doc.title.trim(), cycle, revision: current.plan.revision + 1 }
+    if (contentChanged && used) {
+      const next = forkProgram(doc); next.id = newVersionId
+      const row: SavedProgram = { plan: { ...plan, activeVersionId: newVersionId }, version: { ...current.version, id: newVersionId, number: 2, revision: 2, title: doc.title, guidance: doc.guidance }, document: next }
+      f.rows.set(newVersionId, row); f.rows.set(base.version.id, { ...current, plan: row.plan })
+      return { outcome: 'created', versionId: newVersionId, planRevision: row.plan.revision }
+    }
+    const version = { ...current.version, revision: current.version.revision + (contentChanged || nameChanged ? 1 : 0), title: doc.title, guidance: doc.guidance }
+    f.rows.set(base.version.id, { plan, version, document: structuredClone(doc) })
+    return { outcome: contentChanged ? 'updated' : 'metadata', versionId: base.version.id, planRevision: plan.revision }
+  }
+  return { ...f, initial, attempts }
+}
+
+test('revisione: apertura pulita, uscita pulita e nessuna RPC senza modifiche', async () => {
+  const f = revisionFixture(), store = new ProgramsStore(f.repo)
+  await store.load(); await store.open(f.initial.version.id); store.revise()
+  assert.equal(store.dirty, false); assert.equal(store.pending, false)
+  assert.equal(await store.saveRevision(), 'unchanged'); assert.equal(f.attempts.length, 0)
+  store.close(); assert.equal(store.getSnapshot().document, null)
+})
+
+test('revisione: esiti unchanged, metadata, updated e created rispettano lo storico', async () => {
+  for (const kind of ['unchanged', 'metadata', 'updated', 'created'] as const) {
+    const f = revisionFixture(kind === 'created'), store = new ProgramsStore(f.repo)
+    await store.load(); await store.open(f.initial.version.id); store.revise()
+    const doc = store.getSnapshot().document!
+    if (kind === 'metadata') store.edit({ ...doc, title: 'Nuovo nome' })
+    if (kind === 'updated' || kind === 'created') store.edit({ ...doc, guidance: 'Nuove istruzioni' })
+    assert.equal(store.dirty, kind !== 'unchanged')
+    assert.equal(await store.saveRevision(), kind)
+    assert.equal(f.rows.size, kind === 'created' ? 2 : 1)
+    if (kind === 'created') assert.deepEqual(f.rows.get(f.initial.version.id)!.document, f.initial.document)
+    assert.equal(store.dirty, false)
+  }
+})
+
+test('revisione: risposta persa conserva ID e riconcilia la nuova versione', async () => {
+  const f = revisionFixture(true), store = new ProgramsStore(f.repo), send = f.repo.revise
+  let lost = true
+  f.repo.revise = async (...args) => { const result = await send(...args); if (lost) { lost = false; throw new Error('response lost') } return result }
+  await store.load(); await store.open(f.initial.version.id); store.revise()
+  store.edit({ ...store.getSnapshot().document!, guidance: 'Nuove istruzioni' })
+  assert.equal(await store.saveRevision(), 'created')
+  assert.equal(f.rows.size, 2); assert.equal(store.dirty, false)
+  assert.equal(f.attempts.length, 1)
+})
+
+test('revisione: retry dopo risposta persa riusa l’ID anche se la rilettura fallisce', async () => {
+  const f = revisionFixture(true), store = new ProgramsStore(f.repo), send = f.repo.revise, read = f.repo.list
+  let offline = true
+  f.repo.revise = async (...args) => { const result = await send(...args); if (offline) throw new Error('response lost'); return result }
+  f.repo.list = async (...args) => { if (offline) throw new Error('offline'); return read(...args) }
+  f.repo.list = read
+  await store.load(); await store.open(f.initial.version.id); store.revise()
+  store.edit({ ...store.getSnapshot().document!, guidance: 'Nuove istruzioni' })
+  f.repo.list = async (...args) => { if (offline) throw new Error('offline'); return read(...args) }
+  assert.equal(await store.saveRevision(), null)
+  assert.equal(store.getSnapshot().phase, 'ready'); assert.equal(store.dirty, true)
+  offline = false
+  assert.equal(await store.saveRevision(), 'created')
+  assert.equal(f.attempts.length, 2)
+  assert.equal(f.attempts[0], f.attempts[1])
+  assert.equal(f.rows.size, 2)
+})
+
+test('revisione: esito unchanged del server non provoca rilettura né nuova versione', async () => {
+  const f = revisionFixture(), store = new ProgramsStore(f.repo)
+  await store.load(); await store.open(f.initial.version.id); store.revise()
+  store.edit({ ...store.getSnapshot().document!, guidance: 'Modifica locale' })
+  let reads = 0
+  f.repo.get = async () => { reads++; return null }
+  f.repo.revise = async ({ base }) => ({ outcome: 'unchanged', versionId: base.version.id, planRevision: base.plan.revision })
+  assert.equal(await store.saveRevision(), 'unchanged')
+  assert.equal(reads, 0); assert.equal(f.rows.size, 1)
+})
+
+test('revisione: solo ciclo aggiorna metadata e conserva l’ID della versione', async () => {
+  const f = revisionFixture(true), store = new ProgramsStore(f.repo)
+  await store.load(); await store.open(f.initial.version.id); store.revise()
+  store.setCycleDraft({ start: '2026-10-05', weeks: 6 })
+  assert.equal(store.dirty, true)
+  assert.equal(await store.saveRevision(), 'metadata')
+  assert.equal(f.rows.size, 1)
+  assert.equal(store.getSnapshot().base?.version.id, f.initial.version.id)
+  assert.deepEqual(store.getSnapshot().base?.plan.cycle, { start: '2026-10-05', weeks: 6 })
+})
+
+test('revisione: conflitto conserva la modifica locale e richiede ripartenza online', async () => {
+  const f = revisionFixture(), store = new ProgramsStore(f.repo)
+  await store.load(); await store.open(f.initial.version.id); store.revise()
+  store.edit({ ...store.getSnapshot().document!, guidance: 'Modifica locale' })
+  const online = f.rows.get(f.initial.version.id)!
+  f.rows.set(online.version.id, { ...online, plan: { ...online.plan, revision: 3 }, document: { ...online.document, guidance: 'Modifica remota' } })
+  assert.equal(await store.saveRevision(), null)
+  assert.equal(store.getSnapshot().phase, 'conflict')
+  assert.equal(store.getSnapshot().document?.guidance, 'Modifica locale')
+  assert.equal(store.getSnapshot().remote?.document.guidance, 'Modifica remota')
+  store.restartRevision(); assert.equal(store.dirty, false)
+  assert.equal(store.getSnapshot().document?.guidance, 'Modifica remota')
 })
 
 test('errori di lettura distinti da vuoto, richieste tardive ignorate dopo cambio account', async () => {

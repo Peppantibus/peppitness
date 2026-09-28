@@ -19,7 +19,7 @@ select set_config('request.jwt.claims', '{"sub":"41111111-1111-4111-8111-1111111
 select lives_ok($q$ select public.save_workout_draft('4bbbbbbb-0000-4000-8000-000000000001', '4ccccccc-0000-4000-8000-000000000001', 0,
   'Programma A', '', jsonb_build_array(jsonb_build_object('id', '4ddddddd-0000-4000-8000-000000000001', 'label', 'A', 'title', 'Seduta A',
     'exercises', jsonb_build_array(jsonb_build_object('id', '4eeeeeee-0000-4000-8000-000000000001',
-      'exercise_id', '4aaaaaaa-0000-4000-8000-000000000001', 'sets', 1, 'reps_min', 8, 'reps_max', 8)))) $q$, 'Programma creato');
+      'exercise_id', '4aaaaaaa-0000-4000-8000-000000000001', 'sets', 1, 'reps_min', 8, 'reps_max', 8))))) $q$, 'Programma creato');
 select lives_ok($q$ select public.publish_workout_version('4ccccccc-0000-4000-8000-000000000001', 1, 1) $q$, 'Programma pubblicato');
 select lives_ok($q$ insert into public.active_plans(workout_plan_id) values ('4bbbbbbb-0000-4000-8000-000000000001') $q$, 'Programma seguito');
 select lives_ok($q$ select public.start_workout_session('4fffffff-0000-4000-8000-000000000001', '4ccccccc-0000-4000-8000-000000000001',

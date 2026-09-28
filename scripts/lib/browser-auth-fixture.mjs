@@ -130,7 +130,7 @@ export async function installAuthFixture(rawSend, socket, appOrigin, state = {})
       if (result.failure) { await send('Fetch.failRequest', { requestId, errorReason: result.failure }); return }
       status = result.status; data = result.data
     }
-    else if (url.pathname.startsWith('/rest/v1/workout_') || ['/rest/v1/rpc/save_workout_draft', '/rest/v1/rpc/publish_workout_version'].includes(url.pathname)) {
+    else if (url.pathname.startsWith('/rest/v1/workout_') || ['/rest/v1/rpc/save_workout_draft', '/rest/v1/rpc/publish_workout_version', '/rest/v1/rpc/save_workout_revision'].includes(url.pathname)) {
       const result = programsFixture(request, url, state)
       if (result.failure) { await send('Fetch.failRequest', { requestId, errorReason: result.failure }); return }
       status = result.status; data = result.data

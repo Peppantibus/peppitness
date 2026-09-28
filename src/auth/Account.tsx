@@ -27,7 +27,7 @@ export function Account({ hasUnsavedData, busy = false, onSignedOut }: { hasUnsa
     {error && <p className="form-error" role="alert">{error}</p>}
     {confirm && <Modal label="Uscire dall’account?" onClose={() => { if (!pending) setConfirm(false) }}>
       <h2>Uscire dall’account?</h2><p className="logout-explanation">Le modifiche non salvate e le registrazioni non ancora sincronizzate saranno eliminate da questo dispositivo. I dati già salvati online rimangono nel tuo account.</p>
-      <div className="account-actions"><button className="button secondary" disabled={pending} onClick={() => setConfirm(false)}>Resta</button><button className="button primary" disabled={pending} onClick={() => void signOut()}>Esci e scarta</button></div>
+      <div className="account-actions"><button className="button secondary" disabled={pending} onClick={() => setConfirm(false)}>Resta</button><button className="button danger" disabled={pending} onClick={() => void signOut()}>Esci e scarta</button></div>
     </Modal>}
   </section>
 }

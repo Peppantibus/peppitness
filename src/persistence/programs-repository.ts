@@ -3,12 +3,18 @@ import { isExerciseId, validateExercise } from '../domain/exercises.ts'
 import { programPayload, validateProgram } from '../domain/programs.ts'
 import type { ProgramCycle, ProgramDocument, ProgramRoot, ProgramVersion, ProgramIndex, SavedProgram, ProgramDay, PrescriptionDraft, ProgramExercise } from '../domain/programs.ts'
 
+/** Esito deciso dal database per una modifica a partire da una versione pubblicata. */
+export type RevisionOutcome = 'unchanged' | 'metadata' | 'updated' | 'created'
+export interface RevisionInput { base: SavedProgram; document: ProgramDocument; cycle: ProgramCycle | null; newVersionId: string }
+export interface RevisionResult { outcome: RevisionOutcome; versionId: string; planRevision: number }
 export interface ProgramsRepository {
   list(signal: AbortSignal): Promise<ProgramIndex[]>
   get(versionId: string, signal: AbortSignal): Promise<SavedProgram | null>
   save(document: ProgramDocument, revision: number, signal: AbortSignal): Promise<void>
   publish(saved: SavedProgram, signal: AbortSignal): Promise<void>
   activate(saved: SavedProgram, signal: AbortSignal): Promise<void>
+  /** Modifica di un programma pubblicato: il database sceglie tra nessuna modifica, nome/ciclo, stessa versione o vN+1. */
+  revise(input: RevisionInput, signal: AbortSignal): Promise<RevisionResult>
   /** Inizio e durata del ciclo, con revisione letta + 1 del programma. */
   setCycle(plan: ProgramRoot, cycle: ProgramCycle | null, signal: AbortSignal): Promise<ProgramRoot>
   deletePlans(planId: string | null, signal: AbortSignal): Promise<number>
@@ -26,19 +32,22 @@ function positive(value: unknown): number { return typeof value === 'number' && 
 function nullableId(value: unknown) { return value === null ? null : id(value) }
 function numericInput(value: unknown) { return value === null ? '' : typeof value === 'number' && Number.isFinite(value) ? String(value) : fail() }
 function timestamp(value: unknown) { return value === null ? null : typeof value === 'string' && Number.isFinite(Date.parse(value)) ? value : fail() }
+/** Date informative (cronologia): assenti nelle risposte parziali, mai inventate. */
+function optionalTimestamp(value: unknown) { return value === undefined ? null : timestamp(value) }
 function owned(value: unknown, owner: string) { const row = record(value); if (row.owner_id !== owner) fail(); id(row.id); return row }
 function root(row: Row): ProgramRoot {
   const start = row.cycle_start ?? null, weeks = row.cycle_weeks ?? null
   const cycle = start === null && weeks === null ? null
     : typeof start === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(start) && typeof weeks === 'number' && Number.isInteger(weeks) && weeks >= 1 && weeks <= 52 ? { start, weeks } : fail()
-  const result = { id: id(row.id), name: string(row.name), revision: positive(row.revision), activeVersionId: nullableId(row.active_version_id), archivedAt: timestamp(row.archived_at), cycle }
+  const result = { id: id(row.id), name: string(row.name), revision: positive(row.revision), activeVersionId: nullableId(row.active_version_id), archivedAt: timestamp(row.archived_at), cycle, updatedAt: optionalTimestamp(row.updated_at) }
   if (!result.name.trim() || [...result.name].length > 160) fail()
   return result
 }
 function version(row: Row): ProgramVersion {
   if (!['draft', 'published'].includes(string(row.status))) fail()
   if (!string(row.title).trim() || [...string(row.title)].length > 160 || [...string(row.guidance)].length > 16000) fail()
-  return { id: id(row.id), planId: id(row.plan_id), title: string(row.title), guidance: string(row.guidance), number: positive(row.version_number), revision: positive(row.revision), status: row.status as ProgramVersion['status'] }
+  return { id: id(row.id), planId: id(row.plan_id), title: string(row.title), guidance: string(row.guidance), number: positive(row.version_number), revision: positive(row.revision), status: row.status as ProgramVersion['status'],
+    updatedAt: optionalTimestamp(row.updated_at), publishedAt: optionalTimestamp(row.published_at) }
 }
 function snapshot(value: unknown): ProgramExercise {
   const row = record(value)
@@ -53,8 +62,8 @@ function ordered(rows: Row[]) {
   if (sorted.some((row, index) => row.position !== index)) fail()
   return sorted
 }
-const planColumns = 'id,owner_id,name,revision,active_version_id,archived_at,cycle_start,cycle_weeks'
-const versionColumns = 'id,owner_id,plan_id,title,guidance,version_number,revision,status'
+const planColumns = 'id,owner_id,name,revision,active_version_id,archived_at,cycle_start,cycle_weeks,updated_at'
+const versionColumns = 'id,owner_id,plan_id,title,guidance,version_number,revision,status,published_at,updated_at'
 const dayColumns = 'id,owner_id,version_id,position,label,title,note'
 const prescriptionColumns = 'id,owner_id,day_id,exercise_id,position,exercise_snapshot,mode,sets,optional_sets,reps_min,reps_max,duration_seconds,rest_seconds,rir,rpe,note'
 
@@ -164,6 +173,25 @@ export function createProgramsRepository(client: SupabaseClient, owner: string):
       if (error) throw failure(error)
       if (typeof data !== 'number' || !Number.isSafeInteger(data) || data < 0) fail()
       return data
+    },
+    async revise({ base, document, cycle, newVersionId }, signal) {
+      if (base.version.status !== 'published' || base.plan.archivedAt || !isExerciseId(newVersionId) || newVersionId === base.version.id
+        || document.planId !== base.plan.id || validateProgram(document, true)) throw new ProgramsFailure('invalid')
+      const payload = programPayload(document)
+      const token = await access(signal)
+      const { data, error } = await client.rpc('save_workout_revision', {
+        p_plan_id: base.plan.id, p_base_version_id: base.version.id, p_expected_plan_revision: base.plan.revision, p_expected_version_revision: base.version.revision,
+        p_new_version_id: newVersionId, p_title: payload.p_title, p_guidance: payload.p_guidance, p_days: payload.p_days,
+        p_cycle_start: cycle?.start ?? null, p_cycle_weeks: cycle?.weeks ?? null,
+      }).setHeader('Authorization', `Bearer ${token}`).abortSignal(signal).retry(false)
+      if (error) throw failure(error)
+      const row = record(data)
+      const outcome = string(row.outcome) as RevisionOutcome
+      if (!['unchanged', 'metadata', 'updated', 'created'].includes(outcome)) fail()
+      const result = { outcome, versionId: id(row.version_id), planRevision: positive(row.plan_revision) }
+      // Nuova versione solo con l'ID proposto; negli altri esiti resta la versione di partenza.
+      if (outcome === 'created' ? result.versionId !== newVersionId : result.versionId !== base.version.id) fail()
+      return result
     },
     async activate(saved, signal) {
       // Riattivazione di una versione già pubblicata: la versione stessa non cambia.

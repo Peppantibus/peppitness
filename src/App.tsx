@@ -1,14 +1,16 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
-import { DatePicker } from './components/DatePicker'
+import { DateContext, DatePicker } from './components/DatePicker'
 import { Icon } from './components/Icon'
 import { Layout } from './components/Layout'
 import { Modal } from './components/Modal'
 import { PwaUpdate } from './components/PwaUpdate'
 import { RestTimer } from './components/RestTimer'
 import { SectionMenu } from './components/SectionMenu'
-import { SyncStatus, syncLabels } from './components/SyncStatus'
+import { SyncIndicator, SyncStatus } from './components/SyncStatus'
+import { Toast } from './components/Toast'
+import type { ToastMessage } from './components/Toast'
 import { demoMeals, demoWorkoutDays } from './data/demo'
-import { formatDate, localDate } from './domain/dates'
+import { formatDate, localDate, weekDates } from './domain/dates'
 import { mealLogKey, suggestedDay, workoutDaysFromProgram } from './domain/diary'
 import { daysForType, fitsMealWizard, mealFromPlan } from './domain/meal-plans'
 import { dayForDate, fitsWizard, isWeekly, weekdayOfDate, weekdays } from './domain/weekly'
@@ -17,11 +19,12 @@ import { Progress } from './features/Progress'
 import type { WizardStep } from './features/ProgramWizard'
 import type { MealWizardStep } from './features/MealPlanWizard'
 import { findPreviousExercise } from './domain/workout'
-import type { SetResult } from './domain/types'
+import type { Meal, SetResult } from './domain/types'
 import { Diet, MealDetail } from './features/Diet'
 import { History } from './features/History'
 import { Settings } from './features/Settings'
 import { ExerciseDetail, SessionView, Workout } from './features/Workout'
+import type { CycleSummary } from './features/Workout'
 import { useDiary } from './persistence/use-diary'
 import { useExercises } from './persistence/use-exercises'
 import { usePlans } from './persistence/use-plans'
@@ -64,10 +67,12 @@ export function App() {
   const [mealStep, setMealStep] = useState<MealWizardStep>('name')
   const opening = useRef(false)
   const [planDayChoice, setPlanDayChoice] = useState<Record<string, string>>({})
-  const [discarding, setDiscarding] = useState(false)
   const [online, setOnline] = useState(navigator.onLine)
   const [announcement, setAnnouncement] = useState('')
-  const section = route.startsWith('/scheda') ? 'scheda' : 'dieta'
+  const [toast, setToast] = useState<ToastMessage | null>(null)
+  // Ultima sezione visitata: Impostazioni e pagine non valide riportano lì.
+  const lastSection = useRef<'dieta' | 'scheda'>('dieta')
+  const section = route.startsWith('/scheda') ? 'scheda' : route.startsWith('/dieta') ? 'dieta' : lastSection.current
 
   // Scheda: versione corrente del programma seguito; nessun programma inventato sotto un account.
   const workout = plans.state.workout
@@ -85,7 +90,15 @@ export function App() {
   const cycleNow = cycle ? cycleInfo(cycle, date) : null
   const programSessions = view.sessions.filter(session => session.planId === workout?.plan.id)
   const cycleScore = cycle && workoutDays.length ? adherence(weeklyProgress(workoutDays, programSessions, cycle, today)) : null
-  const cycleLabel = cycleNow ? cycleNow.status === 'upcoming' ? `INIZIA ${formatDate(cycleNow.start, { day: 'numeric', month: 'short' }).toUpperCase()}` : cycleNow.status === 'finished' ? 'CICLO CONCLUSO' : `SETTIMANA ${cycleNow.week} DI ${cycleNow.weeks} · ${cycleScore?.done ?? 0} DI ${cycleScore?.due ?? 0} SEDUTE FATTE` : undefined
+  const cycleSummary: CycleSummary | undefined = cycleNow ? cycleNow.status === 'upcoming' ? { label: `Inizia il ${formatDate(cycleNow.start, { day: 'numeric', month: 'long' })}`, ratio: 0 }
+    : cycleNow.status === 'finished' ? { label: 'Ciclo concluso', ratio: 1 }
+    : { label: `Settimana ${cycleNow.week} di ${cycleNow.weeks}`, detail: cycleScore && cycleScore.due > 0 ? `${cycleScore.done} di ${cycleScore.due} sedute fatte` : undefined, ratio: cycleNow.week / cycleNow.weeks } : undefined
+  // Giorni con una seduta prevista nella settimana mostrata (solo programmi settimanali).
+  const trainingDates = weekly && workout ? weekDates(date).filter(value => dayForDate(workoutDays, value)) : []
+  // Giorni della settimana mostrata con qualcosa di registrato: sedute completate o pasti annotati.
+  const shownWeek = weekDates(date)
+  const sessionDates = shownWeek.filter(value => view.sessions.some(session => session.completedAt && session.date === value))
+  const mealDates = shownWeek.filter(value => Object.values(view.mealLogs).some(log => log.date === value && log.status !== 'unrecorded'))
 
   // Dieta: giornata del piano seguito compatibile con il tipo di giornata del diario.
   const mealPlan = configured ? plans.state.mealPlans.find(plan => plan.id === plans.state.selection?.mealPlanId && !plan.archivedAt) : undefined
@@ -108,13 +121,12 @@ export function App() {
   const validRoute = route === '/dieta' || route === '/scheda' || isHistory || isSettings || isSession || isCatalog || isPrograms || isMealPlans || isProgress || Boolean(meal || exercise || historySession)
   const inDetail = Boolean(meal || exercise)
   const showDaily = validRoute && !isHistory && !isSettings && !isSession && !historySession && !isCatalog && !isPrograms && !isMealPlans && !isProgress
-  const programWizard = isPrograms && Boolean(programs.state.document) && programMode === 'wizard' && (programStep === 'done' || (fitsWizard(programs.state.document!) && programs.state.base?.version.status !== 'published'))
+  const programWizard = isPrograms && Boolean(programs.state.document) && programMode === 'wizard' && (programStep === 'done' || programs.state.revising || (fitsWizard(programs.state.document!) && programs.state.base?.version.status !== 'published'))
   const mealWizard = isMealPlans && Boolean(plans.state.editor.draft) && mealMode === 'wizard' && (mealStep === 'done' || fitsMealWizard(plans.state.editor.draft!.document))
   const pendingPreferences = settings.dirty || ['saving', 'checking', 'uncertain', 'conflict'].includes(settings.state.phase)
   const volatile = diary.store.hasVolatileData || !diary.state.storage
   const pendingEditors = pendingPreferences || catalog.pending || programs.pending || plans.pending
   const hasUnsavedData = pendingEditors || volatile || diary.store.hasPending
-  const diaryNote = configured ? syncLabels[diary.state.sync] : syncLabels.local
   const editorsBusy = ['saving', 'checking'].includes(catalog.state.phase) || ['saving', 'publishing', 'checking'].includes(programs.state.phase) || ['saving', 'checking'].includes(plans.state.editor.phase)
 
   // Collegamenti diretti alla creazione guidata dagli stati vuoti di Scheda e Dieta.
@@ -131,16 +143,16 @@ export function App() {
       window.location.replace('#/scheda/programmi')
     }
     if (route === '/scheda/programmi/modifica' && programs.store && programs.state.phase === 'ready' && !opening.current) {
-      // Dalla Scheda: apre direttamente il programma seguito nel wizard (nuova versione se pubblicato).
+      // Dalla Scheda: apre la versione in uso; il database decide se aggiornarla o crearne una nuova.
       const store = programs.store, item = programs.state.index.find(value => value.plan.id === plans.state.selection?.workoutPlanId)
-      const latest = item?.versions[0]
-      if (programs.state.document || !latest) { window.location.replace('#/scheda/programmi'); return }
+      const target = item?.versions.find(version => version.id === item.plan.activeVersionId) ?? item?.versions[0]
+      if (programs.state.document || !target) { window.location.replace('#/scheda/programmi'); return }
       opening.current = true
-      void store.open(latest.id).then(() => {
+      void store.open(target.id).then(() => {
         const opened = store.getSnapshot()
-        if (opened.base?.version.status === 'published' && !opened.base.plan.archivedAt) store.fork()
-        const document = store.getSnapshot().document
-        setProgramMode(document && fitsWizard(document) ? 'wizard' : 'advanced'); setProgramStep('name')
+        const weekly = Boolean(opened.document && fitsWizard(opened.document))
+        if (opened.base?.version.status === 'published' && !opened.base.plan.archivedAt) store.revise()
+        setProgramMode(weekly ? 'wizard' : 'advanced'); setProgramStep('name')
       }).finally(() => { opening.current = false; window.location.replace('#/scheda/programmi') })
     }
     if (route === '/dieta/piani/nuovo' && plans.store && plans.state.phase === 'ready') {
@@ -148,6 +160,11 @@ export function App() {
       window.location.replace('#/dieta/piani')
     }
   }, [route, programs.store, programs.state.phase, programs.state.document, programs.state.index, plans.store, plans.state.phase, plans.state.editor.phase, plans.state.selection, workout, today])
+
+  useEffect(() => {
+    if (route.startsWith('/scheda')) lastSection.current = 'scheda'
+    else if (route.startsWith('/dieta')) lastSection.current = 'dieta'
+  }, [route])
 
   useEffect(() => {
     const updateNetwork = () => setOnline(navigator.onLine)
@@ -183,6 +200,17 @@ export function App() {
     if (!day || (configured && (!workout || diary.state.phase !== 'ready'))) return
     if (diary.store.startSession({ date, day, planId: workout?.plan.id ?? 'local', versionId: workout?.version.id ?? 'local', timeZone })) navigate('/scheda/seduta')
   }
+  // Registrazione rapida dalla card: «Seguito» con un tocco, oppure lo toglie; «Annulla» ripristina lo stato precedente.
+  const quickFollow = (meal: Meal) => {
+    const log = view.mealLogs[mealLogKey(date, meal.id)]
+    const previous = { status: log?.status ?? 'unrecorded', note: log?.note ?? '' }
+    const next = previous.status === 'followed' ? 'unrecorded' : 'followed'
+    const planId = mealPlan?.id ?? 'local', mealDate = date, mealDayType = dayType
+    diary.store.recordMeal(mealDate, planId, meal, next, previous.note, mealDayType)
+    const message = next === 'followed' ? `${meal.name}: seguito` : `${meal.name}: da registrare`
+    setToast({ id: Date.now(), message, undo: () => { diary.store.recordMeal(mealDate, planId, meal, previous.status, previous.note, mealDayType); setAnnouncement(`${meal.name}: registrazione ripristinata.`) } })
+    setAnnouncement(`${message}. Puoi annullare dall’avviso in basso.`)
+  }
   const retryPlans = <button className="button primary" onClick={() => void plans.store?.load()}>Riprova</button>
   const finishedCycle = cycleNow?.status === 'finished' && <section className="cycle-finished"><Icon name="check" size={20} /><div><strong>Ciclo concluso</strong><p>Hai completato {cycleScore?.done ?? 0} sedute su {cycleScore?.planned ?? 0}. Guarda come è andata e prepara il prossimo.</p></div><div className="program-actions"><a className="button secondary" href="#/scheda/progressi">Progressi</a><a className="button primary" href="#/scheda/programmi/rinnova">Crea dal programma concluso</a></div></section>
 
@@ -191,18 +219,18 @@ export function App() {
     if (configured && plans.state.phase === 'error') return <section className="panel empty-state"><h2>Programma non disponibile</h2><p role="alert">{plans.state.message}</p>{retryPlans}</section>
     if (!day && weekly && workout) return <>
       {finishedCycle}
-      {activeSession && <a className="resume-banner" href="#/scheda/seduta"><Icon name="play" /><span><strong>Allenamento in corso</strong><small>{activeSession.day.title} · {formatDate(activeSession.date)}</small></span><span>Riprendi</span><Icon name="arrow" size={18} /></a>}
+      {activeSession && <a className="resume-banner" href="#/scheda/seduta"><Icon name="play" /><span><strong>Allenamento in corso</strong><small>{activeSession.day.title} · {formatDate(activeSession.date)}</small></span><span>Riprendi</span><Icon name="arrow" size={20} /></a>}
       <section className="rest-day" aria-labelledby="rest-day-title">
-        <span className="rest-day-icon" aria-hidden="true"><Icon name="moon" size={28} /></span>
-        <span className="eyebrow">{weekdays[weekdayOfDate(date)]!.name.toUpperCase()}</span>
+        <span className="rest-day-icon" aria-hidden="true"><Icon name="moon" size={24} /></span>
+        <span className="eyebrow">{weekdays[weekdayOfDate(date)]!.name}</span>
         <h2 id="rest-day-title">Giorno di riposo</h2>
         <p>Il tuo programma non prevede sedute oggi. Recupera bene.</p>
-        <div className="rest-day-options"><span>Vuoi allenarti comunque?</span><div className="wz-chips">{workoutDays.map(item => <button key={item.id} type="button" className="wz-chip" onClick={() => selectDay(item.id)}>{weekdays.find(weekday => weekday.code === item.label)?.name ?? item.label} · {item.title}</button>)}</div></div>
+        <div className="rest-day-options"><span>Vuoi allenarti comunque?</span><div className="chip-row">{workoutDays.map(item => <button key={item.id} type="button" className="chip" onClick={() => selectDay(item.id)}>{weekdays.find(weekday => weekday.code === item.label)?.name ?? item.label} · {item.title}</button>)}</div></div>
       </section>
     </>
     if (!day) return <section className="panel empty-state plan-empty">
       {followable.length ? <><h2>Scegli il programma da seguire</h2><p>La Scheda mostra la versione corrente del programma scelto. Puoi cambiarlo in qualsiasi momento.</p><div className="plan-choices">{followable.map(item => <button key={item.plan.id} className="button secondary plan-choice" disabled={plans.state.selecting} onClick={() => void plans.store?.choose({ workoutPlanId: item.plan.id })}>{item.plan.name}</button>)}</div></>
-        : <><span className="empty-icon"><Icon name="calendar" size={30} /></span><h2>Nessun programma da seguire</h2><p>Imposta la tua settimana: per ogni giorno scegli gli esercizi oppure il riposo.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma<Icon name="arrow" size={18} /></a></>}
+        : <><span className="empty-icon"><Icon name="calendar" size={32} /></span><h2>Nessun programma da seguire</h2><p>Imposta la tua settimana: per ogni giorno scegli gli esercizi oppure il riposo.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma<Icon name="arrow" size={20} /></a></>}
       {activeSession && <a className="button secondary" href="#/scheda/seduta">Riprendi l’allenamento in corso</a>}
     </section>
     return <>
@@ -210,8 +238,8 @@ export function App() {
       {configured && followable.length > 1 && <section className="plan-selectors"><label className="plan-selector">Programma seguito<select value={workout?.plan.id ?? ''} disabled={plans.state.selecting} onChange={event => { setDayId(null); void plans.store?.choose({ workoutPlanId: event.target.value }) }}>{followable.map(item => <option key={item.plan.id} value={item.plan.id}>{item.plan.name}</option>)}</select></label></section>}
       {configured && diary.state.phase === 'loading' && <p className="small muted" role="status">Caricamento del diario…</p>}
       {configured && diary.state.phase === 'error' && <section className="panel"><p role="alert">{diary.state.message}</p><button className="button secondary" onClick={() => void diary.store.refresh()}>Riprova</button></section>}
-      <Workout day={day} days={workoutDays} planTitle={workout ? `${workout.plan.name}` : 'Full body'} planGuidance={workout?.version.guidance || undefined} date={date} sessions={view.sessions} onDay={selectDay} editHref={workout ? '#/scheda/programmi/modifica' : undefined} cycleLabel={cycleLabel}
-        activeSession={activeSession} suggestedDayId={workoutDays.length > 1 ? suggestion?.id : undefined} suggestedLabel={weekly ? 'Oggi' : 'Suggerita'} weekly={weekly} workoutWeekdays={weekly ? [] : settings.state.saved?.workoutWeekdays} onStart={start} diaryNote={diaryNote} />
+      <Workout day={day} days={workoutDays} planTitle={workout ? `${workout.plan.name}` : 'Full body'} planGuidance={workout?.version.guidance || undefined} date={date} today={today} sessions={view.sessions} onDay={selectDay} cycle={cycleSummary} progressHref={workout ? '#/scheda/progressi' : undefined}
+        activeSession={activeSession} suggestedDayId={weekly ? planned?.id : workoutDays.length > 1 ? suggestion?.id : undefined} weekly={weekly} workoutWeekdays={weekly ? [] : settings.state.saved?.workoutWeekdays} onStart={start} />
     </>
   }
 
@@ -220,26 +248,29 @@ export function App() {
     if (configured && plans.state.phase === 'error') return <section className="panel empty-state"><h2>Piano non disponibile</h2><p role="alert">{plans.state.message}</p>{retryPlans}</section>
     if (configured && !mealPlan) return <section className="panel empty-state plan-empty">
       {followableMeals.length ? <><h2>Scegli il piano alimentare da seguire</h2><div className="plan-choices">{followableMeals.map(plan => <button key={plan.id} className="button secondary plan-choice" disabled={plans.state.selecting} onClick={() => void plans.store?.choose({ mealPlanId: plan.id })}>{plan.name}</button>)}</div></>
-        : <><span className="empty-icon"><Icon name="fork" size={30} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo: comparirà qui.</p><a className="button primary" href="#/dieta/piani/nuovo">Crea il tuo piano<Icon name="arrow" size={18} /></a></>}
+        : <><span className="empty-icon"><Icon name="fork" size={32} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo: comparirà qui.</p><a className="button primary" href="#/dieta/piani/nuovo">Crea il tuo piano<Icon name="arrow" size={20} /></a></>}
     </section>
     return <>
       {configured && followableMeals.length > 1 && <section className="plan-selectors"><label className="plan-selector">Piano seguito<select value={mealPlan?.id ?? ''} disabled={plans.state.selecting} onChange={event => void plans.store?.choose({ mealPlanId: event.target.value })}>{followableMeals.map(plan => <option key={plan.id} value={plan.id}>{plan.name}</option>)}</select></label></section>}
-      <Diet date={date} state={view} meals={meals} dayType={dayType} dayTypeHint={!view.dayTypes[date] && programDayType ? `Dalla tua scheda: ${programDayType === 'rest' ? 'giorno di riposo' : 'giorno di allenamento'}.` : undefined} planTitle={mealPlan?.name} planGuidance={mealPlan?.document.guidance || undefined}
+      <Diet date={date} isToday={date === today} state={view} meals={meals} dayType={dayType} dayTypeHint={!view.dayTypes[date] && programDayType ? `Dalla tua scheda: ${programDayType === 'rest' ? 'giorno di riposo' : 'giorno di allenamento'}. Puoi cambiarlo.` : undefined} planTitle={mealPlan?.name} planGuidance={mealPlan?.document.guidance || undefined}
         dayOptions={candidateDays.length > 1 ? candidateDays.map(item => item.name) : []} selectedPlanDay={Math.max(0, candidateDays.findIndex(item => item.id === planDay?.id))}
         onPlanDay={index => setPlanDayChoice(current => ({ ...current, [`${date}:${dayType}`]: candidateDays[index]!.id }))} dayNote={planDay?.note || undefined}
-        onDayType={type => diary.store.setDayType(date, type)} diaryNote={diaryNote} />
+        onDayType={type => diary.store.setDayType(date, type)} onQuickFollow={quickFollow} />
     </>
   }
 
-  return <Layout section={section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard} session={isSession || Boolean(historySession)}>
+  const syncIndicator = <SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} />
+  // Pagine secondarie: intestazione propria (← e titolo); su mobile la barra superiore si nasconde.
+  const subpage = isHistory || isProgress || isSettings || isCatalog || isPrograms || isMealPlans
+  return <Layout section={isSettings ? null : section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard} session={isSession || Boolean(historySession)} subpage={subpage} status={syncIndicator} sidebarStatus={<SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} withLabel />}>
     <div className="sr-only" role="status" aria-live="polite">{announcement}</div>
-    {!online && <div className="network-notice" role="status"><Icon name="info" size={18} /><span>Rete assente. {configured ? 'Le registrazioni restano sul dispositivo e verranno inviate al ritorno della connessione.' : ''}</span></div>}
+    {!online && <div className="network-notice" role="status"><Icon name="info" size={20} /><span>Rete assente. {configured ? 'Le registrazioni restano sul dispositivo e verranno inviate al ritorno della connessione.' : ''}</span></div>}
     {plans.state.message && showDaily && <p className="small muted plans-message" role="status">{plans.state.message}</p>}
     {configured && (showDaily || isSession) && <SyncStatus store={diary.store} state={diary.state} />}
     {showDaily && <>
-      <div className="page-heading"><div><span className="eyebrow">{date === today ? 'OGGI' : 'IL TUO DIARIO'}</span><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><p>{formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}</p></div><SectionMenu section={section} full={configured} /></div>
-      <DatePicker date={date} onChange={setDate} today={today} />
-      {date !== today && <div className="past-notice"><Icon name="calendar" size={17} /><span>Giornata {date < today ? 'passata' : 'futura'} · <strong>{formatDate(date)}</strong></span></div>}
+      <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} extra={section === 'scheda' && configured && workout ? [{ href: '#/scheda/programmi/modifica', icon: 'edit', title: 'Modifica programma', detail: `Esercizi e giorni di «${workout.plan.name}»` }] : []} /></div>
+      <DatePicker date={date} onChange={setDate} today={today} planned={section === 'scheda' ? trainingDates : []} done={section === 'scheda' ? sessionDates : mealDates} doneLabel={section === 'scheda' ? 'seduta completata' : 'pasti registrati'} />
+      <DateContext date={date} today={today} onToday={() => setDate(today)} />
       {section === 'dieta' ? dietContent() : workoutContent()}
     </>}
     {isHistory && <History section={section} state={view} onDate={setDate} />}
@@ -248,17 +279,19 @@ export function App() {
       followedPlanId={plans.state.selection?.workoutPlanId ?? null} followedDays={workout?.document.days ?? null} onFollow={followProgram} onDeleted={async () => { await plans.store?.load() }} deletionBlocked={diary.store.hasPending || diary.store.hasVolatileData} today={today} /></Suspense>}
     {isProgress && <Progress workout={workout} days={workoutDays} sessions={programSessions} today={today} />}
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={mealMode} setMode={setMealMode} step={mealStep} setStep={setMealStep} deletionBlocked={diary.store.hasPending || diary.store.hasVolatileData} /></Suspense>}
-    {isSettings && <Settings hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy} onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice() }} {...settings} />}
-    {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} syncLabel={configured ? diaryNote : undefined}
-      onDiscard={() => setDiscarding(true)}
+    {isSettings && <Settings backSection={lastSection.current} weeklyProgram={weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy} onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice() }} {...settings} />}
+    {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} syncSlot={syncIndicator}
+      onDiscard={() => { diary.store.discardSession(activeSession.id); navigate('/scheda'); setAnnouncement('Seduta eliminata.') }}
       onComplete={() => { diary.store.completeSession(activeSession.id); navigate('/scheda/storico'); setAnnouncement('Allenamento completato.') }} />
       : <section className="panel empty-state"><h1>Nessun allenamento in corso</h1><p>Seleziona una seduta dalla scheda per iniziare.</p><a href="#/scheda" className="button primary">Vai alla scheda</a></section>)}
-    {historySession && <SessionView key={historySession.id} session={historySession} sessions={view.sessions} onChange={updateResult(historySession.id)} onComplete={() => undefined} onEndCorrection={() => diary.store.discardIncomplete(historySession.id)} syncLabel={configured ? diaryNote : undefined} />}
+    {historySession && <SessionView key={historySession.id} session={historySession} sessions={view.sessions} onChange={updateResult(historySession.id)} onComplete={() => undefined} onEndCorrection={() => diary.store.discardIncomplete(historySession.id)} syncSlot={syncIndicator} />}
     {!validRoute && <section className="panel empty-state"><h1>Questa pagina non è disponibile</h1><a className="button primary" href={`#/${section}`}>Torna al tuo spazio</a></section>}
     {meal && <Modal label={`${meal.name}, ${formatDate(date)}`} onClose={() => navigate('/dieta')}><MealDetail key={`${date}:${meal.id}`} meal={view.mealLogs[mealLogKey(date, meal.id)]?.snapshot ?? meal} log={view.mealLogs[mealLogKey(date, meal.id)]} onClose={() => navigate('/dieta')} onSave={(status, note) => { diary.store.recordMeal(date, mealPlan?.id ?? 'local', meal, status, note, dayType); setAnnouncement(`${meal.name}: registrazione aggiornata.`) }} /></Modal>}
     {exercise && <Modal label={exercise.name} onClose={() => navigate('/scheda')}><ExerciseDetail exercise={exercise} previous={findPreviousExercise(view.sessions, exercise, { id: '', date, startedAt: new Date().toISOString() })} /></Modal>}
-    {discarding && activeSession && <Modal label="Annullare l’allenamento?" onClose={() => setDiscarding(false)}><h2>Annullare l’allenamento?</h2><p>La seduta in corso e le serie annotate verranno eliminate. Le sedute completate restano nello storico.</p><div className="program-actions"><button className="button secondary" onClick={() => setDiscarding(false)}>Continua l’allenamento</button><button className="button primary" onClick={() => { diary.store.discardSession(activeSession.id); setDiscarding(false); navigate('/scheda'); setAnnouncement('Allenamento annullato.') }}>Annulla allenamento</button></div></Modal>}
     {diary.state.restTimer && <RestTimer timer={diary.state.restTimer} onChange={diary.store.setRestTimer} />}
-    <PwaUpdate busy={Boolean(activeSession) || inDetail || pendingEditors || diary.state.sync === 'sending' || editorsBusy} hasDemoData={pendingEditors || volatile} />
+    <div className="toast-stack">
+      {toast && <Toast key={toast.id} toast={toast} onClose={() => setToast(current => current?.id === toast.id ? null : current)} />}
+      <PwaUpdate hidden={isSession || Boolean(historySession)} busy={Boolean(activeSession) || inDetail || pendingEditors || diary.state.sync === 'sending' || editorsBusy} hasDemoData={pendingEditors || volatile} />
+    </div>
   </Layout>
 }

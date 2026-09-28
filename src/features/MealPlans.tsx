@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
+import { SubpageHeader } from '../components/SubpageHeader'
 import { Modal } from '../components/Modal'
 import { duplicatePlanDay, mealPlanLimits, newPlanDay, newPlanMeal, planDayTypes } from '../domain/meal-plans'
 import type { MealPlanDay, MealPlanDraft, PlanDayType, PlanMeal } from '../domain/meal-plans'
@@ -95,19 +96,19 @@ export function MealPlans({ store, state, mode, setMode, step, setStep, deletion
     if (!store || !plan) return
     setMode(fitsMealWizard(plan.document) ? 'wizard' : 'advanced'); setStep('name'); store.openMealPlan(id)
   }
-  return <><a className="back-link" href="#/dieta"><Icon name="back" size={18} />Torna alla dieta</a><div className="page-heading catalog-heading"><div><span className="eyebrow">LA TUA DIETA</span><h1>I tuoi piani alimentari<span className="heading-dot">.</span></h1><p>I pasti dei giorni di allenamento e di riposo.</p></div></div>
+  return <><SubpageHeader back="#/dieta" backLabel="Torna alla dieta" title="I tuoi piani alimentari" subtitle="I pasti dei giorni di allenamento e di riposo." />
     {!store ? <section className="panel empty-state"><h2>Accedi per gestire i piani alimentari</h2></section>
       : state.phase === 'loading' ? <section className="panel empty-state" role="status">Caricamento dei piani…</section>
         : state.phase === 'error' ? <section className="panel empty-state"><p role="alert">{state.message}</p><button className="button primary" onClick={() => void store.load()}>Riprova</button></section>
           : state.editor.phase !== 'closed' ? <MealPlanEditor store={store} state={state} />
             : <>
-              <button className="button primary meal-plan-wizard-new full-width-mobile" onClick={startWizard}><Icon name="plus" size={18} />Nuovo piano alimentare</button>
+              <button className="button primary lg meal-plan-wizard-new full-width-mobile" onClick={startWizard}><Icon name="plus" size={20} />Nuovo piano alimentare</button>
               <div className="program-list-tools"><button className="text-button meal-plan-new" onClick={() => { setMode('advanced'); store.createMealPlan() }}>Editor avanzato</button><button className="text-button" onClick={() => void store.load()}>Aggiorna elenco</button>{state.mealPlans.length > 0 && <button className="text-button delete-link" disabled={deletionBlocked || state.deleting} onClick={() => setConfirmDelete({ id: null, name: 'tutti i piani alimentari' })}>Elimina tutto</button>}</div>
               {deletionBlocked && <p className="small muted">Completa la sincronizzazione del diario prima di eliminare i piani alimentari.</p>}
               {state.message && <p role="status">{state.message}</p>}
-              {!state.mealPlans.length ? <section className="panel empty-state"><span className="empty-icon"><Icon name="fork" size={30} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo.</p><button className="button primary" onClick={startWizard}>Crea il tuo piano<Icon name="arrow" size={18} /></button></section>
+              {!state.mealPlans.length ? <section className="panel empty-state"><span className="empty-icon"><Icon name="fork" size={32} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo.</p><button className="button primary" onClick={startWizard}>Crea il tuo piano<Icon name="arrow" size={20} /></button></section>
                 : <div className="program-list">{state.mealPlans.map(plan => <section className={`panel program-card meal-plan-card ${selected === plan.id ? 'is-followed' : ''}`} key={plan.id}>
-                  <div className="program-card-head"><h2>{plan.name}</h2>{selected === plan.id && !plan.archivedAt && <span className="badge-followed"><Icon name="check" size={13} />Seguito</span>}</div>
+                  <div className="program-card-head"><h2>{plan.name}</h2>{selected === plan.id && !plan.archivedAt && <span className="badge-followed"><Icon name="check" size={16} />Seguito</span>}</div>
                   <p className="small muted">{plan.document.days.map(day => `${planDayTypes[day.dayType]}: ${day.meals.length} pasti`).join(' · ') || 'Nessuna giornata'}{plan.archivedAt ? ' · Archiviato' : ''}{selected === plan.id ? ' · Piano seguito' : ''}</p>
                   <div className="program-actions">{!plan.archivedAt && selected !== plan.id && <button className="button primary" disabled={state.selecting} onClick={() => void store.choose({ mealPlanId: plan.id })}>Segui questo piano</button>}<button className="button secondary meal-plan-edit" onClick={() => edit(plan.id)}>Modifica</button><button className="button secondary" disabled={selected === plan.id && !plan.archivedAt} onClick={() => void store.archiveMealPlan(plan.id, !plan.archivedAt)}>{plan.archivedAt ? 'Ripristina' : 'Archivia'}</button><button className="button secondary danger" disabled={deletionBlocked || state.deleting} onClick={() => setConfirmDelete({ id: plan.id, name: plan.name })}>Elimina</button></div></section>)}</div>}
             </>}

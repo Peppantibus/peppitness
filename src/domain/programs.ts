@@ -12,8 +12,8 @@ export interface ProgramDay { id: string; label: string; title: string; note: st
 export interface ProgramDocument { planId: string; id: string; title: string; guidance: string; days: ProgramDay[] }
 /** Ciclo: primo giorno e durata in settimane; la settimana tipo si ripete per tutto il ciclo. */
 export interface ProgramCycle { start: string; weeks: number }
-export interface ProgramRoot { id: string; name: string; revision: number; activeVersionId: string | null; archivedAt: string | null; cycle?: ProgramCycle | null }
-export interface ProgramVersion { id: string; planId: string; title: string; guidance: string; number: number; revision: number; status: 'draft' | 'published' }
+export interface ProgramRoot { id: string; name: string; revision: number; activeVersionId: string | null; archivedAt: string | null; cycle?: ProgramCycle | null; updatedAt?: string | null }
+export interface ProgramVersion { id: string; planId: string; title: string; guidance: string; number: number; revision: number; status: 'draft' | 'published'; updatedAt?: string | null; publishedAt?: string | null }
 export interface ProgramIndex { plan: ProgramRoot; versions: ProgramVersion[] }
 export interface SavedProgram { plan: ProgramRoot; version: ProgramVersion; document: ProgramDocument }
 
@@ -93,6 +93,17 @@ export function validateProgram(document: ProgramDocument, publish = false): str
     if (publish && (!document.days.length || document.days.some(day => !day.exercises.length))) return 'Per pubblicare, aggiungi almeno una seduta e un esercizio in ogni seduta.'
     return null
   } catch (error) { return error instanceof Error ? error.message : 'Controlla i campi della bozza.' }
+}
+/** Contenuto confrontabile di una versione: istruzioni, giorni e prescrizioni senza ID (come il database). */
+function contentKey(document: ProgramDocument) {
+  const payload = programPayload(document)
+  return JSON.stringify({ guidance: payload.p_guidance, days: payload.p_days.map(({ id: _day, exercises, ...day }) => ({ ...day, exercises: exercises.map(({ id: _item, ...item }) => item) })) })
+}
+export function sameContent(a: ProgramDocument, b: ProgramDocument): boolean {
+  try { return contentKey(a) === contentKey(b) } catch { return false }
+}
+export function sameCycle(a: ProgramCycle | null | undefined, b: ProgramCycle | null | undefined): boolean {
+  return (a?.start ?? null) === (b?.start ?? null) && (a?.weeks ?? null) === (b?.weeks ?? null)
 }
 export function sameProgram(a: ProgramDocument, b: ProgramDocument): boolean {
   // I testi del catalogo possono aggiornarsi al salvataggio dello snapshot.
