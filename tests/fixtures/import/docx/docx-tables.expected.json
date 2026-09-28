@@ -1,0 +1,46 @@
+{
+  "document": {
+    "readerVersion": "peppitness.docx-reader.v1",
+    "sourceHash": "a803ff25028afa96c2ec0b8484ddc6d4925242c97bbafabe5d877b3068951ac8",
+    "blocks": [
+      {"id": "p:1", "kind": "heading", "text": "Tabella allenamento", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:2", "kind": "heading", "text": "Seduta A", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:3", "kind": "paragraph", "text": "Riscaldamento: 10 minuti di cyclette prima della tabella.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0", "kind": "table_row", "text": "Esercizio | Serie | Ripetizioni | Recupero", "tableId": "t:1", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:0", "kind": "table_cell", "text": "Esercizio", "tableId": "t:1", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:1", "kind": "table_cell", "text": "Serie", "tableId": "t:1", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:2", "kind": "table_cell", "text": "Ripetizioni", "tableId": "t:1", "row": 0, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:3", "kind": "table_cell", "text": "Recupero", "tableId": "t:1", "row": 0, "column": 3, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1", "kind": "table_row", "text": "Squat | 4 | 6–8 | 2′", "tableId": "t:1", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:0", "kind": "table_cell", "text": "Squat", "tableId": "t:1", "row": 1, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:1", "kind": "table_cell", "text": "4", "tableId": "t:1", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:2", "kind": "table_cell", "text": "6–8", "tableId": "t:1", "row": 1, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:3", "kind": "table_cell", "text": "2′", "tableId": "t:1", "row": 1, "column": 3, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2", "kind": "table_row", "text": "Panca inclinata | 3 | 10 |", "tableId": "t:1", "row": 2, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:0", "kind": "table_cell", "text": "Panca inclinata", "tableId": "t:1", "row": 2, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:1", "kind": "table_cell", "text": "3", "tableId": "t:1", "row": 2, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:2", "kind": "table_cell", "text": "10", "tableId": "t:1", "row": 2, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:3", "kind": "table_cell", "text": "", "tableId": "t:1", "row": 2, "column": 3, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:3", "kind": "table_row", "text": "Rematore\ncon manubrio | 3 | 12 | 90″", "tableId": "t:1", "row": 3, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:3:c:0", "kind": "table_cell", "text": "Rematore\ncon manubrio", "tableId": "t:1", "row": 3, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:3", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:3:c:1", "kind": "table_cell", "text": "3", "tableId": "t:1", "row": 3, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:3", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:3:c:2", "kind": "table_cell", "text": "12", "tableId": "t:1", "row": 3, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:3", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:3:c:3", "kind": "table_cell", "text": "90″", "tableId": "t:1", "row": 3, "column": 3, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:3", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:4", "kind": "paragraph", "text": "Recupero globale: se non indicato, 90 secondi tra le serie.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:5", "kind": "heading", "text": "Seduta B", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0", "kind": "table_row", "text": "Trazioni | 3 x max", "tableId": "t:2", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:5"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0:c:0", "kind": "table_cell", "text": "Trazioni", "tableId": "t:2", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:0", "headingIds": ["p:1", "p:5"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0:c:1", "kind": "table_cell", "text": "3 x max", "tableId": "t:2", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:0", "headingIds": ["p:1", "p:5"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:1", "kind": "table_row", "text": "presa prona", "tableId": "t:2", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:5"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:1:c:1", "kind": "table_cell", "text": "presa prona", "tableId": "t:2", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:1", "headingIds": ["p:1", "p:5"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:6", "kind": "paragraph", "text": "Fine seduta: stretching 5 minuti.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:5"], "page": null, "origin": "native", "bbox": null}
+    ],
+    "readingIssues": []
+  },
+  "metadata": {
+    "readerVersion": "peppitness.docx-reader.v1", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2808, "pageCount": null,
+    "inventory": [
+      {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "p:2", "p:3", "t:1:r:0", "t:1:r:0:c:0", "t:1:r:0:c:1", "t:1:r:0:c:2", "t:1:r:0:c:3", "t:1:r:1", "t:1:r:1:c:0", "t:1:r:1:c:1", "t:1:r:1:c:2", "t:1:r:1:c:3", "t:1:r:2", "t:1:r:2:c:0", "t:1:r:2:c:1", "t:1:r:2:c:2", "t:1:r:2:c:3", "t:1:r:3", "t:1:r:3:c:0", "t:1:r:3:c:1", "t:1:r:3:c:2", "t:1:r:3:c:3", "p:4", "p:5", "t:2:r:0", "t:2:r:0:c:0", "t:2:r:0:c:1", "t:2:r:1", "t:2:r:1:c:1", "p:6"], "issueCodes": []}
+    ]
+  }
+}

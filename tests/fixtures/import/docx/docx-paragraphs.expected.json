@@ -1,0 +1,34 @@
+{
+  "document": {
+    "readerVersion": "peppitness.docx-reader.v1",
+    "sourceHash": "79b0c656ec22315e12be594bfe9752e3efba5b1b92262c0638e21f39dbb4e235",
+    "blocks": [
+      {"id": "p:1", "kind": "heading", "text": "Scheda forza – blocco 1", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:2", "kind": "paragraph", "text": "Obiettivo: forza e tecnica", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:4", "kind": "heading", "text": "Seduta A", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:5", "kind": "list_item", "text": "Squat 4 x 8\nRPE 8", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:6", "kind": "list_item", "text": "Pausa di 2″ in buca", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "p:5", "headingIds": ["p:1", "p:4"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:7", "kind": "list_item", "text": "Bilanciere all’altezza delle spalle", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "p:5", "headingIds": ["p:1", "p:4"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:8", "kind": "list_item", "text": "Panca piana: 3 x 10–12", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:9", "kind": "paragraph", "text": "Guarda il video della tecnica.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:10", "kind": "heading", "text": "Note", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:11", "kind": "paragraph", "text": "Aggiornata al 28/09/2026", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4", "p:10"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:12", "kind": "paragraph", "text": "Recupero tra le serie: 90 secondi per tutti gli esercizi.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4", "p:10"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:13", "kind": "paragraph", "text": "Rest-pause sull’ultima serie; completa il set.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4", "p:10"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:14", "kind": "paragraph", "text": "Durata: 45 minuti", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4", "p:10"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:15", "kind": "paragraph", "text": "Carico: ½ del massimale, 1′30″ di pausa — «tempo 3-1-1»", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:4", "p:10"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:16", "kind": "heading", "text": "Seduta B", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:17", "kind": "list_item", "text": "Stacco rumeno 3 x 6", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:16"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:18", "kind": "paragraph", "text": "Nota libera fuori elenco", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:16"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:19", "kind": "heading", "text": "Dettagli", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:16"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:20", "kind": "paragraph", "text": "Chiudere con 5 minuti di mobilità.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:16", "p:19"], "page": null, "origin": "native", "bbox": null}
+    ],
+    "readingIssues": []
+  },
+  "metadata": {
+    "readerVersion": "peppitness.docx-reader.v1", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 3238, "pageCount": null,
+    "inventory": [
+      {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "p:2", "p:4", "p:5", "p:6", "p:7", "p:8", "p:9", "p:10", "p:11", "p:12", "p:13", "p:14", "p:15", "p:16", "p:17", "p:18", "p:19", "p:20"], "issueCodes": []}
+    ]
+  }
+}

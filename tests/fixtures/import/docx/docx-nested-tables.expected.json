@@ -1,0 +1,41 @@
+{
+  "document": {
+    "readerVersion": "peppitness.docx-reader.v1",
+    "sourceHash": "0d88d4865f1239d26c727490f1cb4b35a019d7e6820f2c262c2314d95bc74a7b",
+    "blocks": [
+      {"id": "p:1", "kind": "heading", "text": "Circuiti", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:2", "kind": "paragraph", "text": "Nota prima: eseguire i circuiti in ordine.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0", "kind": "table_row", "text": "Blocco | Dettaglio", "tableId": "t:1", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:0", "kind": "table_cell", "text": "Blocco", "tableId": "t:1", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:1", "kind": "table_cell", "text": "Dettaglio", "tableId": "t:1", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1", "kind": "table_row", "text": "Circuito 1 | Ripetere 2 volte:\nPausa 1′ alla fine.", "tableId": "t:1", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:0", "kind": "table_cell", "text": "Circuito 1", "tableId": "t:1", "row": 1, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:1", "kind": "table_cell", "text": "Ripetere 2 volte:\nPausa 1′ alla fine.", "tableId": "t:1", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0", "kind": "table_row", "text": "Burpee | 10", "tableId": "t:2", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "t:1:r:1:c:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0:c:0", "kind": "table_cell", "text": "Burpee", "tableId": "t:2", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0:c:1", "kind": "table_cell", "text": "10", "tableId": "t:2", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:1", "kind": "table_row", "text": "Jumping jack | 30″", "tableId": "t:2", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "t:1:r:1:c:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:1:c:0", "kind": "table_cell", "text": "Jumping jack", "tableId": "t:2", "row": 1, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:1:c:1", "kind": "table_cell", "text": "30″", "tableId": "t:2", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2", "kind": "table_row", "text": "Circuito 2 |", "tableId": "t:1", "row": 2, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:0", "kind": "table_cell", "text": "Circuito 2", "tableId": "t:1", "row": 2, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:1", "kind": "table_cell", "text": "", "tableId": "t:1", "row": 2, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:3:r:0", "kind": "table_row", "text": "Kettlebell swing | 15", "tableId": "t:3", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "t:1:r:2:c:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:3:r:0:c:0", "kind": "table_cell", "text": "Kettlebell swing", "tableId": "t:3", "row": 0, "column": 0, "rowSpan": 2, "columnSpan": 1, "parentId": "t:3:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:3:r:0:c:1", "kind": "table_cell", "text": "15", "tableId": "t:3", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:3:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:3:r:1", "kind": "table_row", "text": "", "tableId": "t:3", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "t:1:r:2:c:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:3:r:1:c:1", "kind": "table_cell", "text": "", "tableId": "t:3", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:3:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:4:r:0", "kind": "table_row", "text": "Variante | Goblet squat 10", "tableId": "t:4", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "t:3:r:1:c:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:4:r:0:c:0", "kind": "table_cell", "text": "Variante", "tableId": "t:4", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:4:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:4:r:0:c:1", "kind": "table_cell", "text": "Goblet squat 10", "tableId": "t:4", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:4:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:3", "kind": "paragraph", "text": "Nota dopo: recupero globale 2 minuti tra i circuiti.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null}
+    ],
+    "readingIssues": []
+  },
+  "metadata": {
+    "readerVersion": "peppitness.docx-reader.v1", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2749, "pageCount": null,
+    "inventory": [
+      {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "p:2", "t:1:r:0", "t:1:r:0:c:0", "t:1:r:0:c:1", "t:1:r:1", "t:1:r:1:c:0", "t:1:r:1:c:1", "t:2:r:0", "t:2:r:0:c:0", "t:2:r:0:c:1", "t:2:r:1", "t:2:r:1:c:0", "t:2:r:1:c:1", "t:1:r:2", "t:1:r:2:c:0", "t:1:r:2:c:1", "t:3:r:0", "t:3:r:0:c:0", "t:3:r:0:c:1", "t:3:r:1", "t:3:r:1:c:1", "t:4:r:0", "t:4:r:0:c:0", "t:4:r:0:c:1", "p:3"], "issueCodes": []}
+    ]
+  }
+}

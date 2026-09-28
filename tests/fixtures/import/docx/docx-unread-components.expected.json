@@ -1,0 +1,35 @@
+{
+  "document": {
+    "readerVersion": "peppitness.docx-reader.v1",
+    "sourceHash": "f72c0dec69098d4da0634aab53230380dff5b27fc3a17fb4e13c1ac8e72e3eba",
+    "blocks": [
+      {"id": "p:1", "kind": "heading", "text": "Scheda con parti da controllare", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:2", "kind": "paragraph", "text": "Squat 4 x 8", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:3", "kind": "paragraph", "text": "Panca 3 x 10", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:4", "kind": "paragraph", "text": "Affondi 3 x 12", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:5", "kind": "paragraph", "text": "Vedi riquadro", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:7", "kind": "paragraph", "text": "Plank 3 x 30″", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:8", "kind": "paragraph", "text": "Formula:", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null}
+    ],
+    "readingIssues": [
+      {"code": "tracked_changes", "sourceRefs": ["p:2"], "message": "Il documento contiene revisioni non accettate (2): il testo esclude le parti eliminate e include quelle inserite, senza unirle. Accetta o rifiuta le revisioni in Word e carica di nuovo il file."},
+      {"code": "hidden_text", "sourceRefs": ["p:3", "p:4"], "message": "Testo nascosto in Word (2): escluso dalla lettura. Se contiene indicazioni valide, rendilo visibile e carica di nuovo il file."},
+      {"code": "unsupported_content", "sourceRefs": ["p:8"], "message": "Formule (1) non lette."},
+      {"code": "component_not_read", "sourceRefs": ["p:5"], "message": "Caselle di testo con contenuto (1) non lette da questa versione del lettore."},
+      {"code": "image_without_text", "sourceRefs": [], "message": "Immagini (1) non lette: possono contenere indicazioni che vanno controllate a mano."},
+      {"code": "component_not_read", "sourceRefs": [], "message": "Note a piè di pagina: contiene testo non letto da questa versione del lettore. Controlla che non riporti indicazioni valide per tutto il documento."},
+      {"code": "component_not_read", "sourceRefs": [], "message": "Intestazione: contiene testo non letto da questa versione del lettore. Controlla che non riporti indicazioni valide per tutto il documento."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.docx-reader.v1", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 4935, "pageCount": null,
+    "inventory": [
+      {"id": "docx:body", "kind": "body", "page": null, "status": "partial", "blockIds": ["p:1", "p:2", "p:3", "p:4", "p:5", "p:7", "p:8"], "issueCodes": ["tracked_changes", "hidden_text", "unsupported_content"]},
+      {"id": "docx:text-boxes", "kind": "text_box", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["component_not_read"]},
+      {"id": "docx:images", "kind": "image", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["image_without_text"]},
+      {"id": "docx:footer:1", "kind": "footer", "page": null, "status": "read", "blockIds": [], "issueCodes": []},
+      {"id": "docx:footnotes", "kind": "footnotes", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["component_not_read"]},
+      {"id": "docx:header:1", "kind": "header", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["component_not_read"]}
+    ]
+  }
+}

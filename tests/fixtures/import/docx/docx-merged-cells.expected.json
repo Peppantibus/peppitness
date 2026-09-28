@@ -1,0 +1,50 @@
+{
+  "document": {
+    "readerVersion": "peppitness.docx-reader.v1",
+    "sourceHash": "a4358984831541dd7212a026ea309d6b4c8e95d97fd627d2974405a6e4fde858",
+    "blocks": [
+      {"id": "p:1", "kind": "heading", "text": "Piano settimanale", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0", "kind": "table_row", "text": "Giorno | Esercizio | Schema", "tableId": "t:1", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:0", "kind": "table_cell", "text": "Giorno", "tableId": "t:1", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:1", "kind": "table_cell", "text": "Esercizio", "tableId": "t:1", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:2", "kind": "table_cell", "text": "Schema", "tableId": "t:1", "row": 0, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1", "kind": "table_row", "text": "Lunedì | Squat | 5 x 5", "tableId": "t:1", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:0", "kind": "table_cell", "text": "Lunedì", "tableId": "t:1", "row": 1, "column": 0, "rowSpan": 2, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:1", "kind": "table_cell", "text": "Squat", "tableId": "t:1", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:2", "kind": "table_cell", "text": "5 x 5", "tableId": "t:1", "row": 1, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2", "kind": "table_row", "text": "Affondi | 3 x 10", "tableId": "t:1", "row": 2, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:1", "kind": "table_cell", "text": "Affondi", "tableId": "t:1", "row": 2, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:2", "kind": "table_cell", "text": "3 x 10", "tableId": "t:1", "row": 2, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:3", "kind": "table_row", "text": "Martedì | Riposo attivo: camminata 30 minuti", "tableId": "t:1", "row": 3, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:3:c:0", "kind": "table_cell", "text": "Martedì", "tableId": "t:1", "row": 3, "column": 0, "rowSpan": 3, "columnSpan": 1, "parentId": "t:1:r:3", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:3:c:1", "kind": "table_cell", "text": "Riposo attivo: camminata 30 minuti", "tableId": "t:1", "row": 3, "column": 1, "rowSpan": 1, "columnSpan": 2, "parentId": "t:1:r:3", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:4", "kind": "table_row", "text": "Plank | 3 x 30″", "tableId": "t:1", "row": 4, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:4:c:1", "kind": "table_cell", "text": "Plank", "tableId": "t:1", "row": 4, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:4", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:4:c:2", "kind": "table_cell", "text": "3 x 30″", "tableId": "t:1", "row": 4, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:4", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:5", "kind": "table_row", "text": "Crunch | 3 x 15", "tableId": "t:1", "row": 5, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:5:c:1", "kind": "table_cell", "text": "Crunch", "tableId": "t:1", "row": 5, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:5", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:5:c:2", "kind": "table_cell", "text": "3 x 15", "tableId": "t:1", "row": 5, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:5", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:2", "kind": "heading", "text": "Circuito", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0", "kind": "table_row", "text": "Circuito A: ripetere 3 volte\nsenza pausa fra gli esercizi | Note", "tableId": "t:2", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0:c:0", "kind": "table_cell", "text": "Circuito A: ripetere 3 volte\nsenza pausa fra gli esercizi", "tableId": "t:2", "row": 0, "column": 0, "rowSpan": 2, "columnSpan": 2, "parentId": "t:2:r:0", "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0:c:2", "kind": "table_cell", "text": "Note", "tableId": "t:2", "row": 0, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:0", "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:1", "kind": "table_row", "text": "Recupero 60″", "tableId": "t:2", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:1:c:2", "kind": "table_cell", "text": "Recupero 60″", "tableId": "t:2", "row": 1, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:1", "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:2", "kind": "table_row", "text": "Defaticamento | 5′", "tableId": "t:2", "row": 2, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:2:c:0", "kind": "table_cell", "text": "Defaticamento", "tableId": "t:2", "row": 2, "column": 0, "rowSpan": 1, "columnSpan": 2, "parentId": "t:2:r:2", "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:2:c:2", "kind": "table_cell", "text": "5′", "tableId": "t:2", "row": 2, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:2", "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:3", "kind": "table_row", "text": "Totale: 40 minuti |", "tableId": "t:2", "row": 3, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:3:c:0", "kind": "table_cell", "text": "Totale: 40 minuti", "tableId": "t:2", "row": 3, "column": 0, "rowSpan": 1, "columnSpan": 2, "parentId": "t:2:r:3", "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:3:c:2", "kind": "table_cell", "text": "", "tableId": "t:2", "row": 3, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:3", "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null}
+    ],
+    "readingIssues": [
+      {"code": "merged_cell_text", "sourceRefs": ["t:2:r:0:c:0"], "message": "Testo in celle unite (1): accodato una sola volta alla cella che le contiene."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.docx-reader.v1", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2809, "pageCount": null,
+    "inventory": [
+      {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "t:1:r:0", "t:1:r:0:c:0", "t:1:r:0:c:1", "t:1:r:0:c:2", "t:1:r:1", "t:1:r:1:c:0", "t:1:r:1:c:1", "t:1:r:1:c:2", "t:1:r:2", "t:1:r:2:c:1", "t:1:r:2:c:2", "t:1:r:3", "t:1:r:3:c:0", "t:1:r:3:c:1", "t:1:r:4", "t:1:r:4:c:1", "t:1:r:4:c:2", "t:1:r:5", "t:1:r:5:c:1", "t:1:r:5:c:2", "p:2", "t:2:r:0", "t:2:r:0:c:0", "t:2:r:0:c:2", "t:2:r:1", "t:2:r:1:c:2", "t:2:r:2", "t:2:r:2:c:0", "t:2:r:2:c:2", "t:2:r:3", "t:2:r:3:c:0", "t:2:r:3:c:2"], "issueCodes": ["merged_cell_text"]}
+    ]
+  }
+}
