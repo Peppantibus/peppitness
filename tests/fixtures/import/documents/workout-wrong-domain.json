@@ -1,0 +1,9 @@
+{
+  "readerVersion": "synthetic-fixture/1",
+  "sourceHash": "f893fdfb82ce4e2f23c73db2c482d01dcdd09cf24b5c4f45507165e72c95dc65",
+  "blocks": [
+    { "id": "p:1", "kind": "heading", "text": "Menu settimanale", "page": 1, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "origin": "native", "bbox": [0.1, 0.05, 0.5, 0.04] },
+    { "id": "p:2", "kind": "paragraph", "text": "Colazione: latte e cereali. Pranzo: riso e verdure.", "page": 1, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "origin": "native", "bbox": [0.1, 0.12, 0.8, 0.06] }
+  ],
+  "readingIssues": []
+}

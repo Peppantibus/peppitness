@@ -1,0 +1,81 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "workout",
+  "outcome": "extracted",
+  "title": "Mesociclo 1",
+  "guidance": [],
+  "schedule": "unknown",
+  "cycle": { "startDate": null, "weeks": 4 },
+  "sessions": [{
+    "label": "A",
+    "title": "Giorno A",
+    "weekday": null,
+    "notes": [],
+    "exercises": [
+      {
+        "name": "Squat", "variant": null, "equipment": null, "measurementMode": "reps",
+        "sets": 3, "optionalSets": null, "repetitions": null, "durationSeconds": null,
+        "restSeconds": null, "rir": null, "rpe": null, "perSide": null, "loadUnit": null, "loadConvention": null,
+        "loadInstruction": null, "tempoInstruction": null, "prescriptionText": "Squat | 12/10/8", "notes": []
+      },
+      {
+        "name": "Panca piana", "variant": null, "equipment": null, "measurementMode": "reps",
+        "sets": null, "optionalSets": null, "repetitions": null, "durationSeconds": null,
+        "restSeconds": null, "rir": null, "rpe": null, "perSide": null, "loadUnit": null, "loadConvention": null,
+        "loadInstruction": null, "tempoInstruction": null, "prescriptionText": "Panca piana | AMRAP", "notes": []
+      },
+      {
+        "name": "Curl", "variant": null, "equipment": null, "measurementMode": "reps",
+        "sets": 3, "optionalSets": null, "repetitions": { "min": 10, "max": 10 }, "durationSeconds": null,
+        "restSeconds": null, "rir": null, "rpe": null, "perSide": null, "loadUnit": null, "loadConvention": null,
+        "loadInstruction": null, "tempoInstruction": null, "prescriptionText": "Superserie: Curl + French press | 3 x 10", "notes": []
+      },
+      {
+        "name": "French press", "variant": null, "equipment": null, "measurementMode": "reps",
+        "sets": 3, "optionalSets": null, "repetitions": { "min": 10, "max": 10 }, "durationSeconds": null,
+        "restSeconds": null, "rir": null, "rpe": null, "perSide": null, "loadUnit": null, "loadConvention": null,
+        "loadInstruction": null, "tempoInstruction": null, "prescriptionText": "Superserie: Curl + French press | 3 x 10", "notes": []
+      }
+    ]
+  }],
+  "complexRules": [
+    { "kind": "progression", "text": "Settimane 1-3 carico progressivo", "sourceRefs": ["p:2"], "targetPaths": [] },
+    { "kind": "deload", "text": "settimana 4 scarico al 60%", "sourceRefs": ["p:2"], "targetPaths": [] },
+    { "kind": "superset", "text": "Superserie: Curl + French press", "sourceRefs": ["t:1:r:3"], "targetPaths": ["/sessions/0/exercises/2", "/sessions/0/exercises/3"] }
+  ],
+  "evidence": [
+    { "path": "/title", "spans": [{ "blockId": "p:1", "quote": "Mesociclo 1" }] },
+    { "path": "/cycle/weeks", "spans": [{ "blockId": "p:2", "quote": "Settimane 1-3" }, { "blockId": "p:2", "quote": "settimana 4" }] },
+    { "path": "/sessions/0/label", "spans": [{ "blockId": "p:3", "quote": "Giorno A" }] },
+    { "path": "/sessions/0/title", "spans": [{ "blockId": "p:3", "quote": "Giorno A" }] },
+    { "path": "/sessions/0/exercises/0/name", "spans": [{ "blockId": "t:1:r:1", "quote": "Squat" }] },
+    { "path": "/sessions/0/exercises/0/measurementMode", "spans": [{ "blockId": "t:1:r:1", "quote": "12/10/8" }] },
+    { "path": "/sessions/0/exercises/0/sets", "spans": [{ "blockId": "t:1:r:1", "quote": "12/10/8" }] },
+    { "path": "/sessions/0/exercises/0/prescriptionText", "spans": [{ "blockId": "t:1:r:1", "quote": "Squat | 12/10/8" }] },
+    { "path": "/sessions/0/exercises/1/name", "spans": [{ "blockId": "t:1:r:2", "quote": "Panca piana" }] },
+    { "path": "/sessions/0/exercises/1/measurementMode", "spans": [{ "blockId": "t:1:r:2", "quote": "AMRAP" }] },
+    { "path": "/sessions/0/exercises/1/prescriptionText", "spans": [{ "blockId": "t:1:r:2", "quote": "Panca piana | AMRAP" }] },
+    { "path": "/sessions/0/exercises/2/name", "spans": [{ "blockId": "t:1:r:3", "quote": "Curl" }] },
+    { "path": "/sessions/0/exercises/2/measurementMode", "spans": [{ "blockId": "t:1:r:3", "quote": "3 x 10" }] },
+    { "path": "/sessions/0/exercises/2/sets", "spans": [{ "blockId": "t:1:r:3", "quote": "3 x 10" }] },
+    { "path": "/sessions/0/exercises/2/repetitions", "spans": [{ "blockId": "t:1:r:3", "quote": "3 x 10" }] },
+    { "path": "/sessions/0/exercises/2/prescriptionText", "spans": [{ "blockId": "t:1:r:3", "quote": "Superserie: Curl + French press | 3 x 10" }] },
+    { "path": "/sessions/0/exercises/3/name", "spans": [{ "blockId": "t:1:r:3", "quote": "French press" }] },
+    { "path": "/sessions/0/exercises/3/measurementMode", "spans": [{ "blockId": "t:1:r:3", "quote": "3 x 10" }] },
+    { "path": "/sessions/0/exercises/3/sets", "spans": [{ "blockId": "t:1:r:3", "quote": "3 x 10" }] },
+    { "path": "/sessions/0/exercises/3/repetitions", "spans": [{ "blockId": "t:1:r:3", "quote": "3 x 10" }] },
+    { "path": "/sessions/0/exercises/3/prescriptionText", "spans": [{ "blockId": "t:1:r:3", "quote": "Superserie: Curl + French press | 3 x 10" }] },
+    { "path": "/complexRules/0/text", "spans": [{ "blockId": "p:2", "quote": "Settimane 1-3 carico progressivo" }] },
+    { "path": "/complexRules/1/text", "spans": [{ "blockId": "p:2", "quote": "settimana 4 scarico al 60%" }] },
+    { "path": "/complexRules/2/text", "spans": [{ "blockId": "t:1:r:3", "quote": "Superserie: Curl + French press" }] }
+  ],
+  "issues": [
+    { "code": "unsupported", "path": "/sessions/0/exercises/0/repetitions", "sourceRefs": ["t:1:r:1"], "message": "Ripetizioni decrescenti 12/10/8: non è un intervallo 8–12." },
+    { "code": "unsupported", "path": "/sessions/0/exercises/1/repetitions", "sourceRefs": ["t:1:r:2"], "message": "AMRAP non ha un numero di ripetizioni prescritto." },
+    { "code": "missing", "path": "/sessions/0/exercises/1/sets", "sourceRefs": ["t:1:r:2"], "message": "Numero di serie non indicato." },
+    { "code": "unreadable", "path": "", "sourceRefs": ["p:4"], "message": "Lo schema allegato è un’immagine senza testo." }
+  ],
+  "unassigned": [
+    { "sourceRefs": ["p:4"], "text": "Per la tecnica vedi lo schema allegato.", "reason": "unsupported_structure" }
+  ]
+}

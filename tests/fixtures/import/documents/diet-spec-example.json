@@ -1,0 +1,10 @@
+{
+  "readerVersion": "synthetic-fixture/1",
+  "sourceHash": "850a7d6b234c630cee7370a72650e66f5aedb899f6e3c5e20fed8c94b01cfebc",
+  "blocks": [
+    { "id": "p:1", "kind": "heading", "text": "Menu esempio", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "origin": "native", "bbox": null },
+    { "id": "p:2", "kind": "heading", "text": "Giorno di allenamento", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "origin": "native", "bbox": null },
+    { "id": "p:3", "kind": "paragraph", "text": "Colazione: yogurt bianco 170 g. In alternativa allo yogurt: latte 200 ml.", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "origin": "native", "bbox": null }
+  ],
+  "readingIssues": []
+}

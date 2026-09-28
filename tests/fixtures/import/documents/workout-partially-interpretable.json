@@ -1,0 +1,17 @@
+{
+  "readerVersion": "synthetic-fixture/1",
+  "sourceHash": "1237dc19ff83096607ab9a8afe6c212e3b22c15e07a6b2aa95caac73f6505a0c",
+  "blocks": [
+    { "id": "p:1", "kind": "heading", "text": "Mesociclo 1", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "origin": "native", "bbox": null },
+    { "id": "p:2", "kind": "paragraph", "text": "Settimane 1-3 carico progressivo, settimana 4 scarico al 60%.", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "origin": "native", "bbox": null },
+    { "id": "p:3", "kind": "heading", "text": "Giorno A", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "origin": "native", "bbox": null },
+    { "id": "t:1:r:0", "kind": "table_row", "text": "Esercizio | Schema", "page": null, "tableId": "t:1", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:3"], "origin": "native", "bbox": null },
+    { "id": "t:1:r:1", "kind": "table_row", "text": "Squat | 12/10/8", "page": null, "tableId": "t:1", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:3"], "origin": "native", "bbox": null },
+    { "id": "t:1:r:2", "kind": "table_row", "text": "Panca piana | AMRAP", "page": null, "tableId": "t:1", "row": 2, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:3"], "origin": "native", "bbox": null },
+    { "id": "t:1:r:3", "kind": "table_row", "text": "Superserie: Curl + French press | 3 x 10", "page": null, "tableId": "t:1", "row": 3, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:3"], "origin": "native", "bbox": null },
+    { "id": "p:4", "kind": "paragraph", "text": "Per la tecnica vedi lo schema allegato.", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:3"], "origin": "native", "bbox": null }
+  ],
+  "readingIssues": [
+    { "code": "image_without_text", "sourceRefs": ["p:4"], "message": "Immagine allegata al Giorno A senza testo associato: non letta." }
+  ]
+}
