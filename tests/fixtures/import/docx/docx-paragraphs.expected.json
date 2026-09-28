@@ -1,6 +1,6 @@
 {
   "document": {
-    "readerVersion": "peppitness.docx-reader.v1",
+    "readerVersion": "peppitness.docx-reader.v2",
     "sourceHash": "79b0c656ec22315e12be594bfe9752e3efba5b1b92262c0638e21f39dbb4e235",
     "blocks": [
       {"id": "p:1", "kind": "heading", "text": "Scheda forza – blocco 1", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
@@ -26,7 +26,7 @@
     "readingIssues": []
   },
   "metadata": {
-    "readerVersion": "peppitness.docx-reader.v1", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 3238, "pageCount": null,
+    "readerVersion": "peppitness.docx-reader.v2", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 3238, "pageCount": null,
     "inventory": [
       {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "p:2", "p:4", "p:5", "p:6", "p:7", "p:8", "p:9", "p:10", "p:11", "p:12", "p:13", "p:14", "p:15", "p:16", "p:17", "p:18", "p:19", "p:20"], "issueCodes": []}
     ]

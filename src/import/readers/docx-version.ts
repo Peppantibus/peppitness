@@ -3,4 +3,4 @@
  * caricare nel bundle principale il codice di lettura. Cambia quando cambiano blocchi, ID o
  * problemi prodotti per lo stesso file.
  */
-export const DOCX_READER_VERSION = 'peppitness.docx-reader.v1'
+export const DOCX_READER_VERSION = 'peppitness.docx-reader.v2'

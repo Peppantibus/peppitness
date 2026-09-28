@@ -32,13 +32,15 @@ Negativi: chiavi extra alla radice e annidate, chiave mancante, versione sconosc
 
 Aggiungere un caso: creare i file, referenziarli nel manifest (il test rifiuta file orfani o mancanti) ed eseguire `npm test`.
 
-## DOCX del reader (task 03)
+## DOCX del reader (task 03 e 04)
 
-`docx/` contiene DOCX **binari veri** e i golden del reader `peppitness.docx-reader.v1`, letti da `tests/import-docx.test.ts` e da `scripts/import-docx-reader-browser-check.mjs`:
+`docx/` contiene DOCX **binari veri** e i golden del reader `peppitness.docx-reader.v2`, letti da `tests/import-docx.test.ts`, `tests/import-docx-coverage.test.ts` e da `scripts/import-docx-reader-browser-check.mjs`:
 
 - `docx/manifest.json` (formato 1): per caso `sourceFile`, `sha256`, `expected` (golden `*.expected.json` = `DocumentReadResult` completo, documento + inventario) oppure `expectedError` (codice `DocumentReaderError`), `summary`, `tags`. Il test rifiuta file non referenziati.
-- I binari sono prodotti in modo deterministico da `node scripts/generate-docx-fixtures.mjs` (costruttori in `scripts/lib/docx-fixtures.mjs`); il test verifica che i byte versionati coincidano con il generatore. Aperti anche con Microsoft Word (sola lettura) senza riparazioni.
+- I binari sono prodotti in modo deterministico da `node scripts/generate-docx-fixtures.mjs` (costruttori in `scripts/lib/docx-fixtures.mjs`); il test verifica che i byte versionati coincidano con il generatore. Aperti anche con Microsoft Word (sola lettura) senza riparazioni, tranne `docx-remote-links` (ostile per costruzione: non va aperto in Word, che potrebbe tentare i collegamenti) e `docx-invalid-package`.
 - I golden sono stati rivisti a mano blocco per blocco rispetto a come la fixture è costruita; il test aggiunge asserzioni scritte a mano indipendenti dai golden (parole spezzate, unioni, annidamenti, revisioni, avvisi).
-- Casi: `docx-paragraphs`, `docx-tables`, `docx-merged-cells`, `docx-nested-tables`, `docx-unread-components` (baseline di copertura per il task 04), `docx-invalid-package`. I casi ostili (zip bomb, DTD, percorsi esterni, docm, CFB…) sono costruiti in memoria nei test.
+- Casi 03: `docx-paragraphs`, `docx-tables`, `docx-merged-cells`, `docx-nested-tables`, `docx-unread-components` (baseline 03; dal task 04 è un **rifiuto** perché contiene una revisione aperta), `docx-invalid-package`.
+- Casi 04, distinti per esito (tag `coverage-complete`, `coverage-partial`, `rejection`): `docx-side-content` (copertura completa: intestazioni per sezione e prima pagina, piè di pagina condiviso con contatti minimizzati, note con richiamo NOTEREF, nota di chiusura, caselle di testo), `docx-partial-coverage` (immagine, grafico, formula, simbolo, testo nascosto, commento, nota non richiamata, intestazione non usata, parte sconosciuta, tabella irregolare e interrotta), `docx-remote-links` (collegamenti esterni ostili, mai richiesti), `docx-tracked-changes` (revisioni in corpo, tabella, nota e intestazione: rifiuto).
+- I casi ostili (zip bomb, DTD anche nelle parti laterali, percorsi esterni, docm, CFB, parti danneggiate, metadati personali…) sono costruiti in memoria nei test.
 
 Se una modifica del reader cambia blocchi, ID o problemi per lo stesso file, alzare `DOCX_READER_VERSION` (`src/import/readers/docx-version.ts`) e aggiornare i golden rivedendoli.

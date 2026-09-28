@@ -1,6 +1,6 @@
 {
   "document": {
-    "readerVersion": "peppitness.docx-reader.v1",
+    "readerVersion": "peppitness.docx-reader.v2",
     "sourceHash": "a803ff25028afa96c2ec0b8484ddc6d4925242c97bbafabe5d877b3068951ac8",
     "blocks": [
       {"id": "p:1", "kind": "heading", "text": "Tabella allenamento", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
@@ -38,7 +38,7 @@
     "readingIssues": []
   },
   "metadata": {
-    "readerVersion": "peppitness.docx-reader.v1", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2808, "pageCount": null,
+    "readerVersion": "peppitness.docx-reader.v2", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2808, "pageCount": null,
     "inventory": [
       {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "p:2", "p:3", "t:1:r:0", "t:1:r:0:c:0", "t:1:r:0:c:1", "t:1:r:0:c:2", "t:1:r:0:c:3", "t:1:r:1", "t:1:r:1:c:0", "t:1:r:1:c:1", "t:1:r:1:c:2", "t:1:r:1:c:3", "t:1:r:2", "t:1:r:2:c:0", "t:1:r:2:c:1", "t:1:r:2:c:2", "t:1:r:2:c:3", "t:1:r:3", "t:1:r:3:c:0", "t:1:r:3:c:1", "t:1:r:3:c:2", "t:1:r:3:c:3", "p:4", "p:5", "t:2:r:0", "t:2:r:0:c:0", "t:2:r:0:c:1", "t:2:r:1", "t:2:r:1:c:1", "p:6"], "issueCodes": []}
     ]

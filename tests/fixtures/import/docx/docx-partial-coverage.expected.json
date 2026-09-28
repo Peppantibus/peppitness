@@ -1,0 +1,55 @@
+{
+  "document": {
+    "readerVersion": "peppitness.docx-reader.v2",
+    "sourceHash": "7300185a5da9d19589473c325d841abe5766d69304e9cb62a95fa39802246047",
+    "blocks": [
+      {"id": "p:1", "kind": "heading", "text": "Piano alimentare", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:2", "kind": "paragraph", "text": "Colazione: yogurt 150 g", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:4", "kind": "paragraph", "text": "Andamento del peso:", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:5", "kind": "paragraph", "text": "Pranzo: riso 80 g", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0", "kind": "table_row", "text": "Pasto | Quantità", "tableId": "t:1", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:0", "kind": "table_cell", "text": "Pasto", "tableId": "t:1", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:1", "kind": "table_cell", "text": "Quantità", "tableId": "t:1", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1", "kind": "table_row", "text": "Cena | Pollo 150 g", "tableId": "t:1", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:0", "kind": "table_cell", "text": "Cena", "tableId": "t:1", "row": 1, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:1", "kind": "table_cell", "text": "Pollo 150 g", "tableId": "t:1", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2", "kind": "table_row", "text": "Spuntino |", "tableId": "t:1", "row": 2, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:0", "kind": "table_cell", "text": "Spuntino", "tableId": "t:1", "row": 2, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:2:c:1", "kind": "table_cell", "text": "", "tableId": "t:1", "row": 2, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:2", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0", "kind": "table_row", "text": "Merenda | Frutta 200 g", "tableId": "t:2", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0:c:0", "kind": "table_cell", "text": "Merenda", "tableId": "t:2", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:2:r:0:c:1", "kind": "table_cell", "text": "Frutta 200 g", "tableId": "t:2", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:0", "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:7", "kind": "paragraph", "text": "Integratore:", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:8", "kind": "paragraph", "text": "Kcal giornaliere:", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:9", "kind": "paragraph", "text": "Cena libera", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "hdr:1:p:1", "kind": "paragraph", "text": "Dieta da 1800 kcal", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "fn:1:p:1", "kind": "paragraph", "text": "Una sola volta a settimana.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "p:9", "headingIds": [], "page": null, "origin": "native", "bbox": null}
+    ],
+    "readingIssues": [
+      {"code": "hidden_text", "sourceRefs": ["p:5", "t:1:r:1:c:1"], "message": "Testo nascosto in Word (2): escluso dalla lettura. Se contiene indicazioni valide, rendilo visibile e carica di nuovo il file."},
+      {"code": "unsupported_content", "sourceRefs": ["p:8"], "message": "Formule (1) non lette."},
+      {"code": "unsupported_content", "sourceRefs": ["p:7"], "message": "Simboli di un font speciale (1) non letti."},
+      {"code": "table_structure", "sourceRefs": ["t:1:r:2:c:1"], "message": "Struttura di tabella irregolare (1): celle unite senza cella d’origine o righe di larghezza diversa dalla griglia. Controlla l’allineamento di righe e colonne."},
+      {"code": "table_continuation", "sourceRefs": ["t:2:r:0"], "message": "Tabelle consecutive con le stesse colonne (1), separate solo da paragrafi vuoti: potrebbero essere una sola tabella interrotta. Controlla che le intestazioni valgano anche per la parte successiva."},
+      {"code": "image_without_text", "sourceRefs": [], "message": "Immagini (1) non lette: possono contenere indicazioni che vanno controllate a mano."},
+      {"code": "unsupported_content", "sourceRefs": ["p:4"], "message": "Oggetti incorporati o grafici (1) non letti."},
+      {"code": "hidden_text", "sourceRefs": [], "message": "Intestazione 2: non usata da alcuna sezione del documento (non visibile in Word), esclusa dalla lettura."},
+      {"code": "hidden_text", "sourceRefs": [], "message": "Note a piè di pagina: note non richiamate nel testo (1), non visibili in Word: escluse dalla lettura."},
+      {"code": "component_not_read", "sourceRefs": ["p:2"], "message": "Commenti (1): annotazioni di revisione ai margini, non lette come contenuto del piano. Se riportano indicazioni valide, inseriscile nel testo e carica di nuovo il file."},
+      {"code": "unsupported_content", "sourceRefs": [], "message": "Parti del documento di tipo non riconosciuto con testo (1): non lette. Controlla che non contengano indicazioni del piano."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.docx-reader.v2", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 6260, "pageCount": null,
+    "inventory": [
+      {"id": "docx:body", "kind": "body", "page": null, "status": "partial", "blockIds": ["p:1", "p:2", "p:4", "p:5", "t:1:r:0", "t:1:r:0:c:0", "t:1:r:0:c:1", "t:1:r:1", "t:1:r:1:c:0", "t:1:r:1:c:1", "t:1:r:2", "t:1:r:2:c:0", "t:1:r:2:c:1", "t:2:r:0", "t:2:r:0:c:0", "t:2:r:0:c:1", "p:7", "p:8", "p:9"], "issueCodes": ["hidden_text", "unsupported_content", "table_structure", "table_continuation"]},
+      {"id": "docx:images", "kind": "image", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["image_without_text"]},
+      {"id": "docx:embedded-objects", "kind": "embedded_object", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["unsupported_content"]},
+      {"id": "docx:header:1", "kind": "header", "page": null, "status": "read", "blockIds": ["hdr:1:p:1"], "issueCodes": []},
+      {"id": "docx:header:2", "kind": "header", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["hidden_text"]},
+      {"id": "docx:footnotes", "kind": "footnotes", "page": null, "status": "partial", "blockIds": ["fn:1:p:1"], "issueCodes": ["hidden_text"]},
+      {"id": "docx:comments", "kind": "comments", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["component_not_read"]},
+      {"id": "docx:other-parts", "kind": "embedded_object", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["unsupported_content"]}
+    ]
+  }
+}

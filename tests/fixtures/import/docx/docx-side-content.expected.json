@@ -1,0 +1,58 @@
+{
+  "document": {
+    "readerVersion": "peppitness.docx-reader.v2",
+    "sourceHash": "15dac651591df6960ebd651a372b5d6f95b2f32d1a603faf7f4a6f848f4f33a0",
+    "blocks": [
+      {"id": "p:1", "kind": "heading", "text": "Programma di forza", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:2", "kind": "heading", "text": "Seduta A", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:3", "kind": "paragraph", "text": "Squat 4 x 6", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:4", "kind": "paragraph", "text": "Panca 3 x 8", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:5", "kind": "paragraph", "text": "Trazioni 3 x max", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:6", "kind": "paragraph", "text": "Vedi riquadro", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "box:1:p:1", "kind": "paragraph", "text": "Riscaldamento: 10 minuti di cyclette", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "p:6", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "box:1:p:2", "kind": "paragraph", "text": "Mobilità anche per le spalle", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "p:6", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "box:2:p:1", "kind": "paragraph", "text": "Tempo 3-1-1 su tutte le alzate", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0", "kind": "table_row", "text": "Esercizio | Recupero", "tableId": "t:1", "row": 0, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:0", "kind": "table_cell", "text": "Esercizio", "tableId": "t:1", "row": 0, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:0:c:1", "kind": "table_cell", "text": "Recupero", "tableId": "t:1", "row": 0, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:0", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1", "kind": "table_row", "text": "Stacco | 2′", "tableId": "t:1", "row": 1, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:0", "kind": "table_cell", "text": "Stacco", "tableId": "t:1", "row": 1, "column": 0, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "t:1:r:1:c:1", "kind": "table_cell", "text": "2′", "tableId": "t:1", "row": 1, "column": 1, "rowSpan": 1, "columnSpan": 1, "parentId": "t:1:r:1", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "box:3:p:1", "kind": "paragraph", "text": "Solo nelle settimane pari", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "t:1:r:1:c:1", "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:8", "kind": "paragraph", "text": "Chiusura: stretching 10 minuti", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:2"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:9", "kind": "heading", "text": "Seduta B", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:10", "kind": "paragraph", "text": "Affondi 3 x 12 per lato", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:9"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:11", "kind": "paragraph", "text": "Per dubbi scrivi a [email]", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:9"], "page": null, "origin": "native", "bbox": null},
+      {"id": "hdr:1:p:1", "kind": "paragraph", "text": "Settimane 1–4: recupero 2′ tra le serie", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "hdr:2:p:1", "kind": "paragraph", "text": "Scheda consegnata il 28/09/2026", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "hdr:3:p:1", "kind": "paragraph", "text": "Settimane 5–8: recupero 90″", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "ftr:1:p:1", "kind": "paragraph", "text": "Coach Luca Verdi · [telefono] · [email]", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "ftr:1:p:2", "kind": "paragraph", "text": "Pagina", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "fn:1:p:1", "kind": "paragraph", "text": "Ultima serie a cedimento tecnico.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "p:3", "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "fn:2:p:1", "kind": "paragraph", "text": "Se compare dolore, ridurre il carico del 10%.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "en:1:p:1", "kind": "paragraph", "text": "Ripetere il ciclo per 8 settimane, poi una settimana di scarico.", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": "p:8", "headingIds": [], "page": null, "origin": "native", "bbox": null}
+    ],
+    "readingIssues": [
+      {"code": "contact_data_removed", "sourceRefs": ["p:11"], "message": "Dati di contatto (1) sostituiti da segnaposto ([email], [telefono], [codice fiscale], [partita IVA]): non servono a interpretare il piano (regola peppitness.contact-minimization.v1)."},
+      {"code": "header_footer_scope", "sourceRefs": ["hdr:1:p:1", "p:1"], "message": "Intestazione 1: vale soltanto per: sezione 1 (dal blocco p:1) – pagine ordinarie (il documento ha 2 sezioni). Letta una sola volta."},
+      {"code": "header_footer_scope", "sourceRefs": ["hdr:2:p:1", "p:1"], "message": "Intestazione 2: vale soltanto per: sezione 1 (dal blocco p:1) – prima pagina della sezione (il documento ha 2 sezioni). Letta una sola volta."},
+      {"code": "header_footer_scope", "sourceRefs": ["hdr:3:p:1", "p:9"], "message": "Intestazione 3: vale soltanto per: sezione 2 (dal blocco p:9) – pagine ordinarie (il documento ha 2 sezioni). Letta una sola volta."},
+      {"code": "contact_data_removed", "sourceRefs": ["ftr:1:p:1"], "message": "Piè di pagina 1 — Dati di contatto (2) sostituiti da segnaposto ([email], [telefono], [codice fiscale], [partita IVA]): non servono a interpretare il piano (regola peppitness.contact-minimization.v1)."},
+      {"code": "header_footer_scope", "sourceRefs": ["ftr:1:p:1", "ftr:1:p:2", "p:1", "p:9"], "message": "Piè di pagina 1: vale soltanto per: sezione 1 (dal blocco p:1) – pagine ordinarie; sezione 2 (dal blocco p:9) – pagine ordinarie (il documento ha 2 sezioni). Letta una sola volta."},
+      {"code": "shared_note", "sourceRefs": ["fn:2:p:1", "p:4", "p:5"], "message": "Nota a piè di pagina 2 richiamata in 2 punti: letta una sola volta, vale per tutti i richiami."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.docx-reader.v2", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 6553, "pageCount": null,
+    "inventory": [
+      {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "p:2", "p:3", "p:4", "p:5", "p:6", "t:1:r:0", "t:1:r:0:c:0", "t:1:r:0:c:1", "t:1:r:1", "t:1:r:1:c:0", "t:1:r:1:c:1", "p:8", "p:9", "p:10", "p:11"], "issueCodes": ["contact_data_removed"]},
+      {"id": "docx:text-boxes", "kind": "text_box", "page": null, "status": "read", "blockIds": ["box:1:p:1", "box:1:p:2", "box:2:p:1", "box:3:p:1"], "issueCodes": []},
+      {"id": "docx:header:1", "kind": "header", "page": null, "status": "read", "blockIds": ["hdr:1:p:1"], "issueCodes": ["header_footer_scope"]},
+      {"id": "docx:header:2", "kind": "header", "page": null, "status": "read", "blockIds": ["hdr:2:p:1"], "issueCodes": ["header_footer_scope"]},
+      {"id": "docx:header:3", "kind": "header", "page": null, "status": "read", "blockIds": ["hdr:3:p:1"], "issueCodes": ["header_footer_scope"]},
+      {"id": "docx:footer:1", "kind": "footer", "page": null, "status": "read", "blockIds": ["ftr:1:p:1", "ftr:1:p:2"], "issueCodes": ["contact_data_removed", "header_footer_scope"]},
+      {"id": "docx:footnotes", "kind": "footnotes", "page": null, "status": "read", "blockIds": ["fn:1:p:1", "fn:2:p:1"], "issueCodes": ["shared_note"]},
+      {"id": "docx:endnotes", "kind": "endnotes", "page": null, "status": "read", "blockIds": ["en:1:p:1"], "issueCodes": []}
+    ]
+  }
+}

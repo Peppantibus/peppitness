@@ -21,7 +21,7 @@ const relationshipTypes: Record<string, string> = {
   'http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument': 'officeDocument',
   'http://purl.oclc.org/ooxml/officeDocument/relationships/officeDocument': 'officeDocument',
 }
-for (const kind of ['styles', 'numbering', 'header', 'footer', 'footnotes', 'endnotes', 'comments', 'image', 'hyperlink', 'oleObject', 'package', 'chart', 'diagramData', 'subDocument', 'aFChunk']) {
+for (const kind of ['styles', 'numbering', 'settings', 'header', 'footer', 'footnotes', 'endnotes', 'comments', 'image', 'hyperlink', 'oleObject', 'package', 'chart', 'diagramData', 'subDocument', 'aFChunk']) {
   relationshipTypes[`http://schemas.openxmlformats.org/officeDocument/2006/relationships/${kind}`] = kind
   relationshipTypes[`http://purl.oclc.org/ooxml/officeDocument/relationships/${kind}`] = kind
 }

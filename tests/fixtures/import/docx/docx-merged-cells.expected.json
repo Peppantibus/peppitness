@@ -1,6 +1,6 @@
 {
   "document": {
-    "readerVersion": "peppitness.docx-reader.v1",
+    "readerVersion": "peppitness.docx-reader.v2",
     "sourceHash": "a4358984831541dd7212a026ea309d6b4c8e95d97fd627d2974405a6e4fde858",
     "blocks": [
       {"id": "p:1", "kind": "heading", "text": "Piano settimanale", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
@@ -38,13 +38,14 @@
       {"id": "t:2:r:3:c:2", "kind": "table_cell", "text": "", "tableId": "t:2", "row": 3, "column": 2, "rowSpan": 1, "columnSpan": 1, "parentId": "t:2:r:3", "headingIds": ["p:2"], "page": null, "origin": "native", "bbox": null}
     ],
     "readingIssues": [
-      {"code": "merged_cell_text", "sourceRefs": ["t:2:r:0:c:0"], "message": "Testo in celle unite (1): accodato una sola volta alla cella che le contiene."}
+      {"code": "merged_cell_text", "sourceRefs": ["t:2:r:0:c:0"], "message": "Testo in celle unite (1): accodato una sola volta alla cella che le contiene."},
+      {"code": "table_structure", "sourceRefs": ["t:2:r:3:c:2"], "message": "Struttura di tabella irregolare (1): celle unite senza cella d’origine o righe di larghezza diversa dalla griglia. Controlla l’allineamento di righe e colonne."}
     ]
   },
   "metadata": {
-    "readerVersion": "peppitness.docx-reader.v1", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2809, "pageCount": null,
+    "readerVersion": "peppitness.docx-reader.v2", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 2809, "pageCount": null,
     "inventory": [
-      {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "t:1:r:0", "t:1:r:0:c:0", "t:1:r:0:c:1", "t:1:r:0:c:2", "t:1:r:1", "t:1:r:1:c:0", "t:1:r:1:c:1", "t:1:r:1:c:2", "t:1:r:2", "t:1:r:2:c:1", "t:1:r:2:c:2", "t:1:r:3", "t:1:r:3:c:0", "t:1:r:3:c:1", "t:1:r:4", "t:1:r:4:c:1", "t:1:r:4:c:2", "t:1:r:5", "t:1:r:5:c:1", "t:1:r:5:c:2", "p:2", "t:2:r:0", "t:2:r:0:c:0", "t:2:r:0:c:2", "t:2:r:1", "t:2:r:1:c:2", "t:2:r:2", "t:2:r:2:c:0", "t:2:r:2:c:2", "t:2:r:3", "t:2:r:3:c:0", "t:2:r:3:c:2"], "issueCodes": ["merged_cell_text"]}
+      {"id": "docx:body", "kind": "body", "page": null, "status": "read", "blockIds": ["p:1", "t:1:r:0", "t:1:r:0:c:0", "t:1:r:0:c:1", "t:1:r:0:c:2", "t:1:r:1", "t:1:r:1:c:0", "t:1:r:1:c:1", "t:1:r:1:c:2", "t:1:r:2", "t:1:r:2:c:1", "t:1:r:2:c:2", "t:1:r:3", "t:1:r:3:c:0", "t:1:r:3:c:1", "t:1:r:4", "t:1:r:4:c:1", "t:1:r:4:c:2", "t:1:r:5", "t:1:r:5:c:1", "t:1:r:5:c:2", "p:2", "t:2:r:0", "t:2:r:0:c:0", "t:2:r:0:c:2", "t:2:r:1", "t:2:r:1:c:2", "t:2:r:2", "t:2:r:2:c:0", "t:2:r:2:c:2", "t:2:r:3", "t:2:r:3:c:0", "t:2:r:3:c:2"], "issueCodes": ["merged_cell_text", "table_structure"]}
     ]
   }
 }

@@ -1,0 +1,25 @@
+{
+  "document": {
+    "readerVersion": "peppitness.docx-reader.v2",
+    "sourceHash": "569e3e37b6ad590f2a777df5f00e3691b741a1092ea829aab043b9b211c10227",
+    "blocks": [
+      {"id": "p:1", "kind": "heading", "text": "Scheda con collegamenti esterni", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": [], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:2", "kind": "paragraph", "text": "Tecnica: guarda il video", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:3", "kind": "paragraph", "text": "Schema:", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null},
+      {"id": "p:5", "kind": "paragraph", "text": "Squat 5 x 5", "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "page": null, "origin": "native", "bbox": null}
+    ],
+    "readingIssues": [
+      {"code": "unsupported_content", "sourceRefs": [], "message": "Contenuto incorporato da un altro file (1) non letto."},
+      {"code": "image_without_text", "sourceRefs": ["p:3"], "message": "Immagini collegate all’esterno (1) mai scaricate né lette."},
+      {"code": "component_not_read", "sourceRefs": [], "message": "Intestazione 1: collegata a un file esterno, mai scaricata né letta."}
+    ]
+  },
+  "metadata": {
+    "readerVersion": "peppitness.docx-reader.v2", "format": "docx", "textNormalizationVersion": "peppitness.text-normalization.v1", "byteLength": 3627, "pageCount": null,
+    "inventory": [
+      {"id": "docx:body", "kind": "body", "page": null, "status": "partial", "blockIds": ["p:1", "p:2", "p:3", "p:5"], "issueCodes": ["unsupported_content"]},
+      {"id": "docx:images", "kind": "image", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["image_without_text"]},
+      {"id": "docx:header:1", "kind": "header", "page": null, "status": "not_read", "blockIds": [], "issueCodes": ["component_not_read"]}
+    ]
+  }
+}

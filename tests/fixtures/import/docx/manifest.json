@@ -1,7 +1,7 @@
 {
   "formatVersion": 1,
-  "description": "DOCX sintetici del reader (task 03), generati da scripts/generate-docx-fixtures.mjs. Golden rivisti a mano blocco per blocco rispetto alla costruzione della fixture.",
-  "readerVersion": "peppitness.docx-reader.v1",
+  "description": "DOCX sintetici del reader (task 03 e 04), generati da scripts/generate-docx-fixtures.mjs. Golden rivisti a mano blocco per blocco rispetto alla costruzione della fixture.",
+  "readerVersion": "peppitness.docx-reader.v2",
   "cases": [
     {
       "id": "docx-paragraphs",
@@ -43,10 +43,10 @@
       "id": "docx-unread-components",
       "sourceFile": "docx-unread-components.docx",
       "sha256": "f72c0dec69098d4da0634aab53230380dff5b27fc3a17fb4e13c1ac8e72e3eba",
-      "expected": "docx-unread-components.expected.json",
-      "expectedError": null,
-      "summary": "Baseline di copertura: revisione aperta (6→8), testo nascosto diretto e da stile, casella di testo, immagine, formula, intestazione e nota con testo, piè di pagina vuoto.",
-      "tags": ["coverage", "tracked-changes", "hidden-text", "text-box", "image", "header", "footnotes"]
+      "expected": null,
+      "expectedError": "unsupported",
+      "summary": "Baseline 03 dei componenti non letti con una revisione aperta (6→8): dal task 04 le revisioni aperte rifiutano il documento con diagnostica per parte, mai «4 x 68».",
+      "tags": ["rejection", "tracked-changes", "hidden-text", "text-box", "image", "header", "footnotes"]
     },
     {
       "id": "docx-invalid-package",
@@ -56,6 +56,42 @@
       "expectedError": "corrupt",
       "summary": "ZIP con parti Word ma senza [Content_Types].xml: non è un pacchetto OOXML.",
       "tags": ["invalid-package"]
+    },
+    {
+      "id": "docx-side-content",
+      "sourceFile": "docx-side-content.docx",
+      "sha256": "15dac651591df6960ebd651a372b5d6f95b2f32d1a603faf7f4a6f848f4f33a0",
+      "expected": "docx-side-content.expected.json",
+      "expectedError": null,
+      "summary": "Copertura completa: due sezioni con intestazioni diverse e prima pagina, piè di pagina condiviso con contatti minimizzati e campo PAGE non letto, note (una richiamata due volte), nota di chiusura, caselle di testo nel testo, senza ancoraggio e in cella.",
+      "tags": ["coverage-complete", "header", "footer", "sections", "footnotes", "endnotes", "text-box", "contacts"]
+    },
+    {
+      "id": "docx-partial-coverage",
+      "sourceFile": "docx-partial-coverage.docx",
+      "sha256": "7300185a5da9d19589473c325d841abe5766d69304e9cb62a95fa39802246047",
+      "expected": "docx-partial-coverage.expected.json",
+      "expectedError": null,
+      "summary": "Copertura parziale: immagine interna con testo alternativo, grafico, formula, simbolo, testo nascosto anche in cella, commento, nota non richiamata, intestazione non usata, parte non riconosciuta con testo, tabella irregolare e interrotta.",
+      "tags": ["coverage-partial", "image", "chart", "hidden-text", "comments", "unknown-part", "table-structure"]
+    },
+    {
+      "id": "docx-remote-links",
+      "sourceFile": "docx-remote-links.docx",
+      "sha256": "569e3e37b6ad590f2a777df5f00e3691b741a1092ea829aab043b9b211c10227",
+      "expected": "docx-remote-links.expected.json",
+      "expectedError": null,
+      "summary": "Collegamenti remoti ostili: intestazione, immagine e sottodocumento esterni, collegamento ipertestuale e modello allegato; nulla viene richiesto.",
+      "tags": ["coverage-partial", "external", "hostile"]
+    },
+    {
+      "id": "docx-tracked-changes",
+      "sourceFile": "docx-tracked-changes.docx",
+      "sha256": "dec9a5c9e83340f0ae5558e6098160a38ca352a3e7b650027f00263d36d602d2",
+      "expected": null,
+      "expectedError": "unsupported",
+      "summary": "Revisioni aperte nel corpo, in una riga di tabella, in una nota e in un’intestazione: rifiuto con conteggio per parte.",
+      "tags": ["rejection", "tracked-changes"]
     }
   ]
 }

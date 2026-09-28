@@ -148,7 +148,8 @@ test('celle unite: una sola cella d’origine, span corretti fino all’ultima r
   for (const needle of ['Lunedì', 'Martedì', 'Riposo attivo', 'senza pausa']) {
     assert.equal(cells(result, needle === 'senza pausa' ? 't:2' : 't:1').filter(cell => cell.text.includes(needle)).length, 1, `${needle} in una sola cella`)
   }
-  assert.deepEqual(result.document.readingIssues.map(issue => [issue.code, issue.sourceRefs]), [['merged_cell_text', ['t:2:r:0:c:0']]])
+  // Dal task 04 anche la continuazione verticale senza cella d'origine è segnalata.
+  assert.deepEqual(result.document.readingIssues.map(issue => [issue.code, issue.sourceRefs]), [['merged_cell_text', ['t:2:r:0:c:0']], ['table_structure', ['t:2:r:3:c:2']]])
 })
 
 test('tabelle annidate: identità e parentela proprie, nessun testo contato due volte', async () => {
@@ -165,20 +166,9 @@ test('tabelle annidate: identità e parentela proprie, nessun testo contato due 
   assert.ok(order.indexOf('p:2') < order.indexOf('t:1:r:0') && order.indexOf('t:4:r:0:c:1') < order.indexOf('p:3'))
 })
 
-test('componenti non letti e revisioni: avvisi espliciti, lettura non presentata come completa', async () => {
-  const result = await readFixture('docx-unread-components')
-  const blocks = byId(result)
-  assert.equal(blocks.get('p:2')?.text, 'Squat 4 x 8', 'eliminato escluso, inserito incluso: mai «4 x 68»')
-  assert.ok(!result.document.blocks.some(block => /68|nota interna|da togliere|Riscaldamento extra|Tutti i giorni|Ridurre il carico|x\+1/.test(block.text)))
-  const codes = result.document.readingIssues.map(issue => issue.code)
-  for (const code of ['tracked_changes', 'hidden_text', 'unsupported_content', 'component_not_read', 'image_without_text']) assert.ok(codes.includes(code), code)
-  assert.deepEqual(result.document.readingIssues.find(issue => issue.code === 'hidden_text')?.sourceRefs, ['p:3', 'p:4'], 'nascosto diretto e da stile di carattere')
-  const status = Object.fromEntries(result.metadata.inventory.map(entry => [entry.id, entry.status]))
-  assert.deepEqual(status, {
-    'docx:body': 'partial', 'docx:text-boxes': 'not_read', 'docx:images': 'not_read',
-    'docx:footer:1': 'read', 'docx:footnotes': 'not_read', 'docx:header:1': 'not_read',
-  })
-  assert.ok(result.metadata.inventory.some(entry => entry.status !== 'read'), 'lettura parziale riconoscibile')
+test('componenti non letti e revisioni: dal task 04 la revisione aperta rifiuta il documento, mai «4 x 68»', async () => {
+  // I componenti di questa fixture sono ora letti o segnalati: vedi tests/import-docx-coverage.test.ts.
+  await rejects(readFixture('docx-unread-components'), 'unsupported', /revisioni non accettate \(2 — corpo del documento: 2\).*Accetta tutte/)
 })
 
 test('il pacchetto senza content types è rifiutato come corrotto', async () => {
@@ -312,12 +302,9 @@ test('tabella con ultima riga unita e celle vuote: coordinate valide', async () 
   assert.equal(blocks.get('t:1:r:0')?.text, 'A |')
 })
 
-test('testo eliminato fuori da w:del e spostamenti: mai concatenati al testo corrente', async () => {
+test('testo eliminato fuori da w:del e spostamenti: rifiuto, mai testo concatenato né documento parziale', async () => {
   const body = p([r('Panca 3 x '), r({ xml: '<w:delText>12</w:delText>' }), '<w:moveFrom w:id="3" w:author="A">', r('Trazioni '), '</w:moveFrom>', r('10')])
-  const result = await read(buildDocx({ body }))
-  assert.equal(result.document.blocks[0]!.text, 'Panca 3 x 10')
-  assert.deepEqual(result.document.readingIssues.map(issue => [issue.code, issue.sourceRefs]), [['tracked_changes', ['p:1']]])
-  assert.equal(result.metadata.inventory[0]!.status, 'partial')
+  await rejects(read(buildDocx({ body })), 'unsupported', /revisioni non accettate \(2 — corpo del documento: 2\)/)
 })
 
 // ---------------------------------------------------------------------------------------------

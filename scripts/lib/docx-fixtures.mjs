@@ -164,8 +164,9 @@ export const numberingXml = `<?xml version="1.0" encoding="UTF-8" standalone="ye
 <w:num w:numId="2"><w:abstractNumId w:val="1"/></w:num>
 </w:numbering>`
 
+// `type` è il nome breve di un tipo officeDocument oppure un URI completo (tipi non standard).
 const relationship = (id, type, target, external = false) =>
-  `<Relationship Id="${id}" Type="${REL}/${type}" Target="${escapeXml(target)}"${external ? ' TargetMode="External"' : ''}/>`
+  `<Relationship Id="${id}" Type="${type.includes('://') ? type : `${REL}/${type}`}" Target="${escapeXml(target)}"${external ? ' TargetMode="External"' : ''}/>`
 export const relationshipsXml = items => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${items.map(item => relationship(...item)).join('')}</Relationships>`
 
 /**
@@ -191,7 +192,7 @@ export function buildDocx({ body, sectionXml, mainPart = 'word/document.xml', ma
 
 // --- Fixture del corpus ----------------------------------------------------------------------
 
-const field = (instruction, result) => [
+export const field = (instruction, result) => [
   '<w:r><w:fldChar w:fldCharType="begin"/></w:r>',
   `<w:r><w:instrText xml:space="preserve"> ${escapeXml(instruction)} </w:instrText></w:r>`,
   '<w:r><w:fldChar w:fldCharType="separate"/></w:r>',
@@ -309,8 +310,10 @@ function invalidPackageFixture() {
 // PNG 1×1 trasparente.
 export const tinyPng = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='), char => char.charCodeAt(0))
 
-const textBox = text => `<mc:AlternateContent><mc:Choice Requires="wps"><w:drawing><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="1" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="column"><wp:posOffset>0</wp:posOffset></wp:positionH><wp:positionV relativeFrom="paragraph"><wp:posOffset>0</wp:posOffset></wp:positionV><wp:extent cx="1800000" cy="600000"/><wp:wrapSquare wrapText="bothSides"/><wp:docPr id="1" name="Casella di testo 1"/><wp:cNvGraphicFramePr/><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1800000" cy="600000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></wps:spPr><wps:txbx><w:txbxContent>${para(text)}</w:txbxContent></wps:txbx><wps:bodyPr/></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice><mc:Fallback><w:pict><v:shape style="width:140pt;height:47pt"><v:textbox><w:txbxContent>${para(text)}</w:txbxContent></v:textbox></v:shape></w:pict></mc:Fallback></mc:AlternateContent>`
-const inlineImage = relationshipId => `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="95250" cy="95250"/><wp:docPr id="2" name="Immagine 2"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="immagine.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr/></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`
+/** Casella di testo moderna (wps) con la stessa casella in VML come Fallback: il reader ne legge una sola. */
+export const textBoxXml = (content, id = 1) => `<mc:AlternateContent><mc:Choice Requires="wps"><w:drawing><wp:anchor distT="0" distB="0" distL="0" distR="0" simplePos="0" relativeHeight="${id}" behindDoc="0" locked="0" layoutInCell="1" allowOverlap="1"><wp:simplePos x="0" y="0"/><wp:positionH relativeFrom="column"><wp:posOffset>0</wp:posOffset></wp:positionH><wp:positionV relativeFrom="paragraph"><wp:posOffset>0</wp:posOffset></wp:positionV><wp:extent cx="1800000" cy="600000"/><wp:wrapSquare wrapText="bothSides"/><wp:docPr id="${id}" name="Casella di testo ${id}"/><wp:cNvGraphicFramePr/><a:graphic><a:graphicData uri="http://schemas.microsoft.com/office/word/2010/wordprocessingShape"><wps:wsp><wps:cNvSpPr txBox="1"/><wps:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="1800000" cy="600000"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></wps:spPr><wps:txbx><w:txbxContent>${content}</w:txbxContent></wps:txbx><wps:bodyPr/></wps:wsp></a:graphicData></a:graphic></wp:anchor></w:drawing></mc:Choice><mc:Fallback><w:pict><v:shape style="width:140pt;height:47pt"><v:textbox><w:txbxContent>${content}</w:txbxContent></v:textbox></v:shape></w:pict></mc:Fallback></mc:AlternateContent>`
+export const textBox = (text, id = 1) => textBoxXml(para(text), id)
+const inlineImage = (relationshipId, id = 2, description = '') => `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="95250" cy="95250"/><wp:docPr id="${id}" name="Immagine ${id}"${description ? ` descr="${escapeXml(description)}"` : ''}/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="immagine.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="${relationshipId}"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr/></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing>`
 
 /** Componenti che questa versione non legge: devono produrre avvisi, mai sparire. */
 function unreadComponentsFixture() {
@@ -351,6 +354,182 @@ function unreadComponentsFixture() {
   })
 }
 
+// --- Copertura del task 04: parti laterali, note, caselle, collegamenti, revisioni -------------
+
+export const CONTENT_TYPES = {
+  header: 'application/vnd.openxmlformats-officedocument.wordprocessingml.header+xml',
+  footer: 'application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml',
+  footnotes: 'application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml',
+  endnotes: 'application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml',
+  comments: 'application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml',
+  settings: 'application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml',
+  chart: 'application/vnd.openxmlformats-officedocument.drawingml.chart+xml',
+}
+/** Parte WordprocessingML con radice `w:<root>` e gli stessi namespace del documento. */
+export const sidePart = (root, content) => `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<w:${root} ${namespaces}>${content}</w:${root}>`
+export const footnoteRef = id => r({ xml: `<w:footnoteReference w:id="${id}"/>` })
+export const endnoteRef = id => r({ xml: `<w:endnoteReference w:id="${id}"/>` })
+/** Nota con il segno di richiamo iniziale, come la scrive Word. */
+export const note = (kind, id, text) => `<w:${kind} w:id="${id}">${p([r({ xml: `<w:${kind}Ref/>` }), r(` ${text}`)])}</w:${kind}>`
+/** Separatori che Word mette sempre in testa alle note: senza testo, mai letti. */
+export const noteSeparators = kind => [
+  `<w:${kind} w:type="separator" w:id="-1">${p(r({ xml: '<w:separator/>' }))}</w:${kind}>`,
+  `<w:${kind} w:type="continuationSeparator" w:id="0">${p(r({ xml: '<w:continuationSeparator/>' }))}</w:${kind}>`,
+].join('')
+export const notesPart = (kind, notes) => sidePart(`${kind}s`, noteSeparators(kind) + notes.join(''))
+export const comment = (id, text) => `<w:comment w:id="${id}" w:author="Revisore Esempio" w:date="2026-09-01T00:00:00Z" w:initials="RE">${p([r({ xml: '<w:annotationRef/>' }), r(text)])}</w:comment>`
+/** Testo commentato: intervallo e richiamo del commento. */
+/** Riferimento incrociato di Word a una nota: campo NOTEREF con il numero calcolato come risultato. */
+export const noteReference = (bookmark, number) => field(`NOTEREF ${bookmark} \\f \\h`, number)
+export const commented = (id, runs) => [`<w:commentRangeStart w:id="${id}"/>`, ...runs, `<w:commentRangeEnd w:id="${id}"/>`, r({ xml: `<w:commentReference w:id="${id}"/>` })]
+const sectionProperties = (references, extra = '') => `<w:sectPr>${references}<w:pgSz w:w="11906" w:h="16838"/>${extra}</w:sectPr>`
+const reference = (kind, type, id) => `<w:${kind}Reference w:type="${type}" r:id="${id}"/>`
+const chartInline = relationshipId => `<w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="1800000" cy="1200000"/><wp:docPr id="20" name="Grafico 20"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/chart"><c:chart xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" r:id="${relationshipId}"/></a:graphicData></a:graphic></wp:inline></w:drawing>`
+const chartXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<c:chartSpace xmlns:c="http://schemas.openxmlformats.org/drawingml/2006/chart" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:r="${R}"><c:chart><c:title><c:tx><c:rich><a:bodyPr/><a:p><a:r><a:t>Peso settimanale</a:t></a:r></a:p></c:rich></c:tx><c:overlay val="0"/></c:title><c:plotArea><c:layout/><c:lineChart><c:grouping val="standard"/><c:ser><c:idx val="0"/><c:order val="0"/><c:val><c:numLit><c:ptCount val="2"/><c:pt idx="0"><c:v>80</c:v></c:pt><c:pt idx="1"><c:v>79</c:v></c:pt></c:numLit></c:val></c:ser><c:axId val="1"/><c:axId val="2"/></c:lineChart><c:catAx><c:axId val="1"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="b"/><c:crossAx val="2"/></c:catAx><c:valAx><c:axId val="2"/><c:scaling><c:orientation val="minMax"/></c:scaling><c:delete val="0"/><c:axPos val="l"/><c:crossAx val="1"/></c:valAx></c:plotArea></c:chart></c:chartSpace>`
+
+/**
+ * Copertura completa: due sezioni con intestazioni diverse e prima pagina, piè di pagina condiviso
+ * con contatti, note a piè di pagina (una richiamata due volte), nota di chiusura, caselle di testo
+ * nel testo, senza testo d'ancoraggio e in una cella. Tutto letto; restano solo avvisi informativi.
+ */
+function sideContentFixture() {
+  const sectionOne = sectionProperties(reference('header', 'default', 'rIdHeaderA') + reference('header', 'first', 'rIdHeaderFirst') + reference('footer', 'default', 'rIdFooter'), '<w:titlePg/>')
+  return buildDocx({
+    sectionXml: reference('header', 'default', 'rIdHeaderB'),
+    documentRels: [
+      ['rIdHeaderA', 'header', 'header1.xml'],
+      ['rIdHeaderFirst', 'header', 'header2.xml'],
+      ['rIdHeaderB', 'header', 'header3.xml'],
+      ['rIdFooter', 'footer', 'footer1.xml'],
+      ['rIdFootnotes', 'footnotes', 'footnotes.xml'],
+      ['rIdEndnotes', 'endnotes', 'endnotes.xml'],
+    ],
+    parts: [
+      { name: 'word/header1.xml', contentType: CONTENT_TYPES.header, data: sidePart('hdr', para('Settimane 1–4: recupero 2′ tra le serie')) },
+      { name: 'word/header2.xml', contentType: CONTENT_TYPES.header, data: sidePart('hdr', para('Scheda consegnata il 28/09/2026')) },
+      { name: 'word/header3.xml', contentType: CONTENT_TYPES.header, data: sidePart('hdr', para('Settimane 5–8: recupero 90″')) },
+      { name: 'word/footer1.xml', contentType: CONTENT_TYPES.footer, data: sidePart('ftr', para('Coach Luca Verdi · tel. 333 1234567 · luca.verdi@example.invalid') + p([r('Pagina '), field('PAGE', '1')])) },
+      { name: 'word/footnotes.xml', contentType: CONTENT_TYPES.footnotes, data: notesPart('footnote', [note('footnote', 1, 'Ultima serie a cedimento tecnico.'), note('footnote', 2, 'Se compare dolore, ridurre il carico del 10%.')]) },
+      { name: 'word/endnotes.xml', contentType: CONTENT_TYPES.endnotes, data: notesPart('endnote', [note('endnote', 1, 'Ripetere il ciclo per 8 settimane, poi una settimana di scarico.')]) },
+    ],
+    body: [
+      para('Programma di forza', { style: 'Titolo' }),
+      para('Seduta A', { style: 'Titolo1' }),
+      p([r('Squat 4 x 6'), footnoteRef(1)]),
+      // Secondo richiamo della nota 2 come lo crea Word: riferimento incrociato (NOTEREF) al segnalibro sul richiamo.
+      p([r('Panca 3 x 8'), '<w:bookmarkStart w:id="10" w:name="_Ref200000002"/>', footnoteRef(2), '<w:bookmarkEnd w:id="10"/>']),
+      p([r('Trazioni 3 x max'), noteReference('_Ref200000002', '2')]),
+      p([r('Vedi riquadro'), `<w:r>${textBoxXml(para('Riscaldamento: 10 minuti di cyclette') + para('Mobilità anche per le spalle'), 1)}</w:r>`]),
+      p(`<w:r>${textBox('Tempo 3-1-1 su tutte le alzate', 2)}</w:r>`),
+      tbl(2, [
+        tr([tc('Esercizio'), tc('Recupero')], { header: true }),
+        tr([tc('Stacco'), tc([p([r('2′'), `<w:r>${textBox('Solo nelle settimane pari', 3)}</w:r>`])])]),
+      ]),
+      p([r('Chiusura: stretching 10 minuti'), endnoteRef(1)], { markXml: sectionOne }),
+      para('Seduta B', { style: 'Titolo1' }),
+      para('Affondi 3 x 12 per lato'),
+      para('Per dubbi scrivi a luca.verdi@example.invalid'),
+    ].join(''),
+  })
+}
+
+/**
+ * Copertura parziale: immagine interna con testo alternativo, grafico, formula, simbolo, testo
+ * nascosto (anche in cella), commento, nota mai richiamata, intestazione non usata, parte non
+ * riconosciuta con testo, tabella irregolare e tabella interrotta. Letto ciò che si può, il resto
+ * è segnalato.
+ */
+function partialCoverageFixture() {
+  return buildDocx({
+    sectionXml: reference('header', 'default', 'rIdHeaderUsed'),
+    documentRels: [
+      ['rIdHeaderUsed', 'header', 'header1.xml'],
+      ['rIdHeaderOld', 'header', 'header2.xml'],
+      ['rIdFootnotes', 'footnotes', 'footnotes.xml'],
+      ['rIdComments', 'comments', 'comments.xml'],
+      ['rIdImage1', 'image', 'media/image1.png'],
+      ['rIdChart', 'chart', 'charts/chart1.xml'],
+      ['rIdCustom', 'http://example.invalid/relationships/coach-notes', 'custom/istruzioni.xml'],
+    ],
+    parts: [
+      { name: 'word/header1.xml', contentType: CONTENT_TYPES.header, data: sidePart('hdr', para('Dieta da 1800 kcal')) },
+      { name: 'word/header2.xml', contentType: CONTENT_TYPES.header, data: sidePart('hdr', para('Bozza precedente: 2200 kcal')) },
+      { name: 'word/footnotes.xml', contentType: CONTENT_TYPES.footnotes, data: notesPart('footnote', [note('footnote', 1, 'Una sola volta a settimana.'), note('footnote', 2, 'Vecchia nota: due pasti liberi.')]) },
+      { name: 'word/comments.xml', contentType: CONTENT_TYPES.comments, data: sidePart('comments', comment(0, 'Chiedere se va bene lo yogurt greco')) },
+      { name: 'word/media/image1.png', data: tinyPng, method: 0 },
+      { name: 'word/charts/chart1.xml', contentType: CONTENT_TYPES.chart, data: chartXml },
+      { name: 'word/custom/istruzioni.xml', data: `<?xml version="1.0" encoding="UTF-8"?>\n<note xmlns="http://example.invalid/coach-notes" xmlns:w="${W}"><w:p><w:r><w:t>Aggiungere 20 g di proteine a cena</w:t></w:r></w:p></note>` },
+    ],
+    body: [
+      para('Piano alimentare', { style: 'Titolo1' }),
+      p(commented(0, [r('Colazione: yogurt 150 g')])),
+      p(`<w:r>${inlineImage('rIdImage1', 2, 'Tabella delle porzioni')}</w:r>`),
+      p([r('Andamento del peso: '), `<w:r>${chartInline('rIdChart')}</w:r>`]),
+      p([r('Pranzo: riso 80 g'), r(' solo nei giorni di allenamento', { hidden: true })]),
+      tbl(2, [
+        tr([tc('Pasto'), tc('Quantità')], { header: true }),
+        tr([tc('Cena'), tc([p([r('Pollo 150 g'), r(' oppure tacchino', { hidden: true })])])]),
+        tr([tc('Spuntino'), tc('', { vMerge: 'continue' })]),
+      ]),
+      p(''),
+      tbl(2, [tr([tc('Merenda'), tc('Frutta 200 g')])]),
+      p([r('Integratore: '), r({ xml: '<w:sym w:font="Wingdings" w:char="F0FC"/>' })]),
+      p([r('Kcal giornaliere: '), '<m:oMath><m:r><m:t>1800±100</m:t></m:r></m:oMath>']),
+      p([r('Cena libera'), footnoteRef(1)]),
+    ].join(''),
+  })
+}
+
+/**
+ * Collegamenti remoti ostili: intestazione, immagine e sottodocumento esterni, collegamento
+ * ipertestuale e modello allegato. Nessuna risorsa viene mai richiesta; le parti esterne sono
+ * segnalate come non lette.
+ */
+function remoteLinksFixture() {
+  return buildDocx({
+    sectionXml: reference('header', 'default', 'rIdRemoteHeader'),
+    documentRels: [
+      ['rIdRemoteHeader', 'header', 'https://tracker.example.invalid/header.xml', true],
+      ['rIdRemoteImage', 'image', 'https://tracker.example.invalid/pixel.png', true],
+      ['rIdRemoteDoc', 'subDocument', 'https://tracker.example.invalid/parte2.docx', true],
+      ['rIdLink', 'hyperlink', 'https://tracker.example.invalid/video', true],
+      ['rIdSettings', 'settings', 'settings.xml'],
+    ],
+    parts: [
+      { name: 'word/settings.xml', contentType: CONTENT_TYPES.settings, data: sidePart('settings', '<w:attachedTemplate r:id="rIdTemplate"/>') },
+      { name: 'word/_rels/settings.xml.rels', data: relationshipsXml([['rIdTemplate', 'attachedTemplate', 'https://tracker.example.invalid/modello.dotm', true]]) },
+    ],
+    body: [
+      para('Scheda con collegamenti esterni', { style: 'Titolo1' }),
+      p([r('Tecnica: '), '<w:hyperlink r:id="rIdLink" w:history="1">', r('guarda il video'), '</w:hyperlink>']),
+      p([r('Schema: '), `<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="95250" cy="95250"/><wp:docPr id="3" name="Immagine collegata"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="pixel.png"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:link="rIdRemoteImage"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr/></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>`]),
+      p('<w:subDoc r:id="rIdRemoteDoc"/>'),
+      para('Squat 5 x 5'),
+    ].join(''),
+  })
+}
+
+/** Revisioni aperte nel corpo, in una tabella, in una nota e in un'intestazione: rifiuto. */
+function trackedChangesFixture() {
+  const change = (tag, id, content) => `<w:${tag} w:id="${id}" w:author="Autore" w:date="2026-09-01T00:00:00Z">${content}</w:${tag}>`
+  return buildDocx({
+    sectionXml: reference('header', 'default', 'rIdHeader'),
+    documentRels: [['rIdHeader', 'header', 'header1.xml'], ['rIdFootnotes', 'footnotes', 'footnotes.xml']],
+    parts: [
+      { name: 'word/header1.xml', contentType: CONTENT_TYPES.header, data: sidePart('hdr', p([r('Recupero '), change('ins', 10, r('2′')), change('del', 11, '<w:r><w:delText>90″</w:delText></w:r>')])) },
+      { name: 'word/footnotes.xml', contentType: CONTENT_TYPES.footnotes, data: notesPart('footnote', [`<w:footnote w:id="1">${p([r({ xml: '<w:footnoteRef/>' }), r(' Carico '), change('del', 12, '<w:r><w:delText>80%</w:delText></w:r>'), change('ins', 13, r('75%'))])}</w:footnote>`]) },
+    ],
+    body: [
+      para('Scheda in revisione', { style: 'Titolo1' }),
+      p([r('Squat 4 x '), change('del', 1, '<w:r><w:delText>6</w:delText></w:r>'), change('ins', 2, r('8')), footnoteRef(1)]),
+      tbl(2, [
+        tr([tc('Panca'), tc('3 x 10')]),
+        `<w:tr><w:trPr>${change('ins', 3, '')}</w:trPr>${tc('Croci')}${tc('3 x 12')}</w:tr>`,
+      ]),
+    ].join(''),
+  })
+}
+
 export const docxFixtureBuilders = {
   'docx-paragraphs': paragraphsFixture,
   'docx-tables': tablesFixture,
@@ -358,4 +537,8 @@ export const docxFixtureBuilders = {
   'docx-nested-tables': nestedTablesFixture,
   'docx-unread-components': unreadComponentsFixture,
   'docx-invalid-package': invalidPackageFixture,
+  'docx-side-content': sideContentFixture,
+  'docx-partial-coverage': partialCoverageFixture,
+  'docx-remote-links': remoteLinksFixture,
+  'docx-tracked-changes': trackedChangesFixture,
 }
