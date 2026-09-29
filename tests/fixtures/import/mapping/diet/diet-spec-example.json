@@ -1,0 +1,15 @@
+{
+  "id": "80000000-0000-4000-8000-000000000002",
+  "name": "Menu esempio",
+  "document": {
+    "guidance": "",
+    "days": [{
+      "id": "80000000-0000-4000-8000-000000000011", "name": "Giorno di allenamento", "dayType": "training", "note": "",
+      "meals": [{
+        "id": "80000000-0000-4000-8000-000000000012", "name": "Colazione", "time": "",
+        "foods": [{ "name": "yogurt bianco", "quantity": "170 g" }],
+        "alternatives": ["In alternativa allo yogurt: latte 200 ml."], "additions": [], "note": ""
+      }]
+    }]
+  }
+}

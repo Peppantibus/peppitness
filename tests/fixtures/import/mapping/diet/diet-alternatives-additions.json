@@ -1,0 +1,27 @@
+{
+  "id": "80000000-0000-4000-8000-000000000002",
+  "name": "Piano alimentare",
+  "document": {
+    "guidance": "[Aggiunta — intero piano] Nei giorni di allenamento lungo aggiungere 20 g di frutta secca a scelta.",
+    "days": [{
+      "id": "80000000-0000-4000-8000-000000000011", "name": "Giorno 1", "dayType": "any", "note": "",
+      "meals": [
+        {
+          "id": "80000000-0000-4000-8000-000000000012", "name": "Colazione", "time": "7:30",
+          "foods": [{ "name": "Yogurt greco", "quantity": "170 g" }, { "name": "banana", "quantity": "½" }],
+          "alternatives": ["Yogurt → latte 200 ml", "Opzione B colazione: pane integrale 60 g e marmellata 20 g."], "additions": [], "note": ""
+        },
+        {
+          "id": "80000000-0000-4000-8000-000000000015", "name": "Pranzo", "time": "",
+          "foods": [{ "name": "Pasta di semola", "quantity": "80 g a crudo" }, { "name": "olio EVO", "quantity": "q.b." }],
+          "alternatives": ["Pasta oppure riso basmati 70 g"], "additions": [], "note": ""
+        },
+        {
+          "id": "80000000-0000-4000-8000-000000000018", "name": "Spuntino", "time": "",
+          "foods": [{ "name": "Mela", "quantity": "1" }], "alternatives": [],
+          "additions": ["Se ti alleni nel pomeriggio aggiungi 30 g di pane"], "note": ""
+        }
+      ]
+    }]
+  }
+}

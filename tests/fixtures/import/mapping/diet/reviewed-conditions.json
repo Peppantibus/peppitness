@@ -1,0 +1,25 @@
+{
+  "additionalDecisions": [
+    { "op": "set", "decisionId": "m1", "localId": "i3", "field": "quantityText", "before": "170 g", "after": null, "reason": "user_edit" },
+    { "op": "set", "decisionId": "m2", "localId": "i3", "field": "quantityText", "before": null, "after": "", "reason": "confirmed_missing" },
+    { "op": "set", "decisionId": "m3", "localId": "i1", "field": "dayType", "before": "training", "after": null, "reason": "user_edit" },
+    { "op": "set", "decisionId": "m4", "localId": "i1", "field": "dayType", "before": null, "after": "any", "reason": "user_edit" },
+    { "op": "set", "decisionId": "m5", "localId": "i2", "field": "alternatives", "before": ["In alternativa allo yogurt: latte 200 ml."], "after": ["Opzione A, intera colazione: latte 200 ml e pane 60 g.", "Opzione B, intera colazione: yogurt 170 g e frutta 1 porzione."], "reason": "user_edit" },
+    { "op": "set", "decisionId": "m6", "localId": "i3", "field": "notes", "before": [], "after": ["Proteine 12 g", "Solo se tollerato"], "reason": "user_edit" }
+  ],
+  "expected": {
+    "id": "80000000-0000-4000-8000-000000000002", "name": "Menu esempio",
+    "document": {
+      "guidance": "",
+      "days": [{
+        "id": "80000000-0000-4000-8000-000000000011", "name": "Giorno di allenamento", "dayType": "any", "note": "",
+        "meals": [{
+          "id": "80000000-0000-4000-8000-000000000012", "name": "Colazione", "time": "",
+          "foods": [{ "name": "yogurt bianco", "quantity": "" }],
+          "alternatives": ["Opzione A, intera colazione: latte 200 ml e pane 60 g.", "Opzione B, intera colazione: yogurt 170 g e frutta 1 porzione."], "additions": [],
+          "note": "yogurt bianco (alimento 1): Proteine 12 g\nyogurt bianco (alimento 1): Solo se tollerato"
+        }]
+      }]
+    }
+  }
+}
