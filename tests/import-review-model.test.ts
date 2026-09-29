@@ -1,12 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import type { NormalizedDocument, WorkoutReviewDraft } from '../src/import/contracts/index.ts'
+import type { DietReviewDraft, NormalizedDocument, WorkoutReviewDraft } from '../src/import/contracts/index.ts'
 import { exerciseChoiceKey } from '../src/import/mapping/workout.ts'
 import { createReviewDraft, sequentialLocalIds } from '../src/import/review/draft.ts'
 import { addItem, applyDecision, chooseCatalog, moveItem, setField, staleConfirmations } from '../src/import/review/decisions.ts'
 import {
-  findingState, originalRange, parseNumber, reserveIds, reserveWorkoutIds, ReviewIndex, workoutReviewOutcome,
+  dietReviewOutcome, findingState, originalRange, parseNumber, reserveDietIds, reserveIds, reserveWorkoutIds, ReviewIndex, workoutReviewOutcome,
 } from '../src/features/import/review-model.ts'
 
 type Json = any
@@ -87,4 +87,50 @@ test('12: intervallo originale conservato dopo la scelta scalare; numeri senza a
   assert.deepEqual(originalRange(draft, 'i2', 'restSeconds'), { min: 90, max: 120 })
   assert.equal(originalRange(draft, 'i4', 'restSeconds'), null)
   assert.equal(parseNumber('2,5'), 2.5); assert.equal(parseNumber(''), null); assert.ok(Number.isNaN(parseNumber('tre')!)); assert.equal(parseNumber(' 0 '), 0)
+})
+
+function diet(name: string, extra: Json[] = []) {
+  const entry = read('manifest.json').cases.find((c: Json) => c.id === name)
+  let draft = createReviewDraft({ kind: 'diet', extraction: read(entry.expectedProposal), proposalId: '80000000-0000-4000-8000-000000000001', jobId: null, source, localIds: sequentialLocalIds('i') }) as DietReviewDraft
+  for (const d of [...entry.userDecisions, ...extra]) draft = applyDecision(draft, d) as DietReviewDraft
+  return { draft, document: read(entry.expectedBlocks) as NormalizedDocument }
+}
+const dietIds = (draft: DietReviewDraft) => ({ planId: '80000000-0000-4000-8000-000000000002', items: Object.fromEntries(draft.current.map((item, n) => [item.localId, `80000000-0000-4000-8000-${String(10 + n).padStart(12, '0')}`])) })
+
+test('13: prenotazioni dieta solo per giornate e pasti, stabili dopo riordino e aggiunte', () => {
+  let { draft } = diet('diet-alternatives-additions')
+  const first = reserveDietIds(draft, null, counter)
+  assert.deepEqual(Object.keys(first.items).sort(), ['i1', 'i2', 'i5', 'i8'])
+  assert.equal(reserveDietIds(draft, first, counter), first)
+  draft = moveItem(draft, 'i5', 'i1', 0, { decisionId: 'm1' }) as DietReviewDraft
+  draft = moveItem(draft, 'i7', 'i8', 1, { decisionId: 'm2' }) as DietReviewDraft
+  assert.equal(reserveDietIds(draft, first, counter), first, 'riordino: stesse prenotazioni')
+  draft = addItem(draft, { collection: 'meals', parentLocalId: 'i1', localId: 'u1', values: { name: 'Cena', timeText: null, alternatives: [], additions: [], notes: [] } }, { decisionId: 'm3' }) as DietReviewDraft
+  draft = addItem(draft, { collection: 'foods', parentLocalId: 'u1', localId: 'u2', values: { name: 'Riso', quantityText: null, notes: [] } }, { decisionId: 'm4' }) as DietReviewDraft
+  const next = reserveDietIds(draft, first, counter)
+  assert.ok(next.items.u1 && !next.items.u2, 'gli alimenti non hanno ID nel dominio')
+  for (const [key, value] of Object.entries(first.items)) assert.equal(next.items[key], value)
+})
+
+test('13: esito della revisione dieta uguale ai golden 10; quantità e tipo di giornata richiedono la scelta', () => {
+  for (const name of ['diet-spec-example', 'diet-alternatives-additions']) {
+    const { draft, document } = diet(name)
+    const outcome = dietReviewOutcome(document, draft, dietIds(draft))
+    assert.equal(outcome.readiness.ready, true, name)
+    if (outcome.mapping.ok) assert.deepEqual(outcome.mapping.value.plan, read(`mapping/diet/${name}.json`))
+    else assert.fail(name)
+  }
+  const conditions = read('mapping/diet/reviewed-conditions.json')
+  const reviewed = diet('diet-spec-example', conditions.additionalDecisions)
+  const outcome = dietReviewOutcome(reviewed.document, reviewed.draft, dietIds(reviewed.draft))
+  assert.ok(outcome.mapping.ok && JSON.stringify(outcome.mapping.value.plan) === JSON.stringify(conditions.expected))
+  // Quantità tolta e non confermata; tipo di giornata ignoto: nessuna prontezza.
+  const missing = diet('diet-spec-example', conditions.additionalDecisions.slice(0, 1))
+  assert.equal(dietReviewOutcome(missing.document, missing.draft, dietIds(missing.draft)).readiness.ready, false)
+  const unknownDay = diet('diet-alternatives-additions')
+  const raw = createReviewDraft({ kind: 'diet', extraction: unknownDay.draft.proposal.extraction, proposalId: '80000000-0000-4000-8000-000000000001', jobId: null, source, localIds: sequentialLocalIds('i') }) as DietReviewDraft
+  const blocked = dietReviewOutcome(unknownDay.document, raw, dietIds(raw))
+  assert.equal(blocked.readiness.ready, false)
+  assert.ok(blocked.readiness.confirmations.some(f => f.issue.code === 'day_type_missing'))
+  assert.equal(findingState(raw, blocked.readiness.confirmations.find(f => f.issue.code === 'day_type_missing')!), 'open')
 })

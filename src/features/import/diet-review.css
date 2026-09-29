@@ -1,0 +1,52 @@
+/*
+ * Revisione del piano alimentare importato (task 13): giornate, pasti, piano base, alternative, aggiunte con
+ * condizione, regole dell'intero piano e anteprima. Solo token esistenti di styles.css; parti comuni in review.css.
+ */
+
+.dr-days, .dr-meals, .dr-foods, .dr-rule-list, .dr-preview-days, .dr-preview-meals { margin: 0; padding: 0; list-style: none; }
+.dr-days { display: grid; gap: var(--space-6); }
+.dr-day { display: grid; gap: var(--space-3); padding-top: var(--space-4); border-top: 1px solid var(--color-border); min-width: 0; }
+.dr-days > .dr-day:first-child { padding-top: 0; border-top: 0; }
+.dr-item-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-2); }
+.dr-item-head h3, .dr-item-head h4, .dr-item-head h5 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); min-width: 0; overflow-wrap: anywhere; }
+.dr-item-head h3 { font-size: var(--text-lg); }
+.dr-item-head h4 { font-size: var(--text-base); }
+.dr-item-head h5 { font-size: var(--text-md); }
+.dr-item-head [tabindex]:focus-visible, .dr-rule:focus-visible { outline: 3px solid var(--color-focus); outline-offset: 2px; border-radius: var(--radius-sm); }
+.dr-meals { display: grid; gap: var(--space-3); }
+.dr-meal { display: grid; gap: var(--space-3); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-surface); min-width: 0; }
+.dr-foods { display: grid; gap: var(--space-2); }
+.dr-food { display: grid; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-sm); background: var(--color-surface-muted); min-width: 0; }
+.dr-move { display: grid; gap: var(--space-2); max-width: 24rem; font-size: var(--text-md); font-weight: var(--weight-semibold); }
+
+/* Ambiti distinti: base, alternative, aggiunte */
+.dr-scope { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-left-width: 4px; border-radius: var(--radius-sm); min-width: 0; }
+.dr-scope h5 { font-size: var(--text-md); }
+.dr-scope.is-base { border-left-color: var(--color-primary); }
+.dr-scope.is-alternatives { border-left-color: var(--color-brand-dot); }
+.dr-scope.is-additions { border-left-color: var(--warning-border); }
+
+.dr-rules .dr-rule-list { display: grid; gap: var(--space-3); }
+.dr-rule { display: grid; gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-md); min-width: 0; }
+.dr-rule h3 { font-size: var(--text-base); }
+
+/* Anteprima */
+.dr-preview h3.dr-preview-name { font-size: var(--text-lg); margin: var(--space-3) 0 var(--space-2); overflow-wrap: anywhere; }
+.dr-preview h4 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--text-base); overflow-wrap: anywhere; }
+.dr-preview h5 { font-size: var(--text-sm); color: var(--color-text-muted); }
+.dr-preview-facts { display: grid; gap: var(--space-1); margin: 0 0 var(--space-3); padding: 0; list-style: none; font-size: var(--text-md); }
+.dr-preview-guidance { margin-bottom: var(--space-3); }
+.dr-preview-guidance p, .dr-preview-note { white-space: pre-wrap; overflow-wrap: anywhere; font-size: var(--text-md); line-height: var(--leading-normal); }
+.dr-preview-note { color: var(--color-text-muted); }
+.dr-preview-days { display: grid; gap: var(--space-4); }
+.dr-preview-day { display: grid; gap: var(--space-2); padding-top: var(--space-3); border-top: 1px solid var(--color-border); }
+.dr-preview-meals { display: grid; gap: var(--space-2); }
+.dr-preview-meal { display: grid; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-sm); background: var(--color-surface-muted); min-width: 0; }
+.dr-preview-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2); }
+.dr-preview-foods, .dr-preview-block ul { margin: 0; padding-left: var(--space-5); font-size: var(--text-md); line-height: var(--leading-normal); }
+.dr-preview-foods li, .dr-preview-block li { overflow-wrap: anywhere; white-space: pre-wrap; }
+.dr-preview-block { display: grid; gap: var(--space-1); padding-left: var(--space-3); border-left: 3px solid var(--color-border-strong); }
+.dr-preview-block.is-alternatives { border-left-color: var(--color-brand-dot); }
+.dr-preview-block.is-additions { border-left-color: var(--warning-border); }
+.dr-preview-block ul.dr-preview-notes { list-style: none; padding-left: 0; }
+.dr-preview-notes li.is-food-note { font-weight: var(--weight-semibold); }

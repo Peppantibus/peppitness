@@ -5,8 +5,9 @@
  * sempre l'ID locale, quindi restano corretti dopo riordini e spostamenti.
  */
 import type {
-  JsonValue, MappingResult, NormalizedDocument, ReviewDecision, ReviewDraft, ReviewItem, ValidationIssue, WorkoutReviewDraft,
+  DietReviewDraft, JsonValue, MappingResult, NormalizedDocument, ReviewDecision, ReviewDraft, ReviewItem, ValidationIssue, WorkoutReviewDraft,
 } from '../../import/contracts/index.ts'
+import { mapReviewedDiet, type DietMapping, type DietMappingIds } from '../../import/mapping/diet.ts'
 import { exerciseChoiceKey, mapReviewedWorkout, type WorkoutMapping, type WorkoutMappingIds } from '../../import/mapping/workout.ts'
 import { evaluateReadiness, isConfirmed, staleConfirmations, type Readiness } from '../../import/review/decisions.ts'
 import { resolvePointer, validateDraft, type DraftValidation, type FieldProvenance, type ValidationFinding } from '../../import/validation/validate.ts'
@@ -40,6 +41,13 @@ export function reserveWorkoutIds(draft: WorkoutReviewDraft, ids: WorkoutMapping
   return items === base.items && exercises === base.exercises ? base : { ...base, items, exercises }
 }
 
+/** ID del piano alimentare, delle giornate e dei pasti (gli alimenti non hanno ID nel dominio). Stesso oggetto se non cambia nulla. */
+export function reserveDietIds(draft: DietReviewDraft, ids: DietMappingIds | null, newId: NewId = randomId): DietMappingIds {
+  const base = ids ?? { planId: newId(), items: {} }
+  const items = reserveIds(base.items, (draft.current as readonly ReviewItem[]).filter(item => item.collection === 'days' || item.collection === 'meals').map(item => item.localId), newId)
+  return items === base.items ? base : { ...base, items }
+}
+
 // ---------------------------------------------------------------------------
 // Esito della revisione
 // ---------------------------------------------------------------------------
@@ -50,6 +58,13 @@ export interface ReviewOutcome<T> { validation: DraftValidation; mapping: Mappin
 export function workoutReviewOutcome(document: NormalizedDocument, draft: WorkoutReviewDraft, ids: WorkoutMappingIds): ReviewOutcome<WorkoutMapping> {
   const validation = validateDraft(document, draft)
   const mapping = mapReviewedWorkout(document, draft, ids)
+  return { validation, mapping, readiness: evaluateReadiness(draft, validation.findings, mapping) }
+}
+
+/** Stessi dati per anteprima e conferma: validazione 06, mapper 10, prontezza 07 sulla stessa bozza. */
+export function dietReviewOutcome(document: NormalizedDocument, draft: DietReviewDraft, ids: DietMappingIds): ReviewOutcome<DietMapping> {
+  const validation = validateDraft(document, draft)
+  const mapping = mapReviewedDiet(document, draft, ids)
   return { validation, mapping, readiness: evaluateReadiness(draft, validation.findings, mapping) }
 }
 
