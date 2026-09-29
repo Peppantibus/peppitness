@@ -27,6 +27,7 @@ import { ExerciseDetail, SessionView, Workout } from './features/Workout'
 import type { CycleSummary } from './features/Workout'
 import { useDiary } from './persistence/use-diary'
 import { useExercises } from './persistence/use-exercises'
+import { useImportReview } from './persistence/use-import-review'
 import { usePlans } from './persistence/use-plans'
 import { usePrograms } from './persistence/use-programs'
 import { useSettings } from './persistence/use-settings'
@@ -34,6 +35,7 @@ import { useSettings } from './persistence/use-settings'
 const Programs = lazy(() => import('./features/ProgramEditor').then(module => ({ default: module.Programs })))
 const ExerciseCatalog = lazy(() => import('./features/ExerciseCatalog').then(module => ({ default: module.ExerciseCatalog })))
 const MealPlans = lazy(() => import('./features/MealPlans').then(module => ({ default: module.MealPlans })))
+const ImportPlan = lazy(() => import('./features/import/ImportPlan').then(module => ({ default: module.ImportPlan })))
 
 function subscribeRoute(callback: () => void) { window.addEventListener('hashchange', callback); return () => window.removeEventListener('hashchange', callback) }
 function currentRoute() { return window.location.hash.replace(/^#/, '') || '/dieta' }
@@ -46,6 +48,10 @@ export function App() {
   const isPrograms = route === '/scheda/programmi' || route === '/scheda/programmi/nuovo' || route === '/scheda/programmi/modifica' || route === '/scheda/programmi/rinnova'
   const isMealPlans = route === '/dieta/piani' || route === '/dieta/piani/nuovo'
   const isProgress = route === '/scheda/progressi'
+  const isImport = route === '/scheda/importa' || route === '/dieta/importa'
+  const importKind = route === '/dieta/importa' ? 'diet' : 'workout'
+  // Importazione: il motore si carica sulla sua pagina o in Impostazioni (logout); la lettura prosegue fuori pagina.
+  const importReview = useImportReview(isImport || route === '/impostazioni')
   const catalog = useExercises(isCatalog || isPrograms)
   const programs = usePrograms(isPrograms)
   // Rilettura dei piani al ritorno dagli editor verso le pagine quotidiane.
@@ -118,15 +124,16 @@ export function App() {
   const mealId = route.startsWith('/dieta/pasto/') ? route.split('/')[3] : undefined
   const meal = mealId ? meals.find(item => item.id === mealId) ?? view.mealLogs[mealLogKey(date, mealId)]?.snapshot : undefined
   const exercise = route.startsWith('/scheda/esercizio/') ? workoutDays.flatMap(item => item.exercises).find(item => item.id === route.split('/')[3]) : undefined
-  const validRoute = route === '/dieta' || route === '/scheda' || isHistory || isSettings || isSession || isCatalog || isPrograms || isMealPlans || isProgress || Boolean(meal || exercise || historySession)
+  const validRoute = route === '/dieta' || route === '/scheda' || isHistory || isSettings || isSession || isCatalog || isPrograms || isMealPlans || isProgress || isImport || Boolean(meal || exercise || historySession)
   const inDetail = Boolean(meal || exercise)
-  const showDaily = validRoute && !isHistory && !isSettings && !isSession && !historySession && !isCatalog && !isPrograms && !isMealPlans && !isProgress
+  const showDaily = validRoute && !isHistory && !isSettings && !isSession && !historySession && !isCatalog && !isPrograms && !isMealPlans && !isProgress && !isImport
   const programWizard = isPrograms && Boolean(programs.state.document) && programMode === 'wizard' && (programStep === 'done' || programs.state.revising || (fitsWizard(programs.state.document!) && programs.state.base?.version.status !== 'published'))
   const mealWizard = isMealPlans && Boolean(plans.state.editor.draft) && mealMode === 'wizard' && (mealStep === 'done' || fitsMealWizard(plans.state.editor.draft!.document))
   const pendingPreferences = settings.dirty || ['saving', 'checking', 'uncertain', 'conflict'].includes(settings.state.phase)
   const volatile = diary.store.hasVolatileData || !diary.state.storage
   const pendingEditors = pendingPreferences || catalog.pending || programs.pending || plans.pending
-  const hasUnsavedData = pendingEditors || volatile || diary.store.hasPending
+  // Il logout cancella anche le letture d'importazione di questo account: conferma se c'è qualcosa da perdere.
+  const hasUnsavedData = pendingEditors || volatile || diary.store.hasPending || importReview.logoutRisk
   const editorsBusy = ['saving', 'checking'].includes(catalog.state.phase) || ['saving', 'publishing', 'checking'].includes(programs.state.phase) || ['saving', 'checking'].includes(plans.state.editor.phase)
 
   // Collegamenti diretti alla creazione guidata dagli stati vuoti di Scheda e Dieta.
@@ -174,17 +181,17 @@ export function App() {
   }, [])
 
   useEffect(() => {
-    document.title = `${isSettings ? 'Impostazioni' : isPrograms ? 'I tuoi programmi' : isProgress ? 'I tuoi progressi' : isCatalog ? 'I tuoi esercizi' : isMealPlans ? 'I tuoi piani alimentari' : section === 'dieta' ? 'Dieta' : 'Scheda'} · peppitness`
+    document.title = `${isSettings ? 'Impostazioni' : isImport ? (importKind === 'diet' ? 'Importa un piano alimentare' : 'Importa una scheda') : isPrograms ? 'I tuoi programmi' : isProgress ? 'I tuoi progressi' : isCatalog ? 'I tuoi esercizi' : isMealPlans ? 'I tuoi piani alimentari' : section === 'dieta' ? 'Dieta' : 'Scheda'} · peppitness`
     if (!inDetail) { window.scrollTo({ top: 0 }); document.getElementById('main-content')?.focus({ preventScroll: true }) }
-  }, [route, section, isSettings, isCatalog, isPrograms, isMealPlans, inDetail])
+  }, [route, section, isSettings, isCatalog, isPrograms, isMealPlans, isImport, importKind, inDetail])
 
   useEffect(() => {
-    // Il diario sincronizzabile è già sul dispositivo: l'avviso resta per bozze in memoria.
-    if (!pendingEditors && !volatile) return
+    // Il diario sincronizzabile è già sul dispositivo: l'avviso resta per bozze in memoria e letture in corso.
+    if (!pendingEditors && !volatile && !importReview.busy && !importReview.unsaved) return
     const onBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [pendingEditors, volatile])
+  }, [pendingEditors, volatile, importReview.busy, importReview.unsaved])
 
   const followProgram = async (planId: string) => {
     if (!plans.store) return false
@@ -230,7 +237,7 @@ export function App() {
     </>
     if (!day) return <section className="panel empty-state plan-empty">
       {followable.length ? <><h2>Scegli il programma da seguire</h2><p>La Scheda mostra la versione corrente del programma scelto. Puoi cambiarlo in qualsiasi momento.</p><div className="plan-choices">{followable.map(item => <button key={item.plan.id} className="button secondary plan-choice" disabled={plans.state.selecting} onClick={() => void plans.store?.choose({ workoutPlanId: item.plan.id })}>{item.plan.name}</button>)}</div></>
-        : <><span className="empty-icon"><Icon name="calendar" size={32} /></span><h2>Nessun programma da seguire</h2><p>Imposta la tua settimana: per ogni giorno scegli gli esercizi oppure il riposo.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma<Icon name="arrow" size={20} /></a></>}
+        : <><span className="empty-icon"><Icon name="calendar" size={32} /></span><h2>Nessun programma da seguire</h2><p>Imposta la tua settimana: per ogni giorno scegli gli esercizi oppure il riposo.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma<Icon name="arrow" size={20} /></a><a className="text-link" href="#/scheda/importa">Oppure importalo da un file Word o PDF</a></>}
       {activeSession && <a className="button secondary" href="#/scheda/seduta">Riprendi l’allenamento in corso</a>}
     </section>
     return <>
@@ -248,7 +255,7 @@ export function App() {
     if (configured && plans.state.phase === 'error') return <section className="panel empty-state"><h2>Piano non disponibile</h2><p role="alert">{plans.state.message}</p>{retryPlans}</section>
     if (configured && !mealPlan) return <section className="panel empty-state plan-empty">
       {followableMeals.length ? <><h2>Scegli il piano alimentare da seguire</h2><div className="plan-choices">{followableMeals.map(plan => <button key={plan.id} className="button secondary plan-choice" disabled={plans.state.selecting} onClick={() => void plans.store?.choose({ mealPlanId: plan.id })}>{plan.name}</button>)}</div></>
-        : <><span className="empty-icon"><Icon name="fork" size={32} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo: comparirà qui.</p><a className="button primary" href="#/dieta/piani/nuovo">Crea il tuo piano<Icon name="arrow" size={20} /></a></>}
+        : <><span className="empty-icon"><Icon name="fork" size={32} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo: comparirà qui.</p><a className="button primary" href="#/dieta/piani/nuovo">Crea il tuo piano<Icon name="arrow" size={20} /></a><a className="text-link" href="#/dieta/importa">Oppure importalo da un file Word o PDF</a></>}
     </section>
     return <>
       {configured && followableMeals.length > 1 && <section className="plan-selectors"><label className="plan-selector">Piano seguito<select value={mealPlan?.id ?? ''} disabled={plans.state.selecting} onChange={event => void plans.store?.choose({ mealPlanId: event.target.value })}>{followableMeals.map(plan => <option key={plan.id} value={plan.id}>{plan.name}</option>)}</select></label></section>}
@@ -261,14 +268,16 @@ export function App() {
 
   const syncIndicator = <SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} />
   // Pagine secondarie: intestazione propria (← e titolo); su mobile la barra superiore si nasconde.
-  const subpage = isHistory || isProgress || isSettings || isCatalog || isPrograms || isMealPlans
+  const subpage = isHistory || isProgress || isSettings || isCatalog || isPrograms || isMealPlans || isImport
   return <Layout section={isSettings ? null : section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard} session={isSession || Boolean(historySession)} subpage={subpage} status={syncIndicator} sidebarStatus={<SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} withLabel />}>
     <div className="sr-only" role="status" aria-live="polite">{announcement}</div>
     {!online && <div className="network-notice" role="status"><Icon name="info" size={20} /><span>Rete assente. {configured ? 'Le registrazioni restano sul dispositivo e verranno inviate al ritorno della connessione.' : ''}</span></div>}
     {plans.state.message && showDaily && <p className="small muted plans-message" role="status">{plans.state.message}</p>}
     {configured && (showDaily || isSession) && <SyncStatus store={diary.store} state={diary.state} />}
     {showDaily && <>
-      <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} extra={section === 'scheda' && configured && workout ? [{ href: '#/scheda/programmi/modifica', icon: 'edit', title: 'Modifica programma', detail: `Esercizi e giorni di «${workout.plan.name}»` }] : []} /></div>
+      <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} extra={section === 'scheda'
+        ? [...(configured && workout ? [{ href: '#/scheda/programmi/modifica', icon: 'edit' as const, title: 'Modifica programma', detail: `Esercizi e giorni di «${workout.plan.name}»` }] : []), { href: '#/scheda/importa', icon: 'plus', title: 'Importa una scheda', detail: 'Da un file Word o PDF' }]
+        : [{ href: '#/dieta/importa', icon: 'plus', title: 'Importa un piano alimentare', detail: 'Da un file Word o PDF' }]} /></div>
       <DatePicker date={date} onChange={setDate} today={today} planned={section === 'scheda' ? trainingDates : []} done={section === 'scheda' ? sessionDates : mealDates} doneLabel={section === 'scheda' ? 'seduta completata' : 'pasti registrati'} />
       <DateContext date={date} today={today} onToday={() => setDate(today)} />
       {section === 'dieta' ? dietContent() : workoutContent()}
@@ -279,7 +288,8 @@ export function App() {
       followedPlanId={plans.state.selection?.workoutPlanId ?? null} followedDays={workout?.document.days ?? null} onFollow={followProgram} onDeleted={async () => { await plans.store?.load() }} deletionBlocked={diary.store.hasPending || diary.store.hasVolatileData} today={today} /></Suspense>}
     {isProgress && <Progress workout={workout} days={workoutDays} sessions={programSessions} today={today} />}
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={mealMode} setMode={setMealMode} step={mealStep} setStep={setMealStep} deletionBlocked={diary.store.hasPending || diary.store.hasVolatileData} /></Suspense>}
-    {isSettings && <Settings backSection={lastSection.current} weeklyProgram={weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy} onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice() }} {...settings} />}
+    {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} store={importReview.store} state={importReview.state} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} /></Suspense>}
+    {isSettings && <Settings backSection={lastSection.current} weeklyProgram={weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy} onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice(); void importReview.clearDevice() }} {...settings} />}
     {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} syncSlot={syncIndicator}
       onDiscard={() => { diary.store.discardSession(activeSession.id); navigate('/scheda'); setAnnouncement('Seduta eliminata.') }}
       onComplete={() => { diary.store.completeSession(activeSession.id); navigate('/scheda/storico'); setAnnouncement('Allenamento completato.') }} />
@@ -291,7 +301,7 @@ export function App() {
     {diary.state.restTimer && <RestTimer timer={diary.state.restTimer} onChange={diary.store.setRestTimer} />}
     <div className="toast-stack">
       {toast && <Toast key={toast.id} toast={toast} onClose={() => setToast(current => current?.id === toast.id ? null : current)} />}
-      <PwaUpdate hidden={isSession || Boolean(historySession)} busy={Boolean(activeSession) || inDetail || pendingEditors || diary.state.sync === 'sending' || editorsBusy} hasDemoData={pendingEditors || volatile} />
+      <PwaUpdate hidden={isSession || Boolean(historySession)} busy={Boolean(activeSession) || inDetail || pendingEditors || diary.state.sync === 'sending' || editorsBusy || importReview.busy} hasDemoData={pendingEditors || volatile || importReview.unsaved} />
     </div>
   </Layout>
 }

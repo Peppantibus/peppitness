@@ -14,7 +14,7 @@ import {
   memoryBackend, recordKey, ReviewStore, StorageUnavailableError, type ReviewStorageBackend, type StoredRecord,
 } from '../src/import/review/local-storage.ts'
 import {
-  applyImportEvent, capabilities, createImportSession, ImportAccountScope, ImportStateError, isDirty, matchesOriginal, type ImportEvent, type ImportSession,
+  applyImportEvent, capabilities, createImportSession, ImportAccountScope, ImportStateError, isBusy, isDirty, matchesOriginal, resumeImportSession, type ImportEvent, type ImportSession,
 } from '../src/import/review/state.ts'
 import { validateDraft } from '../src/import/validation/validate.ts'
 
@@ -310,6 +310,17 @@ test('07: offline si rivede, non si analizza né si salva; l’originale si riap
   assert.ok(!matchesOriginal(state, 'a'.repeat(64)))
   const expired = apply(state, { type: 'expired' })
   assert.deepEqual([expired.status, expired.draft, expired.document], ['expired', null, null])
+})
+
+test('07/11: lettura in corso occupata; lettura conclusa in attesa dell’analisi non blocca guardie né scarto', () => {
+  const reading = apply(newSession(), { type: 'read_started' })
+  assert.equal(isBusy(reading), true)
+  assert.equal(capabilities(reading, { online: true }).discard, false)
+  const read = apply(reading, { type: 'read_succeeded', document: incompleteDocument(), sourceHash: SOURCE.sourceHash })
+  assert.deepEqual([read.status, isBusy(read), isDirty(read)], ['reading', false, false])
+  assert.equal(capabilities(read, { online: true }).discard, true)
+  // Riaperta dopo un reload resta leggibile e non occupata.
+  assert.equal(isBusy(resumeImportSession(read, at())), false)
 })
 
 // ---------------------------------------------------------------------------

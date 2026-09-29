@@ -120,8 +120,11 @@ export function createImportSession(input: { ownerId: string; sessionId: string;
   }
 }
 
-/** Stati in cui qualcosa è in corso (lettura, analisi, invio): la UI mostra attesa e non chiude senza avviso. */
-export const isBusy = (state: ImportSession) => state.status === 'reading' || state.status === 'analyzing' || state.status === 'saving' || state.reanalysis?.status === 'running'
+/**
+ * Stati in cui qualcosa è in corso (lettura, analisi, invio): la UI mostra attesa e non chiude senza avviso.
+ * `reading` con il documento già letto è la lettura conclusa in attesa dell'analisi, non un lavoro in corso.
+ */
+export const isBusy = (state: ImportSession) => (state.status === 'reading' && state.document === null) || state.status === 'analyzing' || state.status === 'saving' || state.reanalysis?.status === 'running'
 /** Ci sono modifiche che una chiusura farebbe perdere: journal non durevole con una bozza o un comando. */
 export const isDirty = (state: ImportSession) => state.persistence === 'volatile' && (state.draft !== null || state.commit !== null)
 /** Con un comando già inviato l'identità dell'operazione va conservata finché non è riconciliata. */
