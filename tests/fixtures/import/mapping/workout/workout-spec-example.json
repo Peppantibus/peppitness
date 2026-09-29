@@ -1,0 +1,124 @@
+{
+  "additionalDecisions": [
+    {
+      "op": "set",
+      "decisionId": "m1",
+      "localId": "i0",
+      "field": "schedule",
+      "before": "unknown",
+      "after": "rotation",
+      "reason": "user_edit"
+    }
+  ],
+  "ids": {
+    "planId": "90000000-0000-4000-8000-000000000002",
+    "versionId": "90000000-0000-4000-8000-000000000003",
+    "items": {
+      "i0": "90000000-0000-4000-8000-000000000010",
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012"
+    },
+    "exercises": {
+      "new:new-squat": "90000000-0000-4000-8000-000000000100"
+    }
+  },
+  "expected": {
+    "resolved": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "versionId": "90000000-0000-4000-8000-000000000003",
+      "title": "Scheda esempio",
+      "guidance": "",
+      "cycle": null,
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "A",
+          "title": "Seduta A",
+          "note": "",
+          "prescriptions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exerciseRef": "90000000-0000-4000-8000-000000000100",
+              "sets": 3,
+              "optionalSets": 0,
+              "repsMin": 8,
+              "repsMax": 10,
+              "durationSeconds": null,
+              "restSeconds": 120,
+              "rir": null,
+              "rpe": null,
+              "note": "Prescrizione dalla fonte: Squat | 3 x 8-10 | recupero non indicato"
+            }
+          ]
+        }
+      ],
+      "catalog": [
+        {
+          "ref": "90000000-0000-4000-8000-000000000100",
+          "choice": {
+            "source": "new",
+            "localKey": "new-squat",
+            "values": {
+              "name": "Squat",
+              "variant": "",
+              "equipment": "",
+              "loadConvention": "total",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        }
+      ]
+    },
+    "program": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "id": "90000000-0000-4000-8000-000000000003",
+      "title": "Scheda esempio",
+      "guidance": "",
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "A",
+          "title": "Seduta A",
+          "note": "",
+          "exercises": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000100",
+                "name": "Squat",
+                "variant": "",
+                "equipment": "",
+                "loadConvention": "total",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": false,
+                "note": ""
+              },
+              "sets": "3",
+              "optionalSets": "0",
+              "repsMin": "8",
+              "repsMax": "10",
+              "durationSeconds": "",
+              "restSeconds": "120",
+              "rir": "",
+              "rpe": "",
+              "note": "Prescrizione dalla fonte: Squat | 3 x 8-10 | recupero non indicato"
+            }
+          ]
+        }
+      ]
+    },
+    "cycle": null,
+    "provisionalRefs": [
+      "90000000-0000-4000-8000-000000000100"
+    ],
+    "targets": {
+      "i0": null,
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012"
+    }
+  }
+}

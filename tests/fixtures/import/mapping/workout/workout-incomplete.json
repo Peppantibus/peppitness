@@ -1,0 +1,181 @@
+{
+  "additionalDecisions": [
+    {
+      "op": "set",
+      "decisionId": "m1",
+      "localId": "i0",
+      "field": "schedule",
+      "before": "unknown",
+      "after": "rotation",
+      "reason": "user_edit"
+    }
+  ],
+  "ids": {
+    "planId": "90000000-0000-4000-8000-000000000002",
+    "versionId": "90000000-0000-4000-8000-000000000003",
+    "items": {
+      "i0": "90000000-0000-4000-8000-000000000010",
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012",
+      "i3": "90000000-0000-4000-8000-000000000013"
+    },
+    "exercises": {
+      "new:new-panca": "90000000-0000-4000-8000-000000000100",
+      "new:new-rematore": "90000000-0000-4000-8000-000000000101"
+    }
+  },
+  "expected": {
+    "resolved": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "versionId": "90000000-0000-4000-8000-000000000003",
+      "title": "Scheda forza base",
+      "guidance": "",
+      "cycle": null,
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "1",
+          "title": "Seduta 1",
+          "note": "Stretching finale a piacere.",
+          "prescriptions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exerciseRef": "90000000-0000-4000-8000-000000000100",
+              "sets": 4,
+              "optionalSets": 0,
+              "repsMin": 8,
+              "repsMax": 8,
+              "durationSeconds": null,
+              "restSeconds": 120,
+              "rir": null,
+              "rpe": null,
+              "note": "Prescrizione dalla fonte: Panca piana | 3–4 | 8 |"
+            },
+            {
+              "id": "90000000-0000-4000-8000-000000000013",
+              "exerciseRef": "90000000-0000-4000-8000-000000000101",
+              "sets": 2,
+              "optionalSets": 1,
+              "repsMin": 10,
+              "repsMax": 10,
+              "durationSeconds": null,
+              "restSeconds": 90,
+              "rir": null,
+              "rpe": null,
+              "note": "Prescrizione dalla fonte: Rematore con manubrio | 2 + 1 facoltativa | 10 per lato | 90\""
+            }
+          ]
+        }
+      ],
+      "catalog": [
+        {
+          "ref": "90000000-0000-4000-8000-000000000100",
+          "choice": {
+            "source": "new",
+            "localKey": "new-panca",
+            "values": {
+              "name": "Panca piana",
+              "variant": "",
+              "equipment": "bilanciere",
+              "loadConvention": "total",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        },
+        {
+          "ref": "90000000-0000-4000-8000-000000000101",
+          "choice": {
+            "source": "new",
+            "localKey": "new-rematore",
+            "values": {
+              "name": "Rematore con manubrio",
+              "variant": "",
+              "equipment": "manubrio",
+              "loadConvention": "single-dumbbell",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": true,
+              "note": ""
+            }
+          }
+        }
+      ]
+    },
+    "program": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "id": "90000000-0000-4000-8000-000000000003",
+      "title": "Scheda forza base",
+      "guidance": "",
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "1",
+          "title": "Seduta 1",
+          "note": "Stretching finale a piacere.",
+          "exercises": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000100",
+                "name": "Panca piana",
+                "variant": "",
+                "equipment": "bilanciere",
+                "loadConvention": "total",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": false,
+                "note": ""
+              },
+              "sets": "4",
+              "optionalSets": "0",
+              "repsMin": "8",
+              "repsMax": "8",
+              "durationSeconds": "",
+              "restSeconds": "120",
+              "rir": "",
+              "rpe": "",
+              "note": "Prescrizione dalla fonte: Panca piana | 3–4 | 8 |"
+            },
+            {
+              "id": "90000000-0000-4000-8000-000000000013",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000101",
+                "name": "Rematore con manubrio",
+                "variant": "",
+                "equipment": "manubrio",
+                "loadConvention": "single-dumbbell",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": true,
+                "note": ""
+              },
+              "sets": "2",
+              "optionalSets": "1",
+              "repsMin": "10",
+              "repsMax": "10",
+              "durationSeconds": "",
+              "restSeconds": "90",
+              "rir": "",
+              "rpe": "",
+              "note": "Prescrizione dalla fonte: Rematore con manubrio | 2 + 1 facoltativa | 10 per lato | 90\""
+            }
+          ]
+        }
+      ]
+    },
+    "cycle": null,
+    "provisionalRefs": [
+      "90000000-0000-4000-8000-000000000100",
+      "90000000-0000-4000-8000-000000000101"
+    ],
+    "targets": {
+      "i0": null,
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012",
+      "i3": "90000000-0000-4000-8000-000000000013"
+    }
+  }
+}

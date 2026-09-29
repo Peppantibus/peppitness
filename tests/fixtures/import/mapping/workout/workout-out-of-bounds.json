@@ -1,0 +1,120 @@
+{
+  "additionalDecisions": [],
+  "ids": {
+    "planId": "90000000-0000-4000-8000-000000000002",
+    "versionId": "90000000-0000-4000-8000-000000000003",
+    "items": {
+      "i0": "90000000-0000-4000-8000-000000000010",
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012"
+    },
+    "exercises": {
+      "new:new-burpee": "90000000-0000-4000-8000-000000000100"
+    }
+  },
+  "expected": {
+    "resolved": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "versionId": "90000000-0000-4000-8000-000000000003",
+      "title": "Programma sperimentale",
+      "guidance": "",
+      "cycle": {
+        "start": "2026-10-05",
+        "weeks": 8
+      },
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "Dom",
+          "title": "Seduta X",
+          "note": "Etichetta della fonte: X",
+          "prescriptions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exerciseRef": "90000000-0000-4000-8000-000000000100",
+              "sets": 5,
+              "optionalSets": 0,
+              "repsMin": 10,
+              "repsMax": 10,
+              "durationSeconds": null,
+              "restSeconds": 60,
+              "rir": null,
+              "rpe": 8,
+              "note": "Prescrizione dalla fonte: Burpee: 5000 serie + 2,5 facoltative x 0-20000, RPE 12, recupero 100000 s"
+            }
+          ]
+        }
+      ],
+      "catalog": [
+        {
+          "ref": "90000000-0000-4000-8000-000000000100",
+          "choice": {
+            "source": "new",
+            "localKey": "new-burpee",
+            "values": {
+              "name": "Burpee",
+              "variant": "",
+              "equipment": "",
+              "loadConvention": "bodyweight",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        }
+      ]
+    },
+    "program": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "id": "90000000-0000-4000-8000-000000000003",
+      "title": "Programma sperimentale",
+      "guidance": "",
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "Dom",
+          "title": "Seduta X",
+          "note": "Etichetta della fonte: X",
+          "exercises": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000100",
+                "name": "Burpee",
+                "variant": "",
+                "equipment": "",
+                "loadConvention": "bodyweight",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": false,
+                "note": ""
+              },
+              "sets": "5",
+              "optionalSets": "0",
+              "repsMin": "10",
+              "repsMax": "10",
+              "durationSeconds": "",
+              "restSeconds": "60",
+              "rir": "",
+              "rpe": "8",
+              "note": "Prescrizione dalla fonte: Burpee: 5000 serie + 2,5 facoltative x 0-20000, RPE 12, recupero 100000 s"
+            }
+          ]
+        }
+      ]
+    },
+    "cycle": {
+      "start": "2026-10-05",
+      "weeks": 8
+    },
+    "provisionalRefs": [
+      "90000000-0000-4000-8000-000000000100"
+    ],
+    "targets": {
+      "i0": null,
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012"
+    }
+  }
+}

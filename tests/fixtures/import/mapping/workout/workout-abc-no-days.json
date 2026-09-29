@@ -1,0 +1,264 @@
+{
+  "additionalDecisions": [],
+  "ids": {
+    "planId": "90000000-0000-4000-8000-000000000002",
+    "versionId": "90000000-0000-4000-8000-000000000003",
+    "items": {
+      "i0": "90000000-0000-4000-8000-000000000010",
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012",
+      "i3": "90000000-0000-4000-8000-000000000013",
+      "i4": "90000000-0000-4000-8000-000000000014",
+      "i5": "90000000-0000-4000-8000-000000000015",
+      "i6": "90000000-0000-4000-8000-000000000016"
+    },
+    "exercises": {
+      "new:new-0": "90000000-0000-4000-8000-000000000100",
+      "new:new-1": "90000000-0000-4000-8000-000000000101",
+      "new:new-2": "90000000-0000-4000-8000-000000000102"
+    }
+  },
+  "expected": {
+    "resolved": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "versionId": "90000000-0000-4000-8000-000000000003",
+      "title": "Programma A/B/C",
+      "guidance": "Alternare le sedute A, B e C senza giorni fissi.",
+      "cycle": null,
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "A",
+          "title": "Seduta A",
+          "note": "",
+          "prescriptions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exerciseRef": "90000000-0000-4000-8000-000000000100",
+              "sets": 3,
+              "optionalSets": 0,
+              "repsMin": 5,
+              "repsMax": 5,
+              "durationSeconds": null,
+              "restSeconds": 180,
+              "rir": null,
+              "rpe": null,
+              "note": "Prescrizione dalla fonte: Squat 3 x 5"
+            }
+          ]
+        },
+        {
+          "id": "90000000-0000-4000-8000-000000000013",
+          "label": "B",
+          "title": "Seduta B",
+          "note": "",
+          "prescriptions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000014",
+              "exerciseRef": "90000000-0000-4000-8000-000000000101",
+              "sets": 3,
+              "optionalSets": 0,
+              "repsMin": 5,
+              "repsMax": 5,
+              "durationSeconds": null,
+              "restSeconds": 180,
+              "rir": null,
+              "rpe": null,
+              "note": "Prescrizione dalla fonte: Panca piana 3 x 5"
+            }
+          ]
+        },
+        {
+          "id": "90000000-0000-4000-8000-000000000015",
+          "label": "C",
+          "title": "Seduta C",
+          "note": "",
+          "prescriptions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000016",
+              "exerciseRef": "90000000-0000-4000-8000-000000000102",
+              "sets": 1,
+              "optionalSets": 0,
+              "repsMin": 5,
+              "repsMax": 5,
+              "durationSeconds": null,
+              "restSeconds": 180,
+              "rir": null,
+              "rpe": null,
+              "note": "Prescrizione dalla fonte: Stacco da terra 1 x 5"
+            }
+          ]
+        }
+      ],
+      "catalog": [
+        {
+          "ref": "90000000-0000-4000-8000-000000000100",
+          "choice": {
+            "source": "new",
+            "localKey": "new-0",
+            "values": {
+              "name": "Squat",
+              "variant": "",
+              "equipment": "",
+              "loadConvention": "total",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        },
+        {
+          "ref": "90000000-0000-4000-8000-000000000101",
+          "choice": {
+            "source": "new",
+            "localKey": "new-1",
+            "values": {
+              "name": "Panca piana",
+              "variant": "",
+              "equipment": "",
+              "loadConvention": "total",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        },
+        {
+          "ref": "90000000-0000-4000-8000-000000000102",
+          "choice": {
+            "source": "new",
+            "localKey": "new-2",
+            "values": {
+              "name": "Stacco da terra",
+              "variant": "",
+              "equipment": "",
+              "loadConvention": "total",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        }
+      ]
+    },
+    "program": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "id": "90000000-0000-4000-8000-000000000003",
+      "title": "Programma A/B/C",
+      "guidance": "Alternare le sedute A, B e C senza giorni fissi.",
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "A",
+          "title": "Seduta A",
+          "note": "",
+          "exercises": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000100",
+                "name": "Squat",
+                "variant": "",
+                "equipment": "",
+                "loadConvention": "total",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": false,
+                "note": ""
+              },
+              "sets": "3",
+              "optionalSets": "0",
+              "repsMin": "5",
+              "repsMax": "5",
+              "durationSeconds": "",
+              "restSeconds": "180",
+              "rir": "",
+              "rpe": "",
+              "note": "Prescrizione dalla fonte: Squat 3 x 5"
+            }
+          ]
+        },
+        {
+          "id": "90000000-0000-4000-8000-000000000013",
+          "label": "B",
+          "title": "Seduta B",
+          "note": "",
+          "exercises": [
+            {
+              "id": "90000000-0000-4000-8000-000000000014",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000101",
+                "name": "Panca piana",
+                "variant": "",
+                "equipment": "",
+                "loadConvention": "total",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": false,
+                "note": ""
+              },
+              "sets": "3",
+              "optionalSets": "0",
+              "repsMin": "5",
+              "repsMax": "5",
+              "durationSeconds": "",
+              "restSeconds": "180",
+              "rir": "",
+              "rpe": "",
+              "note": "Prescrizione dalla fonte: Panca piana 3 x 5"
+            }
+          ]
+        },
+        {
+          "id": "90000000-0000-4000-8000-000000000015",
+          "label": "C",
+          "title": "Seduta C",
+          "note": "",
+          "exercises": [
+            {
+              "id": "90000000-0000-4000-8000-000000000016",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000102",
+                "name": "Stacco da terra",
+                "variant": "",
+                "equipment": "",
+                "loadConvention": "total",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": false,
+                "note": ""
+              },
+              "sets": "1",
+              "optionalSets": "0",
+              "repsMin": "5",
+              "repsMax": "5",
+              "durationSeconds": "",
+              "restSeconds": "180",
+              "rir": "",
+              "rpe": "",
+              "note": "Prescrizione dalla fonte: Stacco da terra 1 x 5"
+            }
+          ]
+        }
+      ]
+    },
+    "cycle": null,
+    "provisionalRefs": [
+      "90000000-0000-4000-8000-000000000100",
+      "90000000-0000-4000-8000-000000000101",
+      "90000000-0000-4000-8000-000000000102"
+    ],
+    "targets": {
+      "i0": null,
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012",
+      "i3": "90000000-0000-4000-8000-000000000013",
+      "i4": "90000000-0000-4000-8000-000000000014",
+      "i5": "90000000-0000-4000-8000-000000000015",
+      "i6": "90000000-0000-4000-8000-000000000016"
+    }
+  }
+}

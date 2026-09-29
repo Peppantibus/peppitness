@@ -1,0 +1,228 @@
+{
+  "additionalDecisions": [],
+  "ids": {
+    "planId": "90000000-0000-4000-8000-000000000002",
+    "versionId": "90000000-0000-4000-8000-000000000003",
+    "items": {
+      "i0": "90000000-0000-4000-8000-000000000010",
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012",
+      "i3": "90000000-0000-4000-8000-000000000013",
+      "i4": "90000000-0000-4000-8000-000000000014"
+    },
+    "exercises": {
+      "new:new-trazioni": "90000000-0000-4000-8000-000000000100",
+      "new:new-plank": "90000000-0000-4000-8000-000000000101",
+      "new:new-stacco": "90000000-0000-4000-8000-000000000102"
+    }
+  },
+  "expected": {
+    "resolved": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "versionId": "90000000-0000-4000-8000-000000000003",
+      "title": "Scheda ipertrofia – settimana tipo",
+      "guidance": "",
+      "cycle": null,
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "Lun",
+          "title": "Seduta A",
+          "note": "Etichetta della fonte: A",
+          "prescriptions": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exerciseRef": "90000000-0000-4000-8000-000000000100",
+              "sets": 3,
+              "optionalSets": 0,
+              "repsMin": 8,
+              "repsMax": 12,
+              "durationSeconds": null,
+              "restSeconds": 90,
+              "rir": 2,
+              "rpe": null,
+              "note": "Prescrizione dalla fonte: Trazioni all’elastico: 3 x 8–12, RIR 2, recupero 90–120 s\nrestSeconds: intervallo prima della scelta 90–120; valore scelto {\"min\":90,\"max\":90} (timer_choice)."
+            },
+            {
+              "id": "90000000-0000-4000-8000-000000000013",
+              "exerciseRef": "90000000-0000-4000-8000-000000000101",
+              "sets": 3,
+              "optionalSets": 0,
+              "repsMin": null,
+              "repsMax": null,
+              "durationSeconds": 30,
+              "restSeconds": 90,
+              "rir": null,
+              "rpe": null,
+              "note": "Prescrizione dalla fonte: Plank laterale: 3 x 30 secondi per lato, recupero 1'30\""
+            },
+            {
+              "id": "90000000-0000-4000-8000-000000000014",
+              "exerciseRef": "90000000-0000-4000-8000-000000000102",
+              "sets": 4,
+              "optionalSets": 0,
+              "repsMin": 6,
+              "repsMax": 6,
+              "durationSeconds": null,
+              "restSeconds": 150,
+              "rir": null,
+              "rpe": 8,
+              "note": "Prescrizione dalla fonte: Stacco rumeno con bilanciere: 4 x 6, RPE 8, carico 60 kg, tempo 3-1-1\nCarico prescritto: 60 kg\nTempo di esecuzione: 3-1-1"
+            }
+          ]
+        }
+      ],
+      "catalog": [
+        {
+          "ref": "90000000-0000-4000-8000-000000000100",
+          "choice": {
+            "source": "new",
+            "localKey": "new-trazioni",
+            "values": {
+              "name": "Trazioni all’elastico",
+              "variant": "",
+              "equipment": "",
+              "loadConvention": "bodyweight",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        },
+        {
+          "ref": "90000000-0000-4000-8000-000000000101",
+          "choice": {
+            "source": "new",
+            "localKey": "new-plank",
+            "values": {
+              "name": "Plank laterale",
+              "variant": "",
+              "equipment": "",
+              "loadConvention": "bodyweight",
+              "loadUnit": "kg",
+              "measurementMode": "seconds",
+              "perSide": true,
+              "note": ""
+            }
+          }
+        },
+        {
+          "ref": "90000000-0000-4000-8000-000000000102",
+          "choice": {
+            "source": "new",
+            "localKey": "new-stacco",
+            "values": {
+              "name": "Stacco rumeno",
+              "variant": "",
+              "equipment": "bilanciere",
+              "loadConvention": "total",
+              "loadUnit": "kg",
+              "measurementMode": "reps",
+              "perSide": false,
+              "note": ""
+            }
+          }
+        }
+      ]
+    },
+    "program": {
+      "planId": "90000000-0000-4000-8000-000000000002",
+      "id": "90000000-0000-4000-8000-000000000003",
+      "title": "Scheda ipertrofia – settimana tipo",
+      "guidance": "",
+      "days": [
+        {
+          "id": "90000000-0000-4000-8000-000000000011",
+          "label": "Lun",
+          "title": "Seduta A",
+          "note": "Etichetta della fonte: A",
+          "exercises": [
+            {
+              "id": "90000000-0000-4000-8000-000000000012",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000100",
+                "name": "Trazioni all’elastico",
+                "variant": "",
+                "equipment": "",
+                "loadConvention": "bodyweight",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": false,
+                "note": ""
+              },
+              "sets": "3",
+              "optionalSets": "0",
+              "repsMin": "8",
+              "repsMax": "12",
+              "durationSeconds": "",
+              "restSeconds": "90",
+              "rir": "2",
+              "rpe": "",
+              "note": "Prescrizione dalla fonte: Trazioni all’elastico: 3 x 8–12, RIR 2, recupero 90–120 s\nrestSeconds: intervallo prima della scelta 90–120; valore scelto {\"min\":90,\"max\":90} (timer_choice)."
+            },
+            {
+              "id": "90000000-0000-4000-8000-000000000013",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000101",
+                "name": "Plank laterale",
+                "variant": "",
+                "equipment": "",
+                "loadConvention": "bodyweight",
+                "loadUnit": "kg",
+                "measurementMode": "seconds",
+                "perSide": true,
+                "note": ""
+              },
+              "sets": "3",
+              "optionalSets": "0",
+              "repsMin": "",
+              "repsMax": "",
+              "durationSeconds": "30",
+              "restSeconds": "90",
+              "rir": "",
+              "rpe": "",
+              "note": "Prescrizione dalla fonte: Plank laterale: 3 x 30 secondi per lato, recupero 1'30\""
+            },
+            {
+              "id": "90000000-0000-4000-8000-000000000014",
+              "exercise": {
+                "id": "90000000-0000-4000-8000-000000000102",
+                "name": "Stacco rumeno",
+                "variant": "",
+                "equipment": "bilanciere",
+                "loadConvention": "total",
+                "loadUnit": "kg",
+                "measurementMode": "reps",
+                "perSide": false,
+                "note": ""
+              },
+              "sets": "4",
+              "optionalSets": "0",
+              "repsMin": "6",
+              "repsMax": "6",
+              "durationSeconds": "",
+              "restSeconds": "150",
+              "rir": "",
+              "rpe": "8",
+              "note": "Prescrizione dalla fonte: Stacco rumeno con bilanciere: 4 x 6, RPE 8, carico 60 kg, tempo 3-1-1\nCarico prescritto: 60 kg\nTempo di esecuzione: 3-1-1"
+            }
+          ]
+        }
+      ]
+    },
+    "cycle": null,
+    "provisionalRefs": [
+      "90000000-0000-4000-8000-000000000100",
+      "90000000-0000-4000-8000-000000000101",
+      "90000000-0000-4000-8000-000000000102"
+    ],
+    "targets": {
+      "i0": null,
+      "i1": "90000000-0000-4000-8000-000000000011",
+      "i2": "90000000-0000-4000-8000-000000000012",
+      "i3": "90000000-0000-4000-8000-000000000013",
+      "i4": "90000000-0000-4000-8000-000000000014"
+    }
+  }
+}
