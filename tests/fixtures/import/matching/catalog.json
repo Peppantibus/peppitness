@@ -1,0 +1,10 @@
+{
+  "personal": [
+    {"id":"11111111-1111-4111-8111-111111111111","revision":3,"name":"Squat","variant":"libero","equipment":"bilanciere","loadConvention":"total","loadUnit":"kg","measurementMode":"reps","perSide":false,"note":"Catalogo personale","archivedAt":null},
+    {"id":"22222222-2222-4222-8222-222222222222","revision":1,"name":"Squat","variant":"Smith","equipment":"Smith","loadConvention":"total","loadUnit":"kg","measurementMode":"reps","perSide":false,"note":"","archivedAt":null}
+  ],
+  "shared": [
+    {"id":"33333333-3333-4333-8333-333333333333","revision":1,"name":"Squat","variant":"libero","equipment":"bilanciere","loadConvention":"total","loadUnit":"kg","measurementMode":"reps","perSide":false,"note":"Template","archivedAt":null}
+  ],
+  "complete": true
+}
