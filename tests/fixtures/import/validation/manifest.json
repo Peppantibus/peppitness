@@ -1,0 +1,493 @@
+{
+"formatVersion": 1,
+"description": "Casi della validazione semantica (task 06): varianti sintetiche del corpus 01 o file di questa cartella. Esiti attesi rivisti a mano.",
+"cases": [
+  {
+    "id": "workout-wrong-row-number", "domain": "workout",
+    "summary": "Serie 2 vera ma presa dalla riga del rematore per la panca: citazione esistente, riga sbagliata.",
+    "tags": ["wrong-row", "context"],
+    "document": { "base": "documents/workout-incomplete.json" },
+    "proposal": { "base": "extractions/workout-incomplete.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/exercises/0/sets", "value": 2 },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/sessions/0/exercises/0/sets", "spans": [{ "blockId": "t:1:r:2", "quote": "2 + 1 facoltativa" }] } },
+      { "op": "remove", "path": "/issues/0" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "wrong_context", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": ["t:1:r:2"] }
+    ] }
+  },
+  {
+    "id": "workout-invented-quote", "domain": "workout",
+    "summary": "Serie 4 con citazione «4 x 8-10» che non esiste nel blocco.",
+    "tags": ["invented-quote"],
+    "document": { "base": "documents/workout-spec-example.json" },
+    "proposal": { "base": "extractions/workout-spec-example.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/exercises/0/sets", "value": 4 },
+      { "op": "replace", "path": "/evidence/5/spans/0/quote", "value": "4 x 8-10" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "quote_not_found", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": ["t:1:r:1"] }
+    ] }
+  },
+  {
+    "id": "workout-omitted-section", "domain": "workout",
+    "summary": "Seduta C della fonte omessa dalla proposta.",
+    "tags": ["omission", "coverage"],
+    "document": { "base": "documents/workout-abc-no-days.json" },
+    "proposal": { "base": "extractions/workout-abc-no-days.json", "patch": [
+      { "op": "remove", "path": "/sessions/2" },
+      { "op": "remove", "path": "/evidence/23" },
+      { "op": "remove", "path": "/evidence/22" },
+      { "op": "remove", "path": "/evidence/21" },
+      { "op": "remove", "path": "/evidence/20" },
+      { "op": "remove", "path": "/evidence/19" },
+      { "op": "remove", "path": "/evidence/18" },
+      { "op": "remove", "path": "/evidence/17" },
+      { "op": "remove", "path": "/issues/2" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/1/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/1/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/1/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/1/exercises/0", "sourceRefs": [] },
+      { "code": "section_not_covered", "severity": "confirmation", "sourcePath": "", "sourceRefs": ["p:7", "p:8"] }
+    ] }
+  },
+  {
+    "id": "workout-sets-range-as-optional", "domain": "workout",
+    "summary": "3–4 serie rese come 3 + 1 facoltativa.",
+    "tags": ["sets-range"],
+    "document": { "base": "documents/workout-incomplete.json" },
+    "proposal": { "base": "extractions/workout-incomplete.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/exercises/0/sets", "value": 3 },
+      { "op": "replace", "path": "/sessions/0/exercises/0/optionalSets", "value": 1 },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/sessions/0/exercises/0/sets", "spans": [{ "blockId": "t:1:r:1", "quote": "3–4" }] } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/sessions/0/exercises/0/optionalSets", "spans": [{ "blockId": "t:1:r:1", "quote": "3–4" }] } },
+      { "op": "remove", "path": "/issues/0" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "sets_range_as_number", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": ["t:1:r:1"] },
+      { "code": "sets_range_as_number", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": ["t:1:r:1"] }
+    ] }
+  },
+  {
+    "id": "workout-sequence-as-range", "domain": "workout",
+    "summary": "12/10/8 ridotto all’intervallo 8–12.",
+    "tags": ["reps-sequence"],
+    "document": { "base": "documents/workout-partially-interpretable.json" },
+    "proposal": { "base": "extractions/workout-partially-interpretable.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/exercises/0/repetitions", "value": { "min": 8, "max": 12 } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/sessions/0/exercises/0/repetitions", "spans": [{ "blockId": "t:1:r:1", "quote": "12/10/8" }] } },
+      { "op": "remove", "path": "/issues/0" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "cycle_incomplete", "severity": "blocking", "sourcePath": "/cycle", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "sets_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1/sets", "sourceRefs": [] },
+      { "code": "repetitions_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1/repetitions", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/1/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/2/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/3", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/3/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/3/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/3", "sourceRefs": [] },
+      { "code": "complex_rule_unresolved", "severity": "blocking", "sourcePath": "/complexRules/0", "sourceRefs": ["p:2"] },
+      { "code": "complex_rule_unresolved", "severity": "blocking", "sourcePath": "/complexRules/1", "sourceRefs": ["p:2"] },
+      { "code": "complex_rule_unresolved", "severity": "blocking", "sourcePath": "/complexRules/2", "sourceRefs": ["t:1:r:3"] },
+      { "code": "value_unverified", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": ["t:1:r:1"] },
+      { "code": "reps_sequence_as_range", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/repetitions", "sourceRefs": ["t:1:r:1"] },
+      { "code": "source_not_read", "severity": "blocking", "sourcePath": "", "sourceRefs": ["p:4"] },
+      { "code": "unassigned_content", "severity": "confirmation", "sourcePath": "", "sourceRefs": ["p:4"] }
+    ] }
+  },
+  {
+    "id": "workout-per-side-doubled", "domain": "workout",
+    "summary": "3 x 30 secondi per lato resi come 60 secondi.",
+    "tags": ["per-side"],
+    "document": { "base": "documents/workout-ranges-unicode.json" },
+    "proposal": { "base": "extractions/workout-ranges-unicode.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/exercises/1/durationSeconds", "value": { "min": 60, "max": 60 } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_range", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/1/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/2/optionalSets", "sourceRefs": [] },
+      { "code": "value_contradicts_source", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1/durationSeconds", "sourceRefs": ["p:4"] }
+    ] }
+  },
+  {
+    "id": "workout-rir-from-rpe", "domain": "workout",
+    "summary": "RPE 8 convertito in RIR 8.",
+    "tags": ["rir-rpe"],
+    "document": { "base": "documents/workout-ranges-unicode.json" },
+    "proposal": { "base": "extractions/workout-ranges-unicode.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/exercises/2/rir", "value": { "min": 8, "max": 8 } },
+      { "op": "replace", "path": "/sessions/0/exercises/2/rpe", "value": null },
+      { "op": "replace", "path": "/evidence/24/path", "value": "/sessions/0/exercises/2/rir" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_range", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/1/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/2/optionalSets", "sourceRefs": [] },
+      { "code": "rir_rpe_swapped", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2/rir", "sourceRefs": ["p:5"] }
+    ] }
+  },
+  {
+    "id": "workout-weekday-invented", "domain": "workout",
+    "summary": "Seduta A assegnata al lunedì senza giorno nella fonte.",
+    "tags": ["weekday", "rotation"],
+    "document": { "base": "documents/workout-abc-no-days.json" },
+    "proposal": { "base": "extractions/workout-abc-no-days.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/weekday", "value": 1 },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/sessions/0/weekday", "spans": [{ "blockId": "p:3", "quote": "Seduta A" }] } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/1/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/1/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/1/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/1/exercises/0", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/2/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/2/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/2/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/2/exercises/0", "sourceRefs": [] },
+      { "code": "value_unverified", "severity": "confirmation", "sourcePath": "/sessions/0/weekday", "sourceRefs": ["p:3"] }
+    ] }
+  },
+  {
+    "id": "workout-cover-date", "domain": "workout",
+    "summary": "Data in copertina presa come inizio del ciclo, senza settimane.",
+    "tags": ["cycle", "cover-date"],
+    "document": { "base": "documents/workout-spec-example.json", "patch": [
+      { "op": "replace", "path": "/blocks/0/text", "value": "Scheda esempio 2026-09-01" }
+    ] },
+    "proposal": { "base": "extractions/workout-spec-example.json", "patch": [
+      { "op": "replace", "path": "/cycle", "value": { "startDate": "2026-09-01", "weeks": null } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/cycle/startDate", "spans": [{ "blockId": "p:1", "quote": "2026-09-01" }] } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "cycle_incomplete", "severity": "blocking", "sourcePath": "/cycle", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "cycle_start_unconfirmed", "severity": "confirmation", "sourcePath": "/cycle/startDate", "sourceRefs": ["p:1"] }
+    ] }
+  },
+  {
+    "id": "workout-optional-zero-invented", "domain": "workout",
+    "summary": "Serie facoltative assenti rese come 0.",
+    "tags": ["missing-not-zero"],
+    "document": { "base": "documents/workout-spec-example.json" },
+    "proposal": { "base": "extractions/workout-spec-example.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/exercises/0/optionalSets", "value": 0 },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/sessions/0/exercises/0/optionalSets", "spans": [{ "blockId": "t:1:r:1", "quote": "3 x 8-10" }] } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "value_unverified", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": ["t:1:r:1"] }
+    ] }
+  },
+  {
+    "id": "workout-rest-zero-invented", "domain": "workout",
+    "summary": "«Recupero non indicato» reso come recupero 0.",
+    "tags": ["missing-not-zero"],
+    "document": { "base": "documents/workout-spec-example.json" },
+    "proposal": { "base": "extractions/workout-spec-example.json", "patch": [
+      { "op": "replace", "path": "/sessions/0/exercises/0/restSeconds", "value": { "min": 0, "max": 0 } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/sessions/0/exercises/0/restSeconds", "spans": [{ "blockId": "t:1:r:1", "quote": "recupero non indicato" }] } },
+      { "op": "remove", "path": "/issues/0" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "value_contradicts_source", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": ["t:1:r:1"] }
+    ] }
+  },
+  {
+    "id": "workout-global-rest", "domain": "workout",
+    "summary": "Recupero generale 90 s ereditato dove la riga è vuota, 2' convertito, override 45\" ignorato.",
+    "tags": ["global-rule", "override", "conversion"],
+    "document": { "file": "validation/documents/workout-global-rest.json" },
+    "proposal": { "file": "validation/extractions/workout-global-rest.json" },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/1/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/2/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+      { "code": "local_override_ignored", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2/restSeconds", "sourceRefs": ["p:2", "t:1:r:3"] }
+    ] }
+  },
+  {
+    "id": "workout-hostile-instruction", "domain": "workout",
+    "summary": "Istruzione ostile nel documento seguita dall’interprete (10 serie).",
+    "tags": ["hostile", "global-rule"],
+    "document": { "file": "validation/documents/workout-hostile-instruction.json" },
+    "proposal": { "file": "validation/extractions/workout-hostile-instruction.json" },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "evidence_from_suspicious_text", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": ["p:2"] },
+      { "code": "local_override_ignored", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": ["p:2", "p:4"] },
+      { "code": "suspicious_source_text", "severity": "info", "sourcePath": "", "sourceRefs": ["p:2"] }
+    ] }
+  },
+  {
+    "id": "workout-pdf-pages", "domain": "workout",
+    "summary": "Pagina 2 non collegata e pagina 3 scansionata senza testo.",
+    "tags": ["pdf", "last-page", "coverage"],
+    "document": { "file": "validation/documents/workout-pdf-pages.json" },
+    "proposal": { "file": "validation/extractions/workout-pdf-pages.json" },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "source_not_read", "severity": "blocking", "sourcePath": "", "sourceRefs": [] },
+      { "code": "page_not_covered", "severity": "confirmation", "sourcePath": "", "sourceRefs": ["pdf:2:b:1", "pdf:2:b:2"] }
+    ] }
+  },
+  {
+    "id": "workout-mixed-other-domain", "domain": "workout",
+    "summary": "Documento misto: sezione dieta lasciata fuori come other_domain.",
+    "tags": ["mixed", "unassigned"],
+    "document": { "base": "documents/workout-spec-example.json", "patch": [
+      { "op": "add", "path": "/blocks/-", "value": { "id": "p:3", "kind": "heading", "text": "Dieta", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1"], "origin": "native", "bbox": null } },
+      { "op": "add", "path": "/blocks/-", "value": { "id": "p:4", "kind": "paragraph", "text": "Colazione: latte 200 ml.", "page": null, "tableId": null, "row": null, "column": null, "rowSpan": null, "columnSpan": null, "parentId": null, "headingIds": ["p:1", "p:3"], "origin": "native", "bbox": null } }
+    ] },
+    "proposal": { "base": "extractions/workout-spec-example.json", "patch": [
+      { "op": "add", "path": "/unassigned/-", "value": { "sourceRefs": ["p:3", "p:4"], "text": "Colazione: latte 200 ml.", "reason": "other_domain" } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "other_domain_content", "severity": "info", "sourcePath": "", "sourceRefs": ["p:3", "p:4"] }
+    ] }
+  },
+  {
+    "id": "workout-bad-references", "domain": "workout",
+    "summary": "Titolo citato da un blocco inesistente e prova per un esercizio inesistente.",
+    "tags": ["dangling"],
+    "document": { "base": "documents/workout-spec-example.json" },
+    "proposal": { "base": "extractions/workout-spec-example.json", "patch": [
+      { "op": "replace", "path": "/evidence/0/spans/0/blockId", "value": "p:99" },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/sessions/0/exercises/5/name", "spans": [{ "blockId": "p:2", "quote": "Seduta A" }] } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+      { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+      { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+      { "code": "evidence_dangling_path", "severity": "info", "sourcePath": "", "sourceRefs": ["p:2"] },
+      { "code": "unverified_detail", "severity": "confirmation", "sourcePath": "/title", "sourceRefs": [] }
+    ] }
+  },
+  {
+    "id": "diet-alternative-summed", "domain": "diet",
+    "summary": "«Pasta oppure riso basmati 70 g»: riso aggiunto al pranzo base.",
+    "tags": ["alternatives"],
+    "document": { "base": "documents/diet-alternatives-additions.json" },
+    "proposal": { "base": "extractions/diet-alternatives-additions.json", "patch": [
+      { "op": "add", "path": "/days/0/meals/1/foods/-", "value": { "name": "riso basmati", "quantityText": "70 g", "notes": [] } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/days/0/meals/1/foods/2/name", "spans": [{ "blockId": "t:1:r:2", "quote": "riso basmati" }] } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/days/0/meals/1/foods/2/quantityText", "spans": [{ "blockId": "t:1:r:2", "quote": "70 g" }] } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "day_type_missing", "severity": "confirmation", "sourcePath": "/days/0/dayType", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/1/timeText", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/2/timeText", "sourceRefs": [] },
+      { "code": "alternative_in_base", "severity": "blocking", "sourcePath": "/days/0/meals/1/foods/2/name", "sourceRefs": ["t:1:r:2"] }
+    ] }
+  },
+  {
+    "id": "diet-conditional-in-base", "domain": "diet",
+    "summary": "Aggiunta condizionata (30 g di pane) inserita nello spuntino base.",
+    "tags": ["conditional-additions"],
+    "document": { "base": "documents/diet-alternatives-additions.json" },
+    "proposal": { "base": "extractions/diet-alternatives-additions.json", "patch": [
+      { "op": "add", "path": "/days/0/meals/2/foods/-", "value": { "name": "pane", "quantityText": "30 g", "notes": [] } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/days/0/meals/2/foods/1/name", "spans": [{ "blockId": "t:1:r:3", "quote": "pane" }] } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/days/0/meals/2/foods/1/quantityText", "spans": [{ "blockId": "t:1:r:3", "quote": "30 g" }] } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "day_type_missing", "severity": "confirmation", "sourcePath": "/days/0/dayType", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/1/timeText", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/2/timeText", "sourceRefs": [] },
+      { "code": "conditional_in_base", "severity": "blocking", "sourcePath": "/days/0/meals/2/foods/1/name", "sourceRefs": ["t:1:r:3"] }
+    ] }
+  },
+  {
+    "id": "diet-global-rule-in-meal", "domain": "diet",
+    "summary": "Regola globale ripetuta nelle aggiunte della colazione.",
+    "tags": ["global-rules"],
+    "document": { "base": "documents/diet-alternatives-additions.json" },
+    "proposal": { "base": "extractions/diet-alternatives-additions.json", "patch": [
+      { "op": "add", "path": "/days/0/meals/0/additions/-", "value": "Nei giorni di allenamento lungo aggiungere 20 g di frutta secca a scelta." },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/days/0/meals/0/additions/0", "spans": [{ "blockId": "p:2", "quote": "Nei giorni di allenamento lungo aggiungere 20 g di frutta secca a scelta." }] } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "day_type_missing", "severity": "confirmation", "sourcePath": "/days/0/dayType", "sourceRefs": [] },
+      { "code": "global_rule_in_meal", "severity": "blocking", "sourcePath": "/days/0/meals/0/additions/0", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/1/timeText", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/2/timeText", "sourceRefs": [] }
+    ] }
+  },
+  {
+    "id": "diet-quantity-completed", "domain": "diet",
+    "summary": "Quantità completata oltre la citazione («170 g di yogurt intero»).",
+    "tags": ["textual-quantities"],
+    "document": { "base": "documents/diet-spec-example.json" },
+    "proposal": { "base": "extractions/diet-spec-example.json", "patch": [
+      { "op": "replace", "path": "/days/0/meals/0/foods/0/quantityText", "value": "170 g di yogurt intero" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/0/timeText", "sourceRefs": [] },
+      { "code": "text_not_in_quote", "severity": "blocking", "sourcePath": "/days/0/meals/0/foods/0/quantityText", "sourceRefs": ["p:3"] }
+    ] }
+  },
+  {
+    "id": "diet-food-from-other-meal", "domain": "diet",
+    "summary": "Mela dello spuntino messa nella colazione.",
+    "tags": ["context"],
+    "document": { "base": "documents/diet-alternatives-additions.json" },
+    "proposal": { "base": "extractions/diet-alternatives-additions.json", "patch": [
+      { "op": "add", "path": "/days/0/meals/0/foods/-", "value": { "name": "Mela", "quantityText": "1", "notes": [] } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/days/0/meals/0/foods/2/name", "spans": [{ "blockId": "t:1:r:3", "quote": "Mela" }] } },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/days/0/meals/0/foods/2/quantityText", "spans": [{ "blockId": "t:1:r:3", "quote": "Mela 1" }] } }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "day_type_missing", "severity": "confirmation", "sourcePath": "/days/0/dayType", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/1/timeText", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/2/timeText", "sourceRefs": [] },
+      { "code": "wrong_context", "severity": "blocking", "sourcePath": "/days/0/meals/0/foods/2/name", "sourceRefs": ["t:1:r:3"] }
+    ] }
+  },
+  {
+    "id": "diet-day-type-invented", "domain": "diet",
+    "summary": "«Giorno 1» dichiarato giorno di allenamento.",
+    "tags": ["day-type"],
+    "document": { "base": "documents/diet-alternatives-additions.json" },
+    "proposal": { "base": "extractions/diet-alternatives-additions.json", "patch": [
+      { "op": "replace", "path": "/days/0/dayType", "value": "training" },
+      { "op": "add", "path": "/evidence/-", "value": { "path": "/days/0/dayType", "spans": [{ "blockId": "p:3", "quote": "Giorno 1" }] } },
+      { "op": "remove", "path": "/issues/0" }
+    ] },
+    "expected": { "status": "draft", "issues": [
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/1/timeText", "sourceRefs": [] },
+      { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/2/timeText", "sourceRefs": [] },
+      { "code": "value_unverified", "severity": "confirmation", "sourcePath": "/days/0/dayType", "sourceRefs": ["p:3"] }
+    ] }
+  },
+  {
+    "id": "rejected-outcome-with-content", "domain": "workout",
+    "summary": "Dominio sbagliato ma con un titolo inventato.",
+    "tags": ["wrong-domain", "rejection"],
+    "document": { "base": "documents/workout-wrong-domain.json" },
+    "proposal": { "base": "extractions/workout-wrong-domain.json", "patch": [
+      { "op": "replace", "path": "/title", "value": "Menu settimanale" }
+    ] },
+    "expected": { "status": "rejected", "reason": "outcome_mismatch" }
+  },
+  {
+    "id": "rejected-empty-document", "domain": "workout",
+    "summary": "Documento senza testo con una proposta estratta.",
+    "tags": ["empty", "rejection"],
+    "document": { "file": "validation/documents/empty.json" },
+    "proposal": { "base": "extractions/workout-spec-example.json", "patch": [
+
+    ] },
+    "expected": { "status": "rejected", "reason": "empty_document" }
+  },
+  {
+    "id": "rejected-no-relevant-content", "domain": "workout",
+    "summary": "Documento vuoto, nessun contenuto dichiarato.",
+    "tags": ["empty", "rejection"],
+    "document": { "file": "validation/documents/empty.json" },
+    "proposal": { "base": "extractions/workout-wrong-domain.json", "patch": [
+      { "op": "replace", "path": "/outcome", "value": "no_relevant_content" }
+    ] },
+    "expected": { "status": "rejected", "reason": "no_relevant_content" }
+  },
+  {
+    "id": "rejected-truncated-json", "domain": "workout",
+    "summary": "Risposta troncata.",
+    "tags": ["rejection"],
+    "document": { "base": "documents/workout-spec-example.json" },
+    "proposal": { "json": "{\"schemaVersion\": \"1.0\", \"kind\": \"workout\", \"sessions\": [" },
+    "expected": { "status": "rejected", "reason": "invalid_json" }
+  },
+  {
+    "id": "rejected-other-domain-dto", "domain": "workout",
+    "summary": "DTO dieta per una scheda.",
+    "tags": ["rejection"],
+    "document": { "base": "documents/diet-spec-example.json" },
+    "proposal": { "base": "extractions/diet-spec-example.json", "patch": [
+
+    ] },
+    "expected": { "status": "rejected", "reason": "kind_mismatch" }
+  },
+  {
+    "id": "rejected-unknown-version", "domain": "workout",
+    "summary": "Versione dello schema sconosciuta.",
+    "tags": ["rejection"],
+    "document": { "base": "documents/workout-spec-example.json" },
+    "proposal": { "base": "extractions/workout-spec-example.json", "patch": [
+      { "op": "replace", "path": "/schemaVersion", "value": "2.0" }
+    ] },
+    "expected": { "status": "rejected", "reason": "unsupported_version" }
+  }
+]
+}

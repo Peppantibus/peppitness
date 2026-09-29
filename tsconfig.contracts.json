@@ -17,5 +17,5 @@
     "noEmit": true,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.contracts.tsbuildinfo"
   },
-  "include": ["src/import/contracts", "src/import/mapping/canonical.ts", "supabase/functions/_shared/import/contracts.ts"]
+  "include": ["src/import/contracts", "src/import/mapping/canonical.ts", "src/import/validation", "supabase/functions/_shared/import/contracts.ts", "supabase/functions/_shared/import/validation.ts"]
 }

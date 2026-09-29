@@ -20,7 +20,9 @@ Ogni caso ha tutte le chiavi:
 | `expectedBlocks`, `expectedProposal` | Documento normalizzato e proposta attesi (casi positivi) |
 | `candidate` | Solo casi negativi: `target` (`normalized-document`, `workout-extraction`, `diet-extraction`) più una forma fra `base` + `patch` (sottoinsieme RFC 6902: add/replace/remove), `value` (valore JSON diretto) o `json` (testo da interpretare) |
 | `expectedContractErrors` | Coppie `path` + `code` attese dai validatori di contratto, confrontate come insieme esatto |
-| `expectedIssues`, `userDecisions`, `expectedDomainOutput` | Problemi applicativi (task 06), decisioni della revisione (02/07) e output di dominio (09/10) |
+| `expectedIssues` | Problemi applicativi attesi dalla validazione semantica (task 06): `code`, `severity`, `sourcePath`, `sourceRefs` nell'ordine prodotto da `validateProposal`, rivisti a mano. `[]` per un caso rifiutato prima della bozza (esito diverso da `extracted`). Compilato per tutti i casi positivi; resta `null` sui negativi, che si fermano ai contratti |
+| `userDecisions` | Decisioni della revisione (task 07) nel formato del contratto 02 (`reviewDecisionSchema`), con ID locali `i<n>` assegnati nell'ordine di `enumerateProposalItems` (`createReviewDraft` + `sequentialLocalIds('i')`) e `decisionId` `d<n>`. Simulano un utente che chiude ogni problema bloccante e ogni conferma (scelte del catalogo `new`, recuperi scelti, vuoti confermati, ambiti delle regole); `[]` se non serve nulla, `null` per un caso rifiutato. Verificate in `tests/import-review-state.test.ts` |
+| `expectedDomainOutput` | Output di dominio (09/10) |
 
 `null` significa **annotazione non ancora presente**, non «nessun problema» o «copertura garantita». I task successivi compilano questi campi per i propri livelli, senza riscrivere la verità già annotata.
 
@@ -31,6 +33,16 @@ Positivi: i due esempi completi della specifica (§5.3, §5.4), scheda incomplet
 Negativi: chiavi extra alla radice e annidate, chiave mancante, versione sconosciuta, intervallo invertito, weekday fuori 1–7, evidence sulla radice o con JSON Pointer invalido, DTO dieta al validatore della scheda e viceversa, radice non oggetto, JSON illeggibile, tipi non convertiti, documenti con ID duplicati, riferimenti pendenti, cicli, coordinate/bbox non valide, celle unite sovrapposte, testo non canonico.
 
 Aggiungere un caso: creare i file, referenziarli nel manifest (il test rifiuta file orfani o mancanti) ed eseguire `npm test`.
+
+## Validazione semantica (task 06)
+
+`validation/` contiene i casi della validazione di `src/import/validation/` (`tests/import-validation.test.ts`, `tests/import-evidence.test.ts`):
+
+- `validation/manifest.json` (formato 1): per caso `id`, `domain`, `summary`, `tags`, `document` e `proposal` (uno fra `file` in questa cartella, `base` del corpus 01 con `patch` RFC 6902 add/replace/remove, `json` testuale per le risposte troncate) ed `expected` (`{ status: "draft", issues: [...] }` con `code`, `severity`, `sourcePath`, `sourceRefs` in ordine, oppure `{ status: "rejected", reason }`). Il test rifiuta file non referenziati.
+- `validation/documents/`, `validation/extractions/`: documenti e proposte nuovi, sintetici (`sourceHash` = `sha256("synthetic:<id>")`): regola generale di recupero con eccezione per riga, istruzione ostile seguita dall'interprete, PDF con pagina non collegata e pagina scansionata, documento vuoto.
+- Casi: numero vero nella riga sbagliata, citazione inventata, sezione omessa, 3–4 serie come 3 + 1, 12/10/8 come intervallo, per lato raddoppiato, RPE come RIR, giorno inventato per A/B/C, data di copertina come inizio, 0 inventati per serie facoltative e recupero, riferimenti pendenti, documento misto con `other_domain`, alternative e aggiunte condizionate sommate al pasto base, regola globale copiata in un pasto, quantità completata, alimento di un altro pasto, tipo di giornata inventato, rifiuti (esito con contenuto, documento vuoto, JSON troncato, dominio sbagliato, versione sconosciuta).
+
+Gli esiti sono stati rivisti a mano caso per caso rispetto alla costruzione della fixture. Se una regola cambia di proposito, aggiornare il golden rivedendolo e alzare `VALIDATION_RULES_VERSION` (`src/import/validation/validate.ts`) quando cambia il significato di un codice.
 
 ## DOCX del reader (task 03 e 04)
 

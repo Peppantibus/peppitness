@@ -8,7 +8,7 @@ import * as contracts from '../src/import/contracts/index.ts'
 import * as bridge from '../supabase/functions/_shared/import/contracts.ts'
 import { array, enumeration, nullable, object, string, validate } from '../src/import/contracts/schema.ts'
 import {
-  DocumentReaderError, extractionJsonSchema, extractionSchemaIds, normalizeSourceText, parseExtractionJson, throwIfCancelled,
+  DocumentReaderError, extractionJsonSchema, reviewDecisionSchema, extractionSchemaIds, normalizeSourceText, parseExtractionJson, throwIfCancelled,
   validateDietExtraction, validateDocumentReadResult, validateExtraction, validateNormalizedDocument, validateWorkoutExtraction,
   type DocumentReader, type ExtractionKind, type NormalizedDocument, type ValidationResult,
 } from '../src/import/contracts/index.ts'
@@ -77,8 +77,16 @@ const caseSchema = object({
   expectedProposal: fixturePath,
   candidate: nullable(object({})), // verificato a parte: forme alternative base+patch, value, json
   expectedContractErrors: array(object({ path: string({ maxLength: 200 }), code: string({ minLength: 1, maxLength: 40 }) }), { maxItems: 50 }),
-  expectedIssues: nullable(array(object({}), { maxItems: 100 })),
-  userDecisions: nullable(array(object({}), { maxItems: 100 })),
+  // Task 06: problemi applicativi attesi dalla validazione semantica (verificati in tests/import-validation.test.ts).
+  expectedIssues: nullable(array(object({
+    code: string({ minLength: 1, maxLength: 64, pattern: /^[a-z][a-z0-9_]*$/ }),
+    severity: enumeration(['blocking', 'confirmation', 'info']),
+    sourcePath: nullable(string({ maxLength: 1000 })),
+    sourceRefs: array(string({ minLength: 1, maxLength: 200 }), { maxItems: 50 }),
+  }), { maxItems: 100 })),
+  // Task 07: decisioni della revisione in formato contratto 02, con ID locali `i<n>` nell'ordine di enumerateProposalItems
+  // (createReviewDraft + sequentialLocalIds('i')); verificate in tests/import-review-state.test.ts.
+  userDecisions: nullable(array(reviewDecisionSchema, { maxItems: 100 })),
   expectedDomainOutput: nullable(object({})),
 })
 interface Candidate { target: 'normalized-document' | 'workout-extraction' | 'diet-extraction'; base?: string; patch?: Json[]; value?: Json; json?: string }

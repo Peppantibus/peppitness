@@ -14,8 +14,17 @@
       "expectedProposal": "extractions/workout-spec-example.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
-      "userDecisions": null,
+      "expectedIssues": [
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] }
+      ],
+      "userDecisions": [
+        { "op": "catalog", "decisionId": "d1", "localId": "i2", "before": null, "after": { "source": "new", "localKey": "new-squat", "values": { "name": "Squat", "variant": "", "equipment": "", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d2", "localId": "i2", "field": "restSeconds", "before": null, "after": { "min": 120, "max": 120 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d3", "localId": "i2", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" }
+      ],
       "expectedDomainOutput": null
     },
     {
@@ -30,8 +39,10 @@
       "expectedProposal": "extractions/diet-spec-example.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
-      "userDecisions": null,
+      "expectedIssues": [
+        { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/0/timeText", "sourceRefs": [] }
+      ],
+      "userDecisions": [],
       "expectedDomainOutput": null
     },
     {
@@ -46,8 +57,22 @@
       "expectedProposal": "extractions/workout-incomplete.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
-      "userDecisions": null,
+      "expectedIssues": [
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "sets_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] }
+      ],
+      "userDecisions": [
+        { "op": "catalog", "decisionId": "d1", "localId": "i2", "before": null, "after": { "source": "new", "localKey": "new-panca", "values": { "name": "Panca piana", "variant": "", "equipment": "bilanciere", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d2", "localId": "i2", "field": "sets", "before": null, "after": 4, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d3", "localId": "i2", "field": "restSeconds", "before": null, "after": { "min": 120, "max": 120 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d4", "localId": "i2", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" },
+        { "op": "catalog", "decisionId": "d5", "localId": "i3", "before": null, "after": { "source": "new", "localKey": "new-rematore", "values": { "name": "Rematore con manubrio", "variant": "", "equipment": "manubrio", "loadConvention": "single-dumbbell", "loadUnit": "kg", "measurementMode": "reps", "perSide": true, "note": "" } }, "reason": "catalog_choice" }
+      ],
       "expectedDomainOutput": null
     },
     {
@@ -62,8 +87,27 @@
       "expectedProposal": "extractions/workout-ranges-unicode.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
-      "userDecisions": null,
+      "expectedIssues": [
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "rest_range", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/1/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/2/optionalSets", "sourceRefs": [] }
+      ],
+      "userDecisions": [
+        { "op": "catalog", "decisionId": "d1", "localId": "i2", "before": null, "after": { "source": "new", "localKey": "new-trazioni", "values": { "name": "Trazioni all’elastico", "variant": "", "equipment": "", "loadConvention": "bodyweight", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d2", "localId": "i2", "field": "restSeconds", "before": { "min": 90, "max": 120 }, "after": { "min": 90, "max": 90 }, "reason": "timer_choice" },
+        { "op": "set", "decisionId": "d3", "localId": "i2", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" },
+        { "op": "catalog", "decisionId": "d4", "localId": "i3", "before": null, "after": { "source": "new", "localKey": "new-plank", "values": { "name": "Plank laterale", "variant": "", "equipment": "", "loadConvention": "bodyweight", "loadUnit": "kg", "measurementMode": "seconds", "perSide": true, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d5", "localId": "i3", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" },
+        { "op": "catalog", "decisionId": "d6", "localId": "i4", "before": null, "after": { "source": "new", "localKey": "new-stacco", "values": { "name": "Stacco rumeno", "variant": "", "equipment": "bilanciere", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d7", "localId": "i4", "field": "restSeconds", "before": null, "after": { "min": 150, "max": 150 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d8", "localId": "i4", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" }
+      ],
       "expectedDomainOutput": null
     },
     {
@@ -78,8 +122,31 @@
       "expectedProposal": "extractions/workout-abc-no-days.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
-      "userDecisions": null,
+      "expectedIssues": [
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/1/exercises/0", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/1/exercises/0/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/1/exercises/0/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/1/exercises/0", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/2/exercises/0", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/2/exercises/0/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/2/exercises/0/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/2/exercises/0", "sourceRefs": [] }
+      ],
+      "userDecisions": [
+        { "op": "catalog", "decisionId": "d1", "localId": "i2", "before": null, "after": { "source": "new", "localKey": "new-0", "values": { "name": "Squat", "variant": "", "equipment": "", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d2", "localId": "i2", "field": "restSeconds", "before": null, "after": { "min": 180, "max": 180 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d3", "localId": "i2", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" },
+        { "op": "catalog", "decisionId": "d4", "localId": "i4", "before": null, "after": { "source": "new", "localKey": "new-1", "values": { "name": "Panca piana", "variant": "", "equipment": "", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d5", "localId": "i4", "field": "restSeconds", "before": null, "after": { "min": 180, "max": 180 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d6", "localId": "i4", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" },
+        { "op": "catalog", "decisionId": "d7", "localId": "i6", "before": null, "after": { "source": "new", "localKey": "new-2", "values": { "name": "Stacco da terra", "variant": "", "equipment": "", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d8", "localId": "i6", "field": "restSeconds", "before": null, "after": { "min": 180, "max": 180 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d9", "localId": "i6", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" }
+      ],
       "expectedDomainOutput": null
     },
     {
@@ -94,8 +161,14 @@
       "expectedProposal": "extractions/diet-alternatives-additions.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
-      "userDecisions": null,
+      "expectedIssues": [
+        { "code": "day_type_missing", "severity": "confirmation", "sourcePath": "/days/0/dayType", "sourceRefs": [] },
+        { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/1/timeText", "sourceRefs": [] },
+        { "code": "meal_time_missing", "severity": "info", "sourcePath": "/days/0/meals/2/timeText", "sourceRefs": [] }
+      ],
+      "userDecisions": [
+        { "op": "set", "decisionId": "d1", "localId": "i1", "field": "dayType", "before": null, "after": "any", "reason": "user_edit" }
+      ],
       "expectedDomainOutput": null
     },
     {
@@ -110,7 +183,7 @@
       "expectedProposal": "extractions/workout-wrong-domain.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
+      "expectedIssues": [],
       "userDecisions": null,
       "expectedDomainOutput": null
     },
@@ -126,8 +199,54 @@
       "expectedProposal": "extractions/workout-partially-interpretable.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
-      "userDecisions": null,
+      "expectedIssues": [
+        { "code": "cycle_incomplete", "severity": "blocking", "sourcePath": "/cycle", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "repetitions_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/repetitions", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+        { "code": "sets_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1/sets", "sourceRefs": [] },
+        { "code": "repetitions_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1/repetitions", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/1/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/1/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/1", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/2/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/2/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/2", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/3", "sourceRefs": [] },
+        { "code": "rest_missing", "severity": "blocking", "sourcePath": "/sessions/0/exercises/3/restSeconds", "sourceRefs": [] },
+        { "code": "optional_sets_missing", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/3/optionalSets", "sourceRefs": [] },
+        { "code": "intensity_not_prescribed", "severity": "info", "sourcePath": "/sessions/0/exercises/3", "sourceRefs": [] },
+        { "code": "complex_rule_unresolved", "severity": "blocking", "sourcePath": "/complexRules/0", "sourceRefs": ["p:2"] },
+        { "code": "complex_rule_unresolved", "severity": "blocking", "sourcePath": "/complexRules/1", "sourceRefs": ["p:2"] },
+        { "code": "complex_rule_unresolved", "severity": "blocking", "sourcePath": "/complexRules/2", "sourceRefs": ["t:1:r:3"] },
+        { "code": "value_unverified", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": ["t:1:r:1"] },
+        { "code": "source_not_read", "severity": "blocking", "sourcePath": "", "sourceRefs": ["p:4"] },
+        { "code": "unassigned_content", "severity": "confirmation", "sourcePath": "", "sourceRefs": ["p:4"] }
+      ],
+      "userDecisions": [
+        { "op": "set", "decisionId": "d1", "localId": "i0", "field": "cycle", "before": { "startDate": null, "weeks": 4 }, "after": { "startDate": "2026-10-05", "weeks": 4 }, "reason": "user_edit" },
+        { "op": "catalog", "decisionId": "d2", "localId": "i2", "before": null, "after": { "source": "new", "localKey": "new-squat", "values": { "name": "Squat", "variant": "", "equipment": "", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d3", "localId": "i2", "field": "repetitions", "before": null, "after": { "min": 10, "max": 10 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d4", "localId": "i2", "field": "restSeconds", "before": null, "after": { "min": 120, "max": 120 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d5", "localId": "i2", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" },
+        { "op": "confirm", "decisionId": "d6", "localId": "i2", "field": "sets", "issueCode": "value_unverified", "value": 3, "reason": "scope_choice" },
+        { "op": "remove", "decisionId": "d7", "localId": "i3", "reason": "scope_choice" },
+        { "op": "catalog", "decisionId": "d8", "localId": "i4", "before": null, "after": { "source": "new", "localKey": "new-0", "values": { "name": "Curl", "variant": "", "equipment": "", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d9", "localId": "i4", "field": "restSeconds", "before": null, "after": { "min": 60, "max": 60 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d10", "localId": "i4", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" },
+        { "op": "catalog", "decisionId": "d11", "localId": "i5", "before": null, "after": { "source": "new", "localKey": "new-1", "values": { "name": "French press", "variant": "", "equipment": "", "loadConvention": "total", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d12", "localId": "i5", "field": "restSeconds", "before": null, "after": { "min": 60, "max": 60 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d13", "localId": "i5", "field": "optionalSets", "before": null, "after": 0, "reason": "confirmed_missing" },
+        { "op": "confirm", "decisionId": "d14", "localId": "i6", "field": null, "issueCode": "complex_rule_unresolved", "value": ["p:2"], "reason": "scope_choice" },
+        { "op": "confirm", "decisionId": "d15", "localId": "i7", "field": null, "issueCode": "complex_rule_unresolved", "value": ["p:2"], "reason": "scope_choice" },
+        { "op": "confirm", "decisionId": "d16", "localId": "i8", "field": null, "issueCode": "complex_rule_unresolved", "value": ["t:1:r:3"], "reason": "scope_choice" },
+        { "op": "confirm", "decisionId": "d17", "localId": "i0", "field": null, "issueCode": "source_not_read", "value": ["p:4"], "reason": "scope_choice" },
+        { "op": "confirm", "decisionId": "d18", "localId": "i0", "field": null, "issueCode": "unassigned_content", "value": ["p:4"], "reason": "scope_choice" }
+      ],
       "expectedDomainOutput": null
     },
     {
@@ -142,8 +261,28 @@
       "expectedProposal": "extractions/workout-out-of-bounds.json",
       "candidate": null,
       "expectedContractErrors": [],
-      "expectedIssues": null,
-      "userDecisions": null,
+      "expectedIssues": [
+        { "code": "value_out_of_bounds", "severity": "blocking", "sourcePath": "/cycle/startDate", "sourceRefs": [] },
+        { "code": "catalog_choice_required", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0", "sourceRefs": [] },
+        { "code": "value_unverified", "severity": "confirmation", "sourcePath": "/sessions/0/exercises/0/repetitions", "sourceRefs": ["pdf:1:b:4"] },
+        { "code": "text_too_long", "severity": "blocking", "sourcePath": "/title", "sourceRefs": [] },
+        { "code": "value_out_of_bounds", "severity": "blocking", "sourcePath": "/cycle/weeks", "sourceRefs": [] },
+        { "code": "value_out_of_bounds", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/sets", "sourceRefs": [] },
+        { "code": "value_not_integer", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/optionalSets", "sourceRefs": [] },
+        { "code": "value_out_of_bounds", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/repetitions", "sourceRefs": [] },
+        { "code": "value_out_of_bounds", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/restSeconds", "sourceRefs": [] },
+        { "code": "value_out_of_bounds", "severity": "blocking", "sourcePath": "/sessions/0/exercises/0/rpe", "sourceRefs": [] }
+      ],
+      "userDecisions": [
+        { "op": "set", "decisionId": "d1", "localId": "i0", "field": "title", "before": "Programma di allenamento sperimentale con un titolo volutamente molto lungo per verificare che il limite di centosessanta caratteri del dominio venga segnalato e mai troncato in bozza", "after": "Programma sperimentale", "reason": "user_edit" },
+        { "op": "set", "decisionId": "d2", "localId": "i0", "field": "cycle", "before": { "startDate": "1990-01-01", "weeks": 60 }, "after": { "startDate": "2026-10-05", "weeks": 8 }, "reason": "user_edit" },
+        { "op": "catalog", "decisionId": "d3", "localId": "i2", "before": null, "after": { "source": "new", "localKey": "new-burpee", "values": { "name": "Burpee", "variant": "", "equipment": "", "loadConvention": "bodyweight", "loadUnit": "kg", "measurementMode": "reps", "perSide": false, "note": "" } }, "reason": "catalog_choice" },
+        { "op": "set", "decisionId": "d4", "localId": "i2", "field": "sets", "before": 5000, "after": 5, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d5", "localId": "i2", "field": "optionalSets", "before": 2.5, "after": 0, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d6", "localId": "i2", "field": "repetitions", "before": { "min": 0, "max": 20000 }, "after": { "min": 10, "max": 10 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d7", "localId": "i2", "field": "restSeconds", "before": { "min": 100000, "max": 100000 }, "after": { "min": 60, "max": 60 }, "reason": "user_edit" },
+        { "op": "set", "decisionId": "d8", "localId": "i2", "field": "rpe", "before": { "min": 12, "max": 12 }, "after": { "min": 8, "max": 8 }, "reason": "user_edit" }
+      ],
       "expectedDomainOutput": null
     },
 

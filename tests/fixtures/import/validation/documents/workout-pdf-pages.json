@@ -1,0 +1,98 @@
+{
+  "readerVersion": "synthetic-fixture/1",
+  "sourceHash": "6d788e88aa1e415fe976621a528984e681d943b7657958439137cf07a32604d7",
+  "blocks": [
+    {
+      "id": "pdf:1:b:1",
+      "kind": "heading",
+      "text": "Scheda PDF",
+      "page": 1,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "pdf:1:b:2",
+      "kind": "heading",
+      "text": "Seduta A",
+      "page": 1,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "pdf:1:b:1"
+      ],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "pdf:1:b:3",
+      "kind": "list_item",
+      "text": "Squat 3 x 5, recupero 2'",
+      "page": 1,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "pdf:1:b:1",
+        "pdf:1:b:2"
+      ],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "pdf:2:b:1",
+      "kind": "heading",
+      "text": "Seduta B",
+      "page": 2,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "pdf:1:b:1"
+      ],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "pdf:2:b:2",
+      "kind": "list_item",
+      "text": "Stacco 3 x 5, recupero 3'",
+      "page": 2,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "pdf:1:b:1",
+        "pdf:2:b:1"
+      ],
+      "origin": "native",
+      "bbox": null
+    }
+  ],
+  "readingIssues": [
+    {
+      "code": "no_text_layer",
+      "sourceRefs": [],
+      "message": "Pagina 3: nessun livello di testo, sembra una scansione."
+    }
+  ]
+}

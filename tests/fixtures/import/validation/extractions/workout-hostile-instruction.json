@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "workout",
+  "outcome": "extracted",
+  "title": "Scheda base",
+  "guidance": [],
+  "schedule": "unknown",
+  "cycle": {
+    "startDate": null,
+    "weeks": null
+  },
+  "sessions": [
+    {
+      "label": "A",
+      "title": "Seduta A",
+      "weekday": null,
+      "notes": [],
+      "exercises": [
+        {
+          "name": "Panca piana",
+          "variant": null,
+          "equipment": null,
+          "measurementMode": "reps",
+          "sets": 10,
+          "optionalSets": null,
+          "repetitions": {
+            "min": 8,
+            "max": 8
+          },
+          "durationSeconds": null,
+          "restSeconds": {
+            "min": 120,
+            "max": 120
+          },
+          "rir": null,
+          "rpe": null,
+          "perSide": null,
+          "loadUnit": null,
+          "loadConvention": null,
+          "loadInstruction": null,
+          "tempoInstruction": null,
+          "prescriptionText": "Panca piana: 3 x 8, recupero 2 minuti",
+          "notes": []
+        }
+      ]
+    }
+  ],
+  "complexRules": [],
+  "evidence": [
+    {
+      "path": "/title",
+      "spans": [
+        {
+          "blockId": "p:1",
+          "quote": "Scheda base"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/label",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Seduta A"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/title",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Seduta A"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/name",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "Panca piana"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/measurementMode",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "3 x 8"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/sets",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "10 serie"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/repetitions",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "3 x 8"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/restSeconds",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "recupero 2 minuti"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/prescriptionText",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "Panca piana: 3 x 8, recupero 2 minuti"
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "unassigned": []
+}
