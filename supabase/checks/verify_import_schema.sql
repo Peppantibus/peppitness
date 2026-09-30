@@ -51,4 +51,29 @@ select
  exists(select 1 from pg_constraint where conrelid='peppitness_private.import_usage_ledger'::regclass
    and contype='u' and pg_get_constraintdef(oid)='UNIQUE (owner_id, job_id, attempt)') as budget_attempt_unique,
  exists(select 1 from pg_trigger where tgrelid='peppitness_private.import_usage_ledger'::regclass
-   and tgname='import_usage_retire' and tgenabled='O') as project_usage_survives_account_delete;
+   and tgname='import_usage_retire' and tgenabled='O') as project_usage_survives_account_delete,
+ -- Task 18: ricevute private in scrittura, helper condivisi non esposti, tombstone e cascata account.
+ (select c.relrowsecurity and has_table_privilege('authenticated',c.oid,'select')
+   and not has_table_privilege('authenticated',c.oid,'insert,update,delete')
+   and not has_table_privilege('anon',c.oid,'select,insert,update,delete')
+   and not has_table_privilege('service_role',c.oid,'select,insert,update,delete')
+   from pg_class c where c.oid='public.import_receipts'::regclass) as receipts_read_only_own,
+ has_function_privilege('authenticated','public.get_import_receipt(uuid)','execute')
+   and not has_function_privilege('anon','public.get_import_receipt(uuid)','execute')
+   and not has_function_privilege('service_role','public.get_import_receipt(uuid)','execute') as receipt_lookup_grants_ok,
+ (select count(*)=8 and bool_and(p.proconfig @> array['search_path=""']
+   and not has_function_privilege('anon',p.oid,'execute') and not has_function_privilege('authenticated',p.oid,'execute')
+   and not has_function_privilege('service_role',p.oid,'execute'))
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='peppitness_private'
+   and p.proname in ('canonical_json','import_command_hash','import_content_hash','claim_import_receipt',
+     'finalize_import_receipt','import_follow','lock_import_selection','apply_import_selection')) as receipt_helpers_private,
+ exists(select 1 from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='peppitness_private'
+   and p.proname='canonical_json' and p.proconfig @> array['extra_float_digits=1']) as canonical_float_digits_fixed,
+ (select count(*)=2 from pg_trigger where tgname='import_receipts_tombstone' and tgenabled='O'
+   and tgrelid in ('public.workout_plans'::regclass,'public.meal_plans'::regclass)) as receipt_tombstones_ok,
+ not exists(select 1 from pg_constraint where conrelid='public.import_receipts'::regclass and contype='f'
+   and confrelid in ('public.workout_plans'::regclass,'public.meal_plans'::regclass))
+   and exists(select 1 from pg_constraint where conrelid='public.import_receipts'::regclass and contype='f'
+     and confrelid='auth.users'::regclass and confdeltype='c') as receipts_survive_plans_not_account,
+ exists(select 1 from pg_trigger where tgname='import_receipts_committed_plan'
+   and tgrelid='public.import_receipts'::regclass and tgdeferrable and tginitdeferred and tgenabled='O') as receipt_plan_constraint_ok;

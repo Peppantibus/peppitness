@@ -5,6 +5,14 @@ import { randomUUID } from 'node:crypto'
 import { projectRoot, localWorkdir } from './local-supabase.mjs'
 
 export const sqlLiteral = value => "'" + String(value).replaceAll("'", "''") + "'"
+// Solo messaggi applicativi stabili (PT409) risalgono al test; ogni altro errore resta generico.
+const stableErrors = ['Import request conflict', 'Active selection conflict']
+function stableError(output) {
+  try {
+    const message = JSON.parse(output)?.error?.message
+    return stableErrors.find(text => typeof message === 'string' && message.endsWith(`error: ${text}`))
+  } catch { return undefined }
+}
 export async function importLocalSql(sql) {
   const path = `artifacts/import-db-${randomUUID()}.sql`
   await mkdir(new URL('../../artifacts/', import.meta.url), { recursive: true })
@@ -22,7 +30,7 @@ export async function importLocalSql(sql) {
       proc.stderr.resume() // Mai propagare query/contenuti o dettagli del trasporto.
       proc.on('error', () => reject(new Error('Bootstrap SQL import locale non disponibile.')))
       proc.on('close', code => {
-        if (code !== 0) { reject(new Error('Bootstrap SQL import locale fallito.')); return }
+        if (code !== 0) { reject(new Error(stableError(output) ?? 'Bootstrap SQL import locale fallito.')); return }
         if (output.trim() === 'DO') { resolve([]); return }
         try {
           const parsed = JSON.parse(output)
