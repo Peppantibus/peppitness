@@ -27,7 +27,7 @@ import { ExerciseDetail, SessionView, Workout } from './features/Workout'
 import type { CycleSummary } from './features/Workout'
 import { useDiary } from './persistence/use-diary'
 import { useExercises } from './persistence/use-exercises'
-import { useImportReview } from './persistence/use-import-review'
+import { useImports } from './persistence/use-imports'
 import { usePlans } from './persistence/use-plans'
 import { usePrograms } from './persistence/use-programs'
 import { useSettings } from './persistence/use-settings'
@@ -51,7 +51,7 @@ export function App() {
   const isImport = route === '/scheda/importa' || route === '/dieta/importa'
   const importKind = route === '/dieta/importa' ? 'diet' : 'workout'
   // Importazione: il motore si carica sulla sua pagina o in Impostazioni (logout); la lettura prosegue fuori pagina.
-  const importReview = useImportReview(isImport || route === '/impostazioni')
+  const importReview = useImports(isImport || route === '/impostazioni')
   const catalog = useExercises(isCatalog || isPrograms)
   const programs = usePrograms(isPrograms)
   // Rilettura dei piani al ritorno dagli editor verso le pagine quotidiane.

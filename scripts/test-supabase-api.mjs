@@ -311,7 +311,8 @@ async function run() {
   const program = await workoutChecks(a, b)
   await diaryChecks(a, b, program)
   if (summaryOnly) console.log('IN CORSO import: jobs, isolamento, replay e concorrenza.')
-  await importApiChecks({ request, check, expectOk, expectDenied, concurrentRequests, isRevisionConflict }, a, b)
+  // URL e chiave pubblica per l'SDK del client (21): mai la chiave amministrativa.
+  await importApiChecks({ request, check, expectOk, expectDenied, concurrentRequests, isRevisionConflict, apiUrl: config.apiUrl, publicKey: config.publicKey }, a, b)
   if (summaryOnly) console.log('IN CORSO sessione: rinnovo e logout.')
   const renewed = expectOk(await request('/auth/v1/token?grant_type=refresh_token', {
     method: 'POST', body: { refresh_token: a.refreshToken },

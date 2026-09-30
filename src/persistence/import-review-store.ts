@@ -10,7 +10,7 @@
  *   come blocchi e la pagina PDF si riapre solo riselezionando un file con lo stesso sourceHash;
  * - archivio assente, quota o conflitto rendono la sessione volatile e lo dichiarano (guardie di chiusura).
  */
-import type { DocumentReader, DocumentReadMetadata, ExtractionKind } from '../import/contracts/index.ts'
+import type { DocumentReader, DocumentReadMetadata, ExtractionKind, ReviewDraft } from '../import/contracts/index.ts'
 import { DocumentReaderError } from '../import/contracts/index.ts'
 import { checkSelectedFile, sha256Hex, type SelectedFileInfo } from '../import/readers/file-checks.ts'
 import { createDocxWorkerReader, createPdfWorkerReader, ReaderWorkerError } from '../import/readers/worker-client.ts'
@@ -19,6 +19,9 @@ import {
   applyImportEvent, createImportSession, hasUncertainCommand, ImportAccountScope, isBusy, isDirty, matchesOriginal,
   type ImportEvent, type ImportSession,
 } from '../import/review/state.ts'
+import type { ImportsRepository } from './imports-repository.ts'
+export { createImportsRepository } from './imports-repository.ts'
+import { idleNetwork, ImportsStore, type DispatchResult, type ImportNetwork, type ImportSessionHost, type ImportsStoreOptions, type SessionEvent } from './imports-store.ts'
 
 export type ImportKind = ExtractionKind
 export const importKinds: readonly ImportKind[] = ['workout', 'diet']
@@ -40,6 +43,8 @@ export interface ImportSlot {
   storageMessage: string | null
   /** Sessione ripresa dal journal: l'originale non è in memoria finché non viene riselezionato. */
   restored: boolean
+  /** Stato di rete (21): attività, problemi, analisi compatibili, duplicati, rifiuti e rilettura dopo il salvataggio. */
+  network: ImportNetwork
 }
 
 export interface ImportGuards {
@@ -59,15 +64,17 @@ export interface ImportReviewState {
   guards: ImportGuards
 }
 
-export interface ImportReviewOptions {
+export interface ImportReviewOptions extends Omit<ImportsStoreOptions, 'newId'> {
   journal?: ReviewStore
   createReader?: (format: 'docx' | 'pdf') => DocumentReader & { close?: () => void }
   now?: () => string
   newId?: () => string
+  /** Rete dell'account (21): senza repository il motore resta solo locale (lettura e revisione). */
+  repository?: ImportsRepository
 }
 
 const emptySlot = (patch: Partial<ImportSlot> = {}): ImportSlot => ({
-  session: null, metadata: null, original: null, problem: null, notice: null, storage: null, storageMessage: null, restored: false, ...patch,
+  session: null, metadata: null, original: null, problem: null, notice: null, storage: null, storageMessage: null, restored: false, network: idleNetwork(), ...patch,
 })
 const noGuards: ImportGuards = { busy: false, unsaved: false, logoutRisk: false }
 
@@ -112,6 +119,10 @@ export class ImportReviewStore {
   private readonly generations: Record<ImportKind, number> = { workout: 0, diet: 0 }
   private opening: Promise<void> | null = null
   private risks = { localDrafts: 0, uncertainCommands: 0 }
+  /** Scritture del journal in fila per dominio: ognuna scrive l'ultima versione della sessione. */
+  private readonly writes: Record<ImportKind, Promise<void>> = { workout: Promise.resolve(), diet: Promise.resolve() }
+  /** Coordinatore di rete (21) sulla stessa sessione e sullo stesso journal; null senza repository. */
+  readonly imports: ImportsStore | null
 
   constructor(ownerId: string, options: ImportReviewOptions = {}) {
     this.ownerId = ownerId
@@ -121,6 +132,19 @@ export class ImportReviewStore {
     this.now = options.now ?? (() => new Date().toISOString())
     this.newId = options.newId ?? (() => crypto.randomUUID())
     this.state = { phase: 'opening', storageAvailable: null, slots: { workout: emptySlot(), diet: emptySlot() }, guards: noGuards }
+    // Accesso del coordinatore di rete: stessa sessione dello slot, stesso journal, stesso ambito d'account.
+    const host: ImportSessionHost = {
+      ownerId,
+      current: kind => this.state.slots[kind].session,
+      ticket: () => this.scope.ticket(),
+      isCurrent: ticket => this.scope.isCurrent(ticket),
+      dispatch: (kind, sessionId, event) => this.dispatch(kind, sessionId, event),
+      reload: kind => this.reload(kind),
+      network: kind => this.state.slots[kind].network,
+      setNetwork: (kind, patch) => this.patch(kind, { network: { ...this.state.slots[kind].network, ...patch } }),
+    }
+    const { repository, journal: _journal, createReader: _reader, now: _now, ...network } = options
+    this.imports = repository ? new ImportsStore(host, repository, { ...network, newId: this.newId }) : null
   }
 
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
@@ -140,8 +164,22 @@ export class ImportReviewStore {
     for (const kind of importKinds) {
       const session = this.state.slots[kind].session
       if (session && session.status === 'reading' && session.document === null) this.setSlot(kind, emptySlot({ notice: { tone: 'info', text: 'Lettura interrotta.' } }))
+      // Le risposte di rete successive allo stop non valgono più: niente attività né dati di rete residui.
+      else this.patch(kind, { network: idleNetwork() })
     }
   }
+
+  /** Ritorno online o in primo piano: riconcilia i salvataggi incerti e cerca le analisi interrotte, senza nuovi invii. */
+  resume() { return this.imports?.resume() ?? Promise.resolve() }
+
+  /** Modifica della bozza in revisione (12/13): stessa proposta, decisioni rigiocate, comando non inviato decaduto. */
+  changeDraft(kind: ImportKind, draft: ReviewDraft) { return this.localEvent(kind, { type: 'draft_changed', draft }) }
+  /** Adotta la nuova proposta di una rianalisi: la bozza precedente resta fra quelle superate. */
+  adoptReanalysis(kind: ImportKind) { return this.localEvent(kind, { type: 'reanalysis_adopted' }) }
+  /** Scarta la nuova proposta di una rianalisi (conclusa o fallita): la bozza in uso resta intatta. */
+  dismissReanalysis(kind: ImportKind) { return this.localEvent(kind, { type: 'reanalysis_dismissed' }) }
+  /** Interrompe l'attesa di una rianalisi sul dispositivo (il server non la annulla): la bozza resta. */
+  stopReanalysis(kind: ImportKind) { return this.localEvent(kind, { type: 'cancelled' }) }
 
   /** Logout: interrompe tutto e cancella dal dispositivo ogni sessione di questo account. */
   async clearDevice() {
@@ -257,7 +295,7 @@ export class ImportReviewStore {
     if (loaded.status === 'ok') {
       const original = this.state.slots[kind].original
       const keep = original && loaded.session.file.sourceHash === session.file.sourceHash ? original : null
-      this.setSlot(kind, emptySlot({ session: loaded.session, original: keep, storage: 'durable', restored: !keep, metadata: keep ? this.state.slots[kind].metadata : null }))
+      this.setSlot(kind, emptySlot({ session: loaded.session, original: keep, storage: 'durable', restored: !keep, metadata: keep ? this.state.slots[kind].metadata : null, network: this.state.slots[kind].network }))
     } else {
       this.setSlot(kind, emptySlot({ notice: { tone: 'info', text: loaded.status === 'missing' ? 'Questa lettura è stata rimossa in un’altra scheda.' : loaded.message } }))
     }
@@ -284,6 +322,8 @@ export class ImportReviewStore {
     if (!this.scope.isCurrent(ticket)) return
     this.state = { ...this.state, phase: 'ready', storageAvailable: opened.available }
     this.emit()
+    // Un salvataggio interrotto si verifica subito con la sua chiave; un'analisi interrotta si cerca, non si ripete.
+    void this.resume()
   }
 
   private async runRead(kind: ImportKind, generation: number, mediaType: string | null) {
@@ -319,8 +359,21 @@ export class ImportReviewStore {
     }
   }
 
-  private async persist(kind: ImportKind, session: ImportSession) {
+  /**
+   * Scrive nel journal l'ultima versione della sessione. Le scritture di uno slot sono in fila: ognuna parte
+   * dalla revisione della precedente, così eventi ravvicinati (analisi che arriva durante un edit) non si
+   * scambiano per un'altra scheda; un evento applicato durante la scrittura resta in memoria e va nella successiva.
+   */
+  private persist(kind: ImportKind, session: ImportSession): Promise<void> {
+    const write = this.writes[kind].then(() => this.writeLatest(kind, session.sessionId))
+    this.writes[kind] = write.catch(() => undefined)
+    return write
+  }
+
+  private async writeLatest(kind: ImportKind, sessionId: string) {
     const ticket = this.scope.ticket()
+    const session = this.state.slots[kind].session
+    if (!session || session.sessionId !== sessionId) return
     const result = await this.journal.save(session)
     const current = this.state.slots[kind].session
     if (!this.scope.isCurrent(ticket) || current?.sessionId !== session.sessionId) {
@@ -328,15 +381,38 @@ export class ImportReviewStore {
       if (result.ok) await this.journal.discard(this.ownerId, session.sessionId).catch(() => undefined)
       return
     }
-    if (result.ok) this.patch(kind, { session: result.session, storage: 'durable', storageMessage: null })
-    else if (result.reason === 'conflict') this.patch(kind, { session: result.session, storage: 'conflict', storageMessage: 'Questa lettura è stata modificata in un’altra scheda: ricaricala per vedere la versione aggiornata.' })
+    // Scritta la versione `session`; se nel frattempo ne è arrivata una più nuova, questa riparte dalla revisione scritta.
+    const latest = (written: ImportSession) => current === session ? written : rebase(current, written)
+    if (result.ok) this.patch(kind, { session: latest(result.session), storage: 'durable', storageMessage: null })
+    else if (result.reason === 'conflict') this.patch(kind, { session: current === session ? result.session : { ...current, persistence: 'volatile' }, storage: 'conflict', storageMessage: 'Questa importazione è stata modificata in un’altra scheda: ricaricala per vedere la versione aggiornata.' })
     else this.patch(kind, {
-      session: result.session, storage: 'volatile',
+      session: current === session ? result.session : { ...current, persistence: 'volatile' }, storage: 'volatile',
       storageMessage: result.reason === 'quota'
-        ? 'Spazio del dispositivo esaurito: la lettura resta solo in questa pagina e andrà persa chiudendola o ricaricandola.'
-        : 'L’archivio del dispositivo non è disponibile (per esempio in navigazione privata): la lettura resta solo in questa pagina e andrà persa chiudendola o ricaricandola.',
+        ? 'Spazio del dispositivo esaurito: l’importazione resta solo in questa pagina e andrà persa chiudendola o ricaricandola.'
+        : 'L’archivio del dispositivo non è disponibile (per esempio in navigazione privata): l’importazione resta solo in questa pagina e andrà persa chiudendola o ricaricandola.',
     })
     await this.refreshRisks()
+  }
+
+  /** Evento applicato alla sessione `sessionId` dello slot e scritto; null se la sessione o l'account sono cambiati. */
+  private async dispatch(kind: ImportKind, sessionId: string, event: SessionEvent): Promise<DispatchResult | null> {
+    const session = this.state.slots[kind].session
+    if (!session || session.sessionId !== sessionId) return null
+    const next = this.apply(session, event)
+    if (!next) return null
+    const ticket = this.scope.ticket()
+    this.patch(kind, { session: next })
+    await this.persist(kind, next)
+    const slot = this.state.slots[kind]
+    if (!this.scope.isCurrent(ticket) || slot.session?.sessionId !== sessionId) return null
+    return { session: slot.session, storage: slot.storage }
+  }
+
+  /** Eventi locali della revisione, senza rete: il riduttore decide se sono ammessi. */
+  private async localEvent(kind: ImportKind, event: SessionEvent) {
+    const session = this.state.slots[kind].session
+    if (!session) return null
+    return this.dispatch(kind, session.sessionId, event)
   }
 
   /** Elimina una sessione superata dal journal (se vi era scritta). */
@@ -382,7 +458,14 @@ export class ImportReviewStore {
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never
 
-export const createImportReviewStore = (ownerId: string) => new ImportReviewStore(ownerId)
+/** Versione in memoria più nuova di quella appena scritta: riparte dalla revisione scritta (e dal journal del comando, se è lo stesso). */
+function rebase(newer: ImportSession, written: ImportSession): ImportSession {
+  const sameCommand = newer.commit && written.commit && newer.commit.journalRevision === null
+    && newer.commit.commandHash === written.commit.commandHash && newer.commit.command.requestId === written.commit.command.requestId
+  return { ...newer, revision: written.revision, persistence: written.persistence, commit: sameCommand ? { ...newer.commit!, journalRevision: written.commit!.journalRevision } : newer.commit }
+}
+
+export const createImportReviewStore = (ownerId: string, options: ImportReviewOptions = {}) => new ImportReviewStore(ownerId, options)
 
 /** Logout senza motore caricato: nessuna sessione di questo account resta sul dispositivo. */
 export async function clearImportDevice(ownerId: string) {

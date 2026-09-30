@@ -60,7 +60,7 @@ function draftFor(kind, entry, document, n, extra = []) {
   return draft
 }
 
-function finish(kind, n, draft, mapping, document) {
+function finish(kind, n, draft, mapping, document, ids) {
   if (!mapping.ok) throw new Error(`Mapping fixture non valido: ${JSON.stringify(mapping.issues)}`)
   const command = {
     requestId: caseUuid('e1900000', n),
@@ -70,7 +70,8 @@ function finish(kind, n, draft, mapping, document) {
   }
   const checked = validateCommitCommand(kind, command)
   if (!checked.ok) throw new Error(`Comando fixture non valido: ${JSON.stringify(checked.errors)}`)
-  return { command, document, extraction: draft.proposal.extraction }
+  // `draft`/`ids`: bozza e prenotazioni da cui il comando deriva (test del costruttore dell'app, 21).
+  return { command, document, extraction: draft.proposal.extraction, draft, ids }
 }
 
 const workoutCases = ['workout-spec-example', 'workout-incomplete', 'workout-ranges-unicode', 'workout-abc-no-days', 'workout-out-of-bounds', 'workout-partially-interpretable']
@@ -85,7 +86,8 @@ export function commitFixtureCases() {
     const n = index + 1, prefix = `1900${String(n).padStart(4, '0')}`
     const entry = entryOf(name), golden = read(`mapping/workout/${name}.json`), document = read(entry.expectedBlocks)
     const draft = draftFor('workout', entry, document, n, golden.additionalDecisions)
-    cases.push({ id: name, kind: 'workout', ...finish('workout', n, draft, mapReviewedWorkout(document, draft, prefixed(prefix, golden.ids)), document) })
+    const ids = prefixed(prefix, golden.ids)
+    cases.push({ id: name, kind: 'workout', ...finish('workout', n, draft, mapReviewedWorkout(document, draft, ids), document, ids) })
   })
   {
     const n = 7, entry = entryOf('workout-incomplete'), golden = read('mapping/workout/workout-incomplete.json'), document = read(entry.expectedBlocks)
@@ -95,7 +97,7 @@ export function commitFixtureCases() {
     draft = chooseCatalog(draft, 'i3', { source: 'shared', templateId: shared.id, seen: shared.values }, { decisionId: 'fixture-c2' })
     const ids = prefixed('19000007', golden.ids)
     ids.exercises = { [`shared:${shared.id}`]: caseUuid('19000007', 900) }
-    cases.push({ id: 'workout-catalog', kind: 'workout', ...finish('workout', n, draft, mapReviewedWorkout(document, draft, ids), document) })
+    cases.push({ id: 'workout-catalog', kind: 'workout', ...finish('workout', n, draft, mapReviewedWorkout(document, draft, ids), document, ids) })
   }
   dietCases.forEach(([name, golden], index) => {
     const n = 11 + index, prefix = `2000${String(n).padStart(4, '0')}`
@@ -103,7 +105,7 @@ export function commitFixtureCases() {
     const entry = entryOf(base), document = read(entry.expectedBlocks)
     const draft = draftFor('diet', entry, document, n, golden ? read(`mapping/diet/${golden}.json`).additionalDecisions : [])
     const ids = { planId: caseUuid(prefix, 2), items: Object.fromEntries(draft.current.map((item, i) => [item.localId, caseUuid(prefix, 10 + i)])) }
-    cases.push({ id: name, kind: 'diet', ...finish('diet', n, draft, mapReviewedDiet(document, draft, ids), document) })
+    cases.push({ id: name, kind: 'diet', ...finish('diet', n, draft, mapReviewedDiet(document, draft, ids), document, ids) })
   })
   return cases
 }
