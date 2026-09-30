@@ -356,6 +356,8 @@ export const commitRpcErrors = {
   requestConflict: { sqlstate: 'PT409', message: 'Import request conflict' },
   selectionConflict: { sqlstate: 'PT409', message: 'Active selection conflict' },
   catalogConflict: { sqlstate: 'PT409', message: 'Catalog changed' },
+  /** Job dell'analisi scaduto dopo la preparazione del comando (HTTP 410): nessuna scrittura, serve una nuova analisi. */
+  analysisExpired: { sqlstate: 'PT410', message: 'Import analysis expired' },
 } as const
 
 // ---------------------------------------------------------------------------

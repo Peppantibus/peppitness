@@ -76,4 +76,15 @@ select
    and exists(select 1 from pg_constraint where conrelid='public.import_receipts'::regclass and contype='f'
      and confrelid='auth.users'::regclass and confdeltype='c') as receipts_survive_plans_not_account,
  exists(select 1 from pg_trigger where tgname='import_receipts_committed_plan'
-   and tgrelid='public.import_receipts'::regclass and tgdeferrable and tginitdeferred and tgenabled='O') as receipt_plan_constraint_ok;
+   and tgrelid='public.import_receipts'::regclass and tgdeferrable and tginitdeferred and tgenabled='O') as receipt_plan_constraint_ok,
+ -- Task 19: RPC di conferma della scheda, solo authenticated, SECURITY DEFINER con search_path vuoto.
+ coalesce((select p.prosecdef and p.proconfig @> array['search_path=""']
+   and has_function_privilege('authenticated',p.oid,'execute') and not has_function_privilege('anon',p.oid,'execute')
+   and not has_function_privilege('service_role',p.oid,'execute')
+   from pg_proc p where p.oid=to_regprocedure('public.commit_workout_import(uuid,jsonb,jsonb,jsonb)')),false) as workout_commit_rpc_ok,
+ (select count(*)=9 and bool_and(p.proconfig @> array['search_path=""']
+   and not has_function_privilege('anon',p.oid,'execute') and not has_function_privilege('authenticated',p.oid,'execute')
+   and not has_function_privilege('service_role',p.oid,'execute'))
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='peppitness_private'
+   and p.proname in ('import_require','import_keys','import_text','import_integer','import_decimal','import_exercise_values',
+     'import_exercise_matches','import_check_provenance','import_workout_targets')) as workout_commit_helpers_private;

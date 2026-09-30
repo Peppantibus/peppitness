@@ -5,6 +5,7 @@ import { validateImportJobResult } from '../../src/import/contracts/jobs.ts'
 import { budgetRpcNames } from '../../supabase/functions/_shared/import/budget.ts'
 import { importBudgetApiChecks } from './import-budget-api-fixture.mjs'
 import { importReceiptsApiChecks } from './import-receipts-api-fixture.mjs'
+import { importWorkoutCommitApiChecks } from './import-workout-commit-api-fixture.mjs'
 
 // Unico punto di estensione import per 15/18/19/20. Privilegi admin ammessi SOLO
 // per queste API server, oltre al bootstrap Auth già presente nel runner.
@@ -102,4 +103,5 @@ export async function importApiChecks(context, a, b) {
   check(replay.job.status === 'failed' && replay.job.jobId === failed.job.jobId, 'import: replay non riavvia analisi')
   await importBudgetApiChecks(context, a, b)
   await importReceiptsApiChecks(context, a, b)
+  await importWorkoutCommitApiChecks(context, a, b)
 }
