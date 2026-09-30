@@ -87,4 +87,15 @@ select
    and not has_function_privilege('service_role',p.oid,'execute'))
    from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='peppitness_private'
    and p.proname in ('import_require','import_keys','import_text','import_integer','import_decimal','import_exercise_values',
-     'import_exercise_matches','import_check_provenance','import_workout_targets')) as workout_commit_helpers_private;
+     'import_exercise_matches','import_check_provenance','import_workout_targets')) as workout_commit_helpers_private,
+ -- Task 20: RPC di conferma della dieta e validatore privato; nessuna tabella nutrizionale nuova.
+ coalesce((select p.prosecdef and p.proconfig @> array['search_path=""']
+   and has_function_privilege('authenticated',p.oid,'execute') and not has_function_privilege('anon',p.oid,'execute')
+   and not has_function_privilege('service_role',p.oid,'execute')
+   from pg_proc p where p.oid=to_regprocedure('public.commit_diet_import(uuid,jsonb,jsonb,jsonb)')),false) as diet_commit_rpc_ok,
+ coalesce((select p.proconfig @> array['search_path=""'] and not has_function_privilege('anon',p.oid,'execute')
+   and not has_function_privilege('authenticated',p.oid,'execute') and not has_function_privilege('service_role',p.oid,'execute')
+   from pg_proc p where p.oid=to_regprocedure('peppitness_private.import_diet_targets(jsonb)')),false) as diet_commit_helper_private,
+ exists(select 1 from pg_trigger where tgname='b_validate_meal_plan' and tgrelid='public.meal_plans'::regclass and tgenabled='O')
+   and exists(select 1 from pg_constraint where conrelid='public.meal_plans'::regclass and contype='c'
+     and pg_get_constraintdef(oid) like '%octet_length((document)::text) <= 262144%') as diet_document_schema_unchanged;

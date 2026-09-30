@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import { importCommitFixturesInclude, renderImportCommitFixtures } from '../scripts/generate-import-commit-fixtures.mjs'
 import { catalogSeed, commitFixtureCases, instantiateCommand } from '../scripts/lib/import-commit-fixtures.mjs'
-import { validateCommitCommand, provisionalExerciseRefs } from '../src/import/contracts/index.ts'
+import { validateCommitCommand, provisionalExerciseRefs, domainLimits } from '../src/import/contracts/index.ts'
+import { canonicalJson } from '../src/import/mapping/canonical.ts'
+import { mealPlanTooLarge, MEAL_PLAN_MAX_BYTES } from '../src/domain/meal-plans.ts'
 
 type Json = any
 const read = (path: string): Json => JSON.parse(readFileSync(new URL(`./fixtures/import/${path}`, import.meta.url), 'utf8'))
@@ -52,3 +54,24 @@ test('19/20: copia per account reale con UUID nuovi, salvo quelli conservati', (
   assert.deepEqual(JSON.parse(JSON.stringify(copy).replace(UUID, 'x')), JSON.parse(JSON.stringify(source).replace(UUID, 'x')))
 })
 
+test('20: guard SQL sul JSON canonico compatto = limite di mealPlanTooLarge, anche con escape e Unicode', () => {
+  // Il guard SQL misura peppitness_private.canonical_json (= canonicalJson, vettori del 18): senza numeri
+  // cambia solo l'ordine delle chiavi, quindi i byte coincidono con JSON.stringify del frontend.
+  const utf8 = (text: string) => new TextEncoder().encode(text).length
+  const plan = commitFixtureCases().find(c => c.id === 'diet-reviewed-conditions')!.command.payload.resolved.plan
+  const tricky = structuredClone(plan.document)
+  tricky.guidance = 'virgolette " barra \ tab\tcapo\nè 😀     fine'
+  for (const document of [plan.document, tricky]) assert.equal(utf8(canonicalJson(document)), utf8(JSON.stringify(document)))
+  const limit = domainLimits.diet.documentBytes
+  assert.equal(limit, MEAL_PLAN_MAX_BYTES)
+  const base = structuredClone(plan.document)
+  base.days[0]!.meals.push(...Array.from({ length: 11 }, (_, n) => ({ id: `2c000000-0000-4000-8000-${String(n).padStart(12, '0')}`, name: `Pasto ${n}`,
+    time: '', foods: [], alternatives: ['Frutta'], additions: [], note: '😀'.repeat(4000) })))
+  for (const [target, tooLarge] of [[limit, false], [limit + 1, true]] as const) {
+    const document = structuredClone(base)
+    const missing = target - utf8(JSON.stringify({ ...document, guidance: '' }))
+    document.guidance = 'è'.repeat(Math.floor(missing / 2)) + 'a'.repeat(missing % 2)
+    assert.equal(utf8(canonicalJson(document)), target)
+    assert.equal(mealPlanTooLarge(document) !== null, tooLarge, String(target))
+  }
+})

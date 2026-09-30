@@ -6,6 +6,7 @@ import { budgetRpcNames } from '../../supabase/functions/_shared/import/budget.t
 import { importBudgetApiChecks } from './import-budget-api-fixture.mjs'
 import { importReceiptsApiChecks } from './import-receipts-api-fixture.mjs'
 import { importWorkoutCommitApiChecks } from './import-workout-commit-api-fixture.mjs'
+import { importDietCommitApiChecks } from './import-diet-commit-api-fixture.mjs'
 
 // Unico punto di estensione import per 15/18/19/20. Privilegi admin ammessi SOLO
 // per queste API server, oltre al bootstrap Auth già presente nel runner.
@@ -104,4 +105,5 @@ export async function importApiChecks(context, a, b) {
   await importBudgetApiChecks(context, a, b)
   await importReceiptsApiChecks(context, a, b)
   await importWorkoutCommitApiChecks(context, a, b)
+  await importDietCommitApiChecks(context, a, b)
 }
