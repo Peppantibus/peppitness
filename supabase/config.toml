@@ -385,6 +385,14 @@ deno_version = 2
 # [edge_runtime.secrets]
 # secret_key = "env(SECRET_VALUE)"
 
+# Import task 17: analisi autenticata dei documenti. Il gateway verifica il JWT e il handler lo
+# riverifica con Supabase Auth; secrets solo in supabase/functions/.env (ignorato), mai qui.
+[functions.extract-plan]
+enabled = true
+verify_jwt = true
+import_map = "./functions/extract-plan/deno.json"
+entrypoint = "./functions/extract-plan/index.ts"
+
 [analytics]
 enabled = true
 port = 54327

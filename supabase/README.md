@@ -90,3 +90,49 @@ npx.cmd supabase db query --linked --file supabase/checks/verify_schema.sql --ou
 Tutti i controlli devono essere `true` e le tre versioni presenti. La query non legge utenti o dati applicativi. L'utente ha confermato questo risultato anche sul cloud: primo deploy applicato e metadati verificati. Non occorre ripeterlo; questo non sostituisce i successivi test HTTP sul cloud.
 
 Riferimenti: [migrazioni Supabase](https://supabase.com/docs/guides/deployment/database-migrations), [RLS e test](https://supabase.com/docs/guides/database/postgres/row-level-security), [pgTAP](https://supabase.com/docs/guides/local-development/testing/pgtap-extended).
+
+## Importazione: provider di estrazione (server, task 16)
+
+Adapter server in `supabase/functions/_shared/import/`: `provider.ts` (interfaccia 01, configurazione, `prepare`/`send`), `openai-provider.ts` (primo adapter, OpenAI Responses API), `prompts.ts` (due prompt distinti, versione `peppitness.import-prompts.v1`), `provider-errors.ts` (errori tipizzati). Nessun modulo di `src/` li importa; la chiave non ha mai prefisso `VITE_`.
+
+**Capacità del primo adapter:** output strutturato strict sì; immagini e PDF diretto no. Richiesta: `instructions` = prompt del dominio, un solo messaggio utente con i blocchi del documento in JSON (id, tipo, testo canonico, struttura di tabella, titoli; niente hash del file o bbox), `text.format` `json_schema` strict con radice distinta per dominio, `store: false` (non equivale a Zero Data Retention), `tools: []`, `truncation: "disabled"`, `max_output_tokens` e, solo se configurato, `reasoning.effort`. Nessun `temperature`, nessuna storia di chat, nessun retry o fallback nell'adapter: ogni `send` è un solo invio e il coordinatore dell'endpoint (17) passa ogni chiamata dal budget 15.
+
+**Schema tradotto:** da `extractionJsonSchema(kind)` si conservano `type`, `properties`, `required`, `additionalProperties:false`, `items`, `anyOf` (nullable), `enum` (anche al posto di `const`), `minimum`/`maximum`, `minItems`; si omettono `$schema`, `$id`, `title`, `$comment`, `minLength`/`maxLength`, `pattern`, `maxItems`. Intervalli ordinati, JSON Pointer, pattern degli ID e lunghezze restano verificati da `validateProposal`, sempre obbligatorio dopo l'adapter.
+
+**Terminazioni:** `completed` (dati `unknown`), `incomplete` (`data` null, mai bozza parziale), `refused` (rifiuto esplicito o filtro contenuti). Errori `ExtractionProviderError` con `code` (`timeout`, `network`, `aborted`, `rate_limited`, `server_error`, `bad_request`, `auth`, `invalid_response`, `invalid_output`, `failed`, `configuration`) e `delivery`: `not_sent`, `rejected` (errore HTTP senza output, usage 0), `received` (usage dal corpo, se presente), `uncertain` (timeout/rete/abort dopo l'avvio o corpo non riconosciuto: la riserva resta). Log solo metadati: codice, stato, HTTP, request ID, latenza, token.
+
+**Configurazione (solo secrets server, disabilitata se incompleta o non valida):**
+
+| Variabile | Obbligatoria | Significato |
+|---|---|---|
+| `IMPORT_PROVIDER` | sì | `openai` (unico valore accettato) |
+| `IMPORT_MODEL` | sì | modello/snapshot del profilo standard, scelto dal corpus 25; nessun default |
+| `IMPORT_RETRY_MODEL` | no | profilo `retry`; se assente coincide con lo standard |
+| `IMPORT_PROMPT_VERSION` | sì | deve essere `peppitness.import-prompts.v1` |
+| `IMPORT_MAX_OUTPUT_TOKENS` | sì | tetto output (reasoning compreso), 1–128000 |
+| `IMPORT_RETRY_MAX_OUTPUT_TOKENS` | no | tetto del profilo retry |
+| `IMPORT_REASONING_EFFORT` | no | solo se provato con il modello scelto |
+| `IMPORT_PROVIDER_TIMEOUT_MS` | no | 1000–300000, default 90000 |
+| `OPENAI_API_KEY` | sì | chiave server; mai in log, errori, body o frontend |
+
+URL del provider, prompt, strumenti e modello non sono configurabili dal client. Nessun modello è dichiarato scelto prima della valutazione del task 25; i test usano solo trasporto simulato (`tests/import-provider.test.ts`, risposte in `tests/fixtures/import/provider/`).
+
+## Importazione: endpoint `extract-plan` (task 17, solo locale)
+
+Funzione `supabase/functions/extract-plan/` (`index.ts` cablaggio Deno, `handler.ts` logica provata in Node), con `_shared/import/{analysis,segments,server-config,synthetic-transport}.ts`. Registrata in `config.toml` (`[functions.extract-plan]`, `verify_jwt = true`, import map `deno.json` con `@supabase/supabase-js` 2.117.2). **Nessun deploy**: la funzione non è pubblicata nel progetto cloud.
+
+**Contratto HTTP (per il task 21):** `POST /functions/v1/extract-plan`, `Authorization: Bearer <sessione utente>`, corpo `ExtractPlanRequest` (contratto 02). Risposta con job = `ImportJobResult`: `ready`/`failed`/`expired` HTTP 200, `running` HTTP 202. Errori senza job = `{ error: ImportError }`: 401 `unauthenticated`, 400 `invalid_request`/`unsupported_schema_version`, 403 origine non configurata, 405 metodo, 409 `request_conflict` (stessa chiave con altro input; `retryable: true` se un'altra analisi dell'account è attiva), 413 `limit_exceeded` (byte, profondità, blocchi, testo, token, oppure `providerCallsPerAnalysis` = serve una selezione esplicita di sezioni/pagine), 429 `budget_exhausted`, 503 `provider_unavailable` (analisi disattivata o budget/provider non configurati), 500 `internal`. Ripresa: `get_import_job(p_job_id)` con la sessione utente (RLS/ownership), oppure lo stesso POST con la stessa `analysisRequestId` e lo stesso input (replay senza nuove chiamate). Un job `running` rimasto oltre lease e scadenza viene chiuso al replay (`provider_outcome_uncertain` se la chiamata era partita, altrimenti `internal`).
+
+**Garanzie:** identità verificata dal gateway e da `auth.getUser` (sessione revocata o utente inesistente → 401), mai `owner_id` dal corpo; client privilegiato limitato alle RPC server di jobs e budget; nessuna scrittura di piani/esercizi/catalogo; ogni chiamata (segmenti e retry) passa da `runBudgetedAttempt` con al massimo 2 chiamate per analisi (`min(providerCallsPerAnalysis, max_attempts)`); timeout dopo l'invio = esito incerto con riserva mantenuta, nessun retry; retry solo per errori certi (429/5xx/output non JSON o non valido, incompleto se il profilo retry ha più token) dopo attesa del `Retry-After` entro `IMPORT_MAX_RETRY_WAIT_SECONDS` e il tempo residuo, e dopo ricontrollo del job; risultato validato con `validateProposal` sul documento completo e salvato con `complete_import_job` prima della risposta; esiti `wrong_document_type`/`no_relevant_content`/`unreadable` salvati come `ready` senza contenuto (i mapper 09/10 li bloccano); disconnessione del client non annulla analisi né salvataggio. Documento oltre budget: segmenti per sezioni complete (titoli), contesto globale e titoli antenati ripetuti, tabelle/righe mai spezzate, ricomposizione in ordine di fonte con puntatori rimappati; se non entra in 2 chiamate → 413 con richiesta di selezione, nessun job creato.
+
+**Variabili server aggiuntive:** `IMPORT_ALLOWED_ORIGINS` (origini esatte, separate da virgola), `IMPORT_ANALYSIS_DEADLINE_MS` (5000–400000, default 140000), `IMPORT_MAX_RETRY_WAIT_SECONDS` (0–60, default 10), `IMPORT_TEST_TRANSPORT=synthetic` (solo con `SUPABASE_URL` locale; altrimenti la funzione resta disattivata). Finché il ledger ha un solo modello/prezzo, `IMPORT_RETRY_MODEL` diverso da `IMPORT_MODEL` disattiva l'endpoint. La configurazione budget (`peppitness_private.import_budget_config`) deve avere `enabled=true` e `provider`/`model` uguali a quelli del server.
+
+**Prova locale** (Docker e stack avviati, nessun costo):
+
+```powershell
+node scripts/import-edge-local-check.mjs --write-env      # crea supabase/functions/.env sintetico (ignorato)
+npx.cmd supabase functions serve extract-plan             # terminale dedicato
+node scripts/import-edge-local-check.mjs --summary        # altro terminale
+```
+
+Lo script accetta solo lo stack su `127.0.0.1`, rifiuta un `.env` non sintetico, abilita temporaneamente il budget locale via SQL e lo ripristina, crea e rimuove tre account inventati. Il gateway Kong locale risponde da sé ai preflight `OPTIONS` e riscrive `Access-Control-Allow-Origin` in `*`: il 403 per origini non configurate è del handler, il valore esatto dell'header è provato nei test Node. Dopo la prova fermare `functions serve` e, se resta attivo, il contenitore `supabase_edge_runtime_peppitness`.

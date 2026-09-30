@@ -1,0 +1,16 @@
+{
+  "summary": "HTTP 429 con Retry-After.",
+  "httpStatus": 429,
+  "headers": {
+    "x-request-id": "req_synthetic_429",
+    "retry-after": "7",
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "message": "Synthetic rate limit.",
+      "type": "requests",
+      "code": "rate_limit_exceeded"
+    }
+  }
+}

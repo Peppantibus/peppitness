@@ -1,0 +1,16 @@
+{
+  "summary": "HTTP 400: schema non supportato.",
+  "httpStatus": 400,
+  "headers": {
+    "x-request-id": "req_synthetic_400",
+    "content-type": "application/json"
+  },
+  "body": {
+    "error": {
+      "message": "Synthetic invalid schema.",
+      "type": "invalid_request_error",
+      "code": "invalid_json_schema",
+      "param": "text.format.schema"
+    }
+  }
+}
