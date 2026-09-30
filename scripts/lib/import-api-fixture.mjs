@@ -2,10 +2,12 @@ import { randomUUID } from 'node:crypto'
 import { readFileSync } from 'node:fs'
 import { prepareImportJob, parseServerJob, jobServerRpcNames } from '../../supabase/functions/_shared/import/jobs.ts'
 import { validateImportJobResult } from '../../src/import/contracts/jobs.ts'
+import { budgetRpcNames } from '../../supabase/functions/_shared/import/budget.ts'
+import { importBudgetApiChecks } from './import-budget-api-fixture.mjs'
 
 // Unico punto di estensione import per 15/18/19/20. Privilegi admin ammessi SOLO
 // per queste API server, oltre al bootstrap Auth già presente nel runner.
-export const importServerPaths = Object.freeze(Object.values(jobServerRpcNames).map(name => `/rest/v1/rpc/${name}`))
+export const importServerPaths = Object.freeze([...Object.values(jobServerRpcNames), ...Object.values(budgetRpcNames)].map(name => `/rest/v1/rpc/${name}`))
 const fixture = name => JSON.parse(readFileSync(new URL(`../../tests/fixtures/import/${name}.json`, import.meta.url), 'utf8'))
 
 export async function importApiChecks(context, a, b) {
@@ -97,4 +99,5 @@ export async function importApiChecks(context, a, b) {
   check(failed.providerOutcome === 'uncertain' && failed.job.usageSummary.inputTokens === null && failed.job.error.retryable === false, 'import: incerto non è consumo zero o retry')
   const replay = parseServerJob(expectOk(await server('create_import_job', await prepareImportJob(a.id, { ...input, analysisRequestId: newProfile.job.analysisRequestId }, profile)), 'import: replay fallito'))
   check(replay.job.status === 'failed' && replay.job.jobId === failed.job.jobId, 'import: replay non riavvia analisi')
+  await importBudgetApiChecks(context, a, b)
 }

@@ -26,7 +26,7 @@ export function localApiUrl(value, port = localApiPort()) {
 }
 
 /** Cartella alternativa della CLI (copia della config con porte diverse), validata. */
-function localWorkdir(env = process.env) {
+export function localWorkdir(env = process.env) {
   const value = env.PEPPITNESS_SUPABASE_WORKDIR
   if (value === undefined || value === '') return null
   if (!/^[A-Za-z0-9_:\\/.-]{1,260}$/.test(value)) throw new Error('PEPPITNESS_SUPABASE_WORKDIR non valida.')
