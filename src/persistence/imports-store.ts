@@ -419,7 +419,9 @@ export class ImportsStore {
       if (!this.host.isCurrent(ticket)) return // stop/logout: il journal conserva `saving`, riaperto come `save_unknown`
       if (error instanceof CommitRejected) {
         // Il replay precede ogni altro controllo: un rifiuto certo prova che nessun tentativo precedente è stato salvato.
-        await this.dispatch(kind, started.session, { type: 'save_rejected', error: { code: error.reason, message: rejectionProblems[error.reason].message } }, ticket)
+        const rejected = await this.dispatch(kind, started.session, { type: 'save_rejected', error: { code: error.reason, message: rejectionProblems[error.reason].message } }, ticket)
+        // ID tecnici già usati: la prossima conferma prenota ID nuovi (e avrà una nuova chiave).
+        if (rejected && error.reason === 'request_conflict' && rejected.session.draft) await this.dispatch(kind, rejected.session, { type: 'draft_changed', draft: rejected.session.draft, reservations: null }, ticket)
         this.host.setNetwork(kind, { rejection: error.reason, problem: rejectionProblems[error.reason] })
         return
       }

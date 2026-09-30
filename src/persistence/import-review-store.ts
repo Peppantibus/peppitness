@@ -10,14 +10,14 @@
  *   come blocchi e la pagina PDF si riapre solo riselezionando un file con lo stesso sourceHash;
  * - archivio assente, quota o conflitto rendono la sessione volatile e lo dichiarano (guardie di chiusura).
  */
-import type { DocumentReader, DocumentReadMetadata, ExtractionKind, ReviewDraft } from '../import/contracts/index.ts'
-import { DocumentReaderError } from '../import/contracts/index.ts'
+import type { DocumentReader, DocumentReadMetadata, ExtractionKind, NormalizedDocument, ReviewDraft } from '../import/contracts/index.ts'
+import { DocumentReaderError, validateNormalizedDocument } from '../import/contracts/index.ts'
 import { checkSelectedFile, sha256Hex, type SelectedFileInfo } from '../import/readers/file-checks.ts'
 import { createDocxWorkerReader, createPdfWorkerReader, ReaderWorkerError } from '../import/readers/worker-client.ts'
 import { indexedDbBackend, ReviewStore } from '../import/review/local-storage.ts'
 import {
   applyImportEvent, createImportSession, hasUncertainCommand, ImportAccountScope, isBusy, isDirty, matchesOriginal,
-  type ImportEvent, type ImportSession,
+  type ImportEvent, type ImportSession, type MappingReservations,
 } from '../import/review/state.ts'
 import type { ImportsRepository } from './imports-repository.ts'
 export { createImportsRepository } from './imports-repository.ts'
@@ -172,8 +172,58 @@ export class ImportReviewStore {
   /** Ritorno online o in primo piano: riconcilia i salvataggi incerti e cerca le analisi interrotte, senza nuovi invii. */
   resume() { return this.imports?.resume() ?? Promise.resolve() }
 
-  /** Modifica della bozza in revisione (12/13): stessa proposta, decisioni rigiocate, comando non inviato decaduto. */
-  changeDraft(kind: ImportKind, draft: ReviewDraft) { return this.localEvent(kind, { type: 'draft_changed', draft }) }
+  /**
+   * Modifica della bozza in revisione (12/13): stessa proposta, decisioni rigiocate, comando non inviato decaduto.
+   * `reservations`: ID prenotati dalla revisione, conservati nel journal con la bozza fino al congelamento.
+   */
+  changeDraft(kind: ImportKind, draft: ReviewDraft, reservations?: MappingReservations | null) {
+    return this.localEvent(kind, { type: 'draft_changed', draft, ...(reservations === undefined ? {} : { reservations }) })
+  }
+
+  /**
+   * Nuova sessione dello slot con un documento derivato da quello letto (selezione esplicita di sezioni o
+   * pagine, 22): stessa fonte e stesso reader, esclusioni dichiarate nei problemi di lettura; la precedente
+   * lascia il journal. Nessuna analisi parte da sola.
+   */
+  async restartWith(kind: ImportKind, document: NormalizedDocument) {
+    const slot = this.state.slots[kind], previous = slot.session
+    if (!previous?.document || hasUncertainCommand(previous) || previous.draft) return false
+    if (!validateNormalizedDocument(document).ok || document.sourceHash !== previous.document.sourceHash || document.readerVersion !== previous.document.readerVersion) return false
+    await this.adopt(kind, previous.file, document, slot.original, slot.metadata)
+    void this.forget(previous)
+    return true
+  }
+
+  /**
+   * Stesso documento letto nell'altro dominio (dominio sbagliato o file misto): una sessione separata, con
+   * analisi e conferma proprie. L'altro slot viene sostituito solo se non ha lavoro in corso o incerto.
+   */
+  async copyTo(from: ImportKind, to: ImportKind) {
+    const source = this.state.slots[from], target = this.state.slots[to].session
+    if (from === to || !source.session?.document) return false
+    // Una revisione in corso nell'altro dominio non si sovrascrive; un'importazione conclusa sì.
+    if (target && (hasUncertainCommand(target) || isBusy(target) || (target.draft && (target.status === 'reviewing' || target.status === 'ready')))) return false
+    this.nextGeneration(to)
+    this.abortRead(to)
+    if (target) void this.forget(target)
+    await this.adopt(to, source.session.file, source.session.document, source.original, source.metadata)
+    return true
+  }
+
+  /**
+   * Scarta l'importazione dello slot. Con un comando inviato e non riconciliato serve la conferma esplicita
+   * (il piano potrebbe essere già salvato): la ricevuta resterà comunque sul server.
+   */
+  async discard(kind: ImportKind, options: { acknowledgeUncertain?: boolean } = {}) {
+    const session = this.state.slots[kind].session
+    if (!session || isBusy(session)) return false
+    if (hasUncertainCommand(session) && !options.acknowledgeUncertain) return false
+    this.nextGeneration(kind)
+    this.setSlot(kind, emptySlot({ notice: { tone: 'info', text: 'Importazione scartata da questo dispositivo.' } }))
+    if (session.revision !== null) await this.journal.discard(this.ownerId, session.sessionId, { acknowledgeUncertain: true }).catch(() => undefined)
+    await this.refreshRisks()
+    return true
+  }
   /** Adotta la nuova proposta di una rianalisi: la bozza precedente resta fra quelle superate. */
   adoptReanalysis(kind: ImportKind) { return this.localEvent(kind, { type: 'reanalysis_adopted' }) }
   /** Scarta la nuova proposta di una rianalisi (conclusa o fallita): la bozza in uso resta intatta. */
@@ -406,6 +456,15 @@ export class ImportReviewStore {
     const slot = this.state.slots[kind]
     if (!this.scope.isCurrent(ticket) || slot.session?.sessionId !== sessionId) return null
     return { session: slot.session, storage: slot.storage }
+  }
+
+  /** Sessione nuova con un documento già letto (nessuna lettura, nessuna rete), scritta nel journal. */
+  private async adopt(kind: ImportKind, file: ImportSession['file'], document: NormalizedDocument, original: Uint8Array | null, metadata: DocumentReadMetadata | null) {
+    let session = createImportSession({ ownerId: this.ownerId, sessionId: this.newId(), kind, file: { ...file }, at: this.now() })
+    session = this.apply(session, { type: 'read_started' }) ?? session
+    session = this.apply(session, { type: 'read_succeeded', document, sourceHash: document.sourceHash }) ?? session
+    this.setSlot(kind, emptySlot({ session, original, metadata }))
+    await this.persist(kind, session)
   }
 
   /** Eventi locali della revisione, senza rete: il riduttore decide se sono ammessi. */

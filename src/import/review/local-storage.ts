@@ -166,8 +166,19 @@ export function verifyStoredSession(value: unknown, ownerId: string, sessionId: 
     }
   }
   if (value.receipt !== null && !validateImportReceipt(value.receipt).ok) return { ok: false, message: 'Ricevuta non valida.' }
+  if (value.reservations !== undefined && value.reservations !== null && !validReservations(value.reservations)) return { ok: false, message: 'Prenotazioni degli ID non valide.' }
   if ((value.status === 'saving' || value.status === 'save_unknown') && commit === null) return { ok: false, message: 'Salvataggio senza comando.' }
   return { ok: true, session: value as unknown as ImportSession }
+}
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+const uuidMap = (value: unknown) => isObject(value) && Object.values(value).every(id => typeof id === 'string' && UUID.test(id))
+/** Prenotazioni del mapping (22): solo UUID, nessun altro campo. */
+function validReservations(value: unknown) {
+  if (!isObject(value) || typeof value.planId !== 'string' || !UUID.test(value.planId) || !uuidMap(value.items)) return false
+  if (value.versionId !== undefined && (typeof value.versionId !== 'string' || !UUID.test(value.versionId))) return false
+  if (value.exercises !== undefined && !uuidMap(value.exercises)) return false
+  return Object.keys(value).every(key => ['planId', 'versionId', 'items', 'exercises'].includes(key))
 }
 
 /** Migrazioni del formato della voce: oggi solo la V1. Una voce più nuova resta intatta e non viene letta. */

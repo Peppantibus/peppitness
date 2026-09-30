@@ -152,7 +152,7 @@ async function reviewed(engine: ImportReviewStore, item: FixtureCase) {
   assert.equal(session(engine, item.kind).status, 'reviewing')
   let draft = session(engine, item.kind).draft!
   for (const decision of item.draft.decisions) draft = applyDecision(draft, decision)
-  await engine.changeDraft(item.kind, draft)
+  await engine.changeDraft(item.kind, draft, item.ids as never)
   return draft
 }
 const record = (backend: ReturnType<typeof memoryBackend>, sessionId: string) => [...backend.records.values()].find((item: StoredRecord) => item.sessionId === sessionId)!.session as ImportSession
@@ -307,6 +307,8 @@ test('21: rifiuti certi del catalogo e della scadenza tornano in revisione senza
     server.state.commitHook = phase => { if (phase === 'before') throw new CommitRejected(reason) }
     await engine.imports!.confirm('workout', { ids: item.ids as never, selection: defaultSelectionOptions })
     assert.deepEqual([session(engine, 'workout').status, slot(engine, 'workout').network.rejection, server.receipts.size], ['reviewing', reason, 0], reason)
+    // ID tecnici già usati: la prossima conferma prenota ID nuovi (22).
+    if (reason === 'request_conflict') assert.equal(session(engine, 'workout').reservations, null)
   }
 })
 
@@ -528,3 +530,4 @@ test('21: rilettura dopo il salvataggio fallita → esito salvato distinto dall�
   assert.equal(slot(engine, 'diet').network.refresh, 'done')
   assert.equal(server.state.commitCalls, 1)
 })
+

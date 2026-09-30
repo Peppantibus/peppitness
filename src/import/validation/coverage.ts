@@ -22,6 +22,8 @@ export const readingIssueClasses: Readonly<Record<string, ValidationIssueCode>> 
   no_text_layer: 'source_not_read', empty_page: 'source_not_read', image_without_text: 'source_not_read', unreadable_text: 'source_not_read',
   component_not_read: 'source_not_read', damaged_page: 'source_not_read', damaged_part: 'source_not_read', unsupported_content: 'source_not_read',
   empty_body: 'source_not_read', tracked_changes: 'source_not_read',
+  // Parti escluse per scelta dall'analisi (22): vanno confermate come fuori dal piano, mai ignorate.
+  excluded_by_user: 'source_not_read',
   hidden_text: 'source_hidden_content',
   reading_order_uncertain: 'reading_uncertain', misaligned_numbers: 'reading_uncertain', overlapping_text: 'reading_uncertain',
   merged_cell_text: 'reading_note', table_structure: 'reading_note', table_continuation: 'reading_note', contact_data_removed: 'reading_note',

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { DateContext, DatePicker } from './components/DatePicker'
 import { Icon } from './components/Icon'
 import { Layout } from './components/Layout'
@@ -20,6 +20,7 @@ import type { WizardStep } from './features/ProgramWizard'
 import type { MealWizardStep } from './features/MealPlanWizard'
 import { findPreviousExercise } from './domain/workout'
 import type { Meal, SetResult } from './domain/types'
+import type { ImportReceipt } from './import/contracts/index.ts'
 import { Diet, MealDetail } from './features/Diet'
 import { History } from './features/History'
 import { Settings } from './features/Settings'
@@ -50,12 +51,25 @@ export function App() {
   const isProgress = route === '/scheda/progressi'
   const isImport = route === '/scheda/importa' || route === '/dieta/importa'
   const importKind = route === '/dieta/importa' ? 'diet' : 'workout'
-  // Importazione: il motore si carica sulla sua pagina o in Impostazioni (logout); la lettura prosegue fuori pagina.
-  const importReview = useImports(isImport || route === '/impostazioni')
-  const catalog = useExercises(isCatalog || isPrograms)
+  // Il catalogo serve anche alla revisione della scheda importata (scelte esistente/comune/nuovo).
+  const catalog = useExercises(isCatalog || isPrograms || route === '/scheda/importa')
   const programs = usePrograms(isPrograms)
   // Rilettura dei piani al ritorno dagli editor verso le pagine quotidiane.
   const plans = usePlans(isCatalog || isPrograms ? 'programs' : isMealPlans ? 'meal-plans' : 'daily')
+  // Dopo un'importazione confermata dal server: rilettura di piani, programmi e catalogo. Un errore qui resta
+  // distinto dall'esito (il piano è salvato) e si può ripetere dalla pagina d'importazione.
+  const plansStore = plans.store, catalogStore = catalog.store, programsStore = programs.store
+  const onImportSaved = useCallback(async (receipt: ImportReceipt) => {
+    if (!plansStore) return
+    await plansStore.load()
+    const loaded = plansStore.getSnapshot()
+    if (loaded.phase !== 'ready' || loaded.cached) throw new Error('Piani non riletti')
+    if (receipt.kind !== 'workout') return
+    if (catalogStore) { await catalogStore.load(); if (catalogStore.getSnapshot().phase === 'error') throw new Error('Catalogo non riletto') }
+    if (programsStore && programsStore.getSnapshot().phase !== 'idle') { await programsStore.load(); if (programsStore.getSnapshot().phase === 'error') throw new Error('Programmi non riletti') }
+  }, [plansStore, catalogStore, programsStore])
+  // Importazione: il motore si carica sulla sua pagina o in Impostazioni (logout); lettura e analisi proseguono fuori pagina.
+  const importReview = useImports(isImport || route === '/impostazioni', onImportSaved)
   const diary = useDiary()
   const configured = Boolean(plans.store)
   const view = diary.state.view
@@ -267,6 +281,13 @@ export function App() {
   }
 
   const syncIndicator = <SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} />
+  const importCatalog = { personal: catalog.state.rows, shared: catalog.state.sharedRows, complete: catalog.state.phase === 'ready' }
+  const importContext = {
+    online, catalog: importCatalog, selection: plans.state.selection,
+    selectionKnown: configured && plans.state.phase === 'ready' && !plans.state.cached,
+    followedName: importKind === 'workout' ? workout?.plan.name ?? null : mealPlan?.name ?? null,
+    onSelectionStale: () => void plans.store?.load(), onCatalogStale: () => void catalog.store?.load(),
+  }
   // Pagine secondarie: intestazione propria (← e titolo); su mobile la barra superiore si nasconde.
   const subpage = isHistory || isProgress || isSettings || isCatalog || isPrograms || isMealPlans || isImport
   return <Layout section={isSettings ? null : section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard} session={isSession || Boolean(historySession)} subpage={subpage} status={syncIndicator} sidebarStatus={<SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} withLabel />}>
@@ -288,7 +309,7 @@ export function App() {
       followedPlanId={plans.state.selection?.workoutPlanId ?? null} followedDays={workout?.document.days ?? null} onFollow={followProgram} onDeleted={async () => { await plans.store?.load() }} deletionBlocked={diary.store.hasPending || diary.store.hasVolatileData} today={today} /></Suspense>}
     {isProgress && <Progress workout={workout} days={workoutDays} sessions={programSessions} today={today} />}
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={mealMode} setMode={setMealMode} step={mealStep} setStep={setMealStep} deletionBlocked={diary.store.hasPending || diary.store.hasVolatileData} /></Suspense>}
-    {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} store={importReview.store} state={importReview.state} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} /></Suspense>}
+    {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} store={importReview.store} state={importReview.state} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}
     {isSettings && <Settings backSection={lastSection.current} weeklyProgram={weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy} onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice(); void importReview.clearDevice() }} {...settings} />}
     {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} syncSlot={syncIndicator}
       onDiscard={() => { diary.store.discardSession(activeSession.id); navigate('/scheda'); setAnnouncement('Seduta eliminata.') }}

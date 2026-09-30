@@ -37,6 +37,17 @@ export interface FrozenCommit {
   sent: boolean
 }
 
+/**
+ * ID tecnici prenotati per il mapping della bozza (09/10: piano, versione, elementi, identità shared/new),
+ * conservati con la bozza finché il comando non li congela: una ripresa non ne genera di nuovi.
+ */
+export interface MappingReservations {
+  planId: string
+  versionId?: string
+  items: Readonly<Record<string, string>>
+  exercises?: Readonly<Record<string, string>>
+}
+
 export interface Reanalysis {
   analysisRequestId: string
   status: 'running' | 'ready' | 'failed'
@@ -60,6 +71,8 @@ export interface ImportSession {
   draft: ReviewDraft | null
   previousDrafts: ReviewDraft[]
   reanalysis: Reanalysis | null
+  /** Prenotazioni del mapping per la bozza in uso; null = da prenotare. Assenti nelle voci scritte prima del 22. */
+  reservations?: MappingReservations | null
   commit: FrozenCommit | null
   receipt: ImportReceipt | null
   error: ImportError | { code: string; message: string } | null
@@ -93,7 +106,7 @@ export type ImportEvent = Owned<
   | { type: 'analysis_failed'; analysisRequestId: string; error: ImportError }
   | { type: 'reanalysis_adopted' }
   | { type: 'reanalysis_dismissed' }
-  | { type: 'draft_changed'; draft: ReviewDraft }
+  | { type: 'draft_changed'; draft: ReviewDraft; reservations?: MappingReservations | null }
   | { type: 'readiness_confirmed'; draft: ReviewDraft; findings: readonly ValidationFinding[]; mapping: MappingResult<unknown> }
   | { type: 'command_frozen'; command: CommitCommand; commandHash: string }
   | { type: 'save_started' }
@@ -115,7 +128,7 @@ export function createImportSession(input: { ownerId: string; sessionId: string;
   if (!Number.isSafeInteger(input.file.size) || input.file.size < 0) throw new ImportStateError('invalid_input', 'Dimensione del file non valida.')
   return {
     formatVersion: IMPORT_SESSION_FORMAT, sessionId: input.sessionId, ownerId: input.ownerId, kind: input.kind, status: 'selected',
-    file: { ...input.file }, document: null, analysisRequestId: null, jobId: null, draft: null, previousDrafts: [], reanalysis: null,
+    file: { ...input.file }, document: null, analysisRequestId: null, jobId: null, draft: null, previousDrafts: [], reanalysis: null, reservations: null,
     commit: null, receipt: null, error: null, createdAt: input.at, lastActivityAt: input.at, serverExpiresAt: null, revision: null, persistence: 'volatile',
   }
 }
@@ -213,7 +226,7 @@ export function applyImportEvent(state: ImportSession, event: ImportEvent): Outc
       }
       if (state.status !== 'analyzing' || state.analysisRequestId !== event.analysisRequestId) return ignored('stale_response')
       return done(event.type === 'analysis_succeeded'
-        ? touch(state, event, { status: 'reviewing', draft: event.draft, jobId: event.jobId, serverExpiresAt: event.serverExpiresAt })
+        ? touch(state, event, { status: 'reviewing', draft: event.draft, jobId: event.jobId, serverExpiresAt: event.serverExpiresAt, reservations: null })
         : touch(state, event, { status: 'failed', error: event.error }))
     }
     case 'reanalysis_adopted': {
@@ -221,7 +234,7 @@ export function applyImportEvent(state: ImportSession, event: ImportEvent): Outc
       const next = state.reanalysis.draft
       return done(touch(state, event, {
         status: 'reviewing', draft: next, previousDrafts: [...state.previousDrafts, state.draft], analysisRequestId: state.reanalysis.analysisRequestId,
-        jobId: next.proposal.jobId, reanalysis: null, commit: null,
+        jobId: next.proposal.jobId, reanalysis: null, commit: null, reservations: null,
       }))
     }
     case 'reanalysis_dismissed':
@@ -237,7 +250,9 @@ export function applyImportEvent(state: ImportSession, event: ImportEvent): Outc
       const checked = verifyDraft(event.draft)
       if (!checked.ok) throw new ImportStateError('invalid_input', `Bozza non valida: ${checked.message}`)
       // Ogni modifica richiede di rivalutare la prontezza; un comando congelato e mai inviato decade.
-      return done(touch(state, event, { status: 'reviewing', draft: checked.draft, commit: null }))
+      // Prenotazioni: quelle dell'evento se indicate (anche null = da rigenerare), altrimenti restano.
+      const reservations = event.reservations === undefined ? state.reservations ?? null : event.reservations
+      return done(touch(state, event, { status: 'reviewing', draft: checked.draft, commit: null, reservations }))
     }
     case 'readiness_confirmed': {
       if (state.status !== 'reviewing' && state.status !== 'ready') return fail(state, event)
@@ -293,7 +308,7 @@ export function applyImportEvent(state: ImportSession, event: ImportEvent): Outc
     case 'expired':
       if (state.status === 'saving' || hasUncertainCommand(state) || state.status === 'saved') return ignored('stale_response')
       // I contenuti scadono davvero: bozza, documento e comando non inviato non restano sul dispositivo.
-      return done({ ...state, status: 'expired', document: null, draft: null, previousDrafts: [], reanalysis: null, commit: null })
+      return done({ ...state, status: 'expired', document: null, draft: null, previousDrafts: [], reanalysis: null, commit: null, reservations: null })
   }
 }
 
@@ -311,7 +326,7 @@ export function markVolatile(state: ImportSession): ImportSession {
  * (il server potrebbe averlo applicato); lettura e analisi interrotte tornano ripetibili.
  */
 export function resumeImportSession(state: ImportSession, now: string): ImportSession {
-  if (isExpired(state, now)) return { ...state, status: 'expired', document: null, draft: null, previousDrafts: [], reanalysis: null, commit: null }
+  if (isExpired(state, now)) return { ...state, status: 'expired', document: null, draft: null, previousDrafts: [], reanalysis: null, commit: null, reservations: null }
   switch (state.status) {
     case 'saving': return { ...state, status: 'save_unknown', error: { code: 'interrupted', message: 'Invio interrotto: esito da verificare con lo stesso requestId.' } }
     case 'reading': return { ...state, status: state.document ? 'reading' : 'failed', error: state.document ? null : { code: 'interrupted', message: 'Lettura interrotta: riselezionare il file.' } }

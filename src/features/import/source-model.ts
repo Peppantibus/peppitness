@@ -149,3 +149,71 @@ export function blockAtPoint(blocks: readonly SourceBlock[], x: number, y: numbe
   }
   return found
 }
+
+// ---------------------------------------------------------------------------
+// Selezione esplicita di parti (22): quando il server chiede di ridurre il documento
+// ---------------------------------------------------------------------------
+
+/** Codice del problema di lettura che dichiara le parti escluse per scelta (classificato come parte non letta). */
+export const EXCLUDED_BY_USER = 'excluded_by_user'
+export interface DocumentUnit { id: string; label: string; blockIds: string[] }
+
+const clip = (text: string, max = 60) => [...text].length > max ? `${[...text].slice(0, max - 1).join('')}…` : text
+
+/**
+ * Parti selezionabili, in ordine di fonte: pagine per il PDF; per il DOCX le sezioni del primo livello di titoli
+ * che divide davvero il documento (un titolo unico in testa non basta), con il testo che precede i sottotitoli
+ * come parte propria. Ogni blocco appartiene a una sola parte.
+ */
+export function documentUnits(document: NormalizedDocument, format: 'docx' | 'pdf'): DocumentUnit[] {
+  const byId = new Map(document.blocks.map(block => [block.id, block]))
+  const chain = (block: SourceBlock) => block.kind === 'heading' ? [...block.headingIds, block.id] : block.headingIds
+  const keyAt = (block: SourceBlock, depth: number) => {
+    if (format === 'pdf') return `page:${block.page ?? 0}`
+    const headings = chain(block)
+    return headings[depth] ?? (depth > 0 && headings[depth - 1] ? `pre:${headings[depth - 1]}` : 'start')
+  }
+  let depth = 0
+  while (format === 'docx' && depth < 3 && new Set(document.blocks.map(block => keyAt(block, depth))).size < 2) depth++
+  const units = new Map<string, DocumentUnit>()
+  for (const block of document.blocks) {
+    const key = keyAt(block, depth)
+    let unit = units.get(key)
+    if (!unit) {
+      const heading = byId.get(key.startsWith('pre:') ? key.slice(4) : key)
+      const label = key.startsWith('page:') ? `Pagina ${key.slice(5)}` : key === 'start' ? 'Parte iniziale e testo fuori dalle sezioni'
+        : key.startsWith('pre:') ? `Introduzione di «${clip(heading?.text || 'sezione senza titolo')}»` : clip(heading?.text || 'Sezione senza titolo')
+      unit = { id: key, label, blockIds: [] }
+      units.set(key, unit)
+    }
+    unit.blockIds.push(block.id)
+  }
+  return [...units.values()]
+}
+
+/**
+ * Documento con le sole parti scelte: blocchi nell'ordine originale, chiusi su genitori e titoli richiamati
+ * (nessun riferimento pendente), problemi di lettura conservati sui blocchi rimasti e un problema che
+ * elenca le parti escluse. Stessa fonte e stesso reader: nessun testo riscritto, nessun troncamento nascosto.
+ */
+export function narrowDocument(document: NormalizedDocument, units: readonly DocumentUnit[], chosen: ReadonlySet<string>): NormalizedDocument {
+  const byId = new Map(document.blocks.map(block => [block.id, block]))
+  const keep = new Set<string>()
+  const stack = units.filter(unit => chosen.has(unit.id)).flatMap(unit => unit.blockIds)
+  while (stack.length) {
+    const id = stack.pop()!
+    if (keep.has(id)) continue
+    const block = byId.get(id)
+    if (!block) continue
+    keep.add(id)
+    if (block.parentId) stack.push(block.parentId)
+    stack.push(...block.headingIds)
+  }
+  const excluded = units.filter(unit => !chosen.has(unit.id)).map(unit => unit.label)
+  const readingIssues = document.readingIssues.flatMap(issue => {
+    const refs = issue.sourceRefs.filter(id => keep.has(id))
+    return issue.sourceRefs.length && !refs.length ? [] : [{ ...issue, sourceRefs: refs }]
+  })
+  if (excluded.length) readingIssues.push({ code: EXCLUDED_BY_USER, sourceRefs: [], message: `Parti escluse dall’analisi per scelta: ${excluded.join('; ')}.` })
+  return { ...document, blocks: document.blocks.filter(block => keep.has(block.id)), readingIssues }
+}
