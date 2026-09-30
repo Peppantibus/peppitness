@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic HTTP recording; not a real model response",
+  "httpStatus": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "id": "resp_evaluation_workout-rest-zero-invented",
+    "model": "synthetic-evaluation-v1",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"schemaVersion\":\"1.0\",\"kind\":\"workout\",\"outcome\":\"extracted\",\"title\":\"Scheda esempio\",\"guidance\":[],\"schedule\":\"unknown\",\"cycle\":{\"startDate\":null,\"weeks\":null},\"sessions\":[{\"label\":\"A\",\"title\":\"Seduta A\",\"weekday\":null,\"notes\":[],\"exercises\":[{\"name\":\"Squat\",\"variant\":null,\"equipment\":null,\"measurementMode\":\"reps\",\"sets\":3,\"optionalSets\":null,\"repetitions\":{\"min\":8,\"max\":10},\"durationSeconds\":null,\"restSeconds\":{\"min\":0,\"max\":0},\"rir\":null,\"rpe\":null,\"perSide\":null,\"loadUnit\":null,\"loadConvention\":null,\"loadInstruction\":null,\"tempoInstruction\":null,\"prescriptionText\":\"Squat | 3 x 8-10 | recupero non indicato\",\"notes\":[]}]}],\"complexRules\":[],\"evidence\":[{\"path\":\"/title\",\"spans\":[{\"blockId\":\"p:1\",\"quote\":\"Scheda esempio\"}]},{\"path\":\"/sessions/0/label\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Seduta A\"}]},{\"path\":\"/sessions/0/title\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Seduta A\"}]},{\"path\":\"/sessions/0/exercises/0/name\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"Squat\"}]},{\"path\":\"/sessions/0/exercises/0/measurementMode\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"3 x 8-10\"}]},{\"path\":\"/sessions/0/exercises/0/sets\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"3 x 8-10\"}]},{\"path\":\"/sessions/0/exercises/0/repetitions\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"3 x 8-10\"}]},{\"path\":\"/sessions/0/exercises/0/prescriptionText\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"Squat | 3 x 8-10 | recupero non indicato\"}]},{\"path\":\"/sessions/0/exercises/0/restSeconds\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"recupero non indicato\"}]}],\"issues\":[],\"unassigned\":[]}"
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 1200,
+      "output_tokens": 450,
+      "output_tokens_details": {
+        "reasoning_tokens": 50
+      }
+    }
+  },
+  "transportError": false,
+  "latencyMs": 25
+}

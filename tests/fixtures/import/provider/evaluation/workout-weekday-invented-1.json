@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic HTTP recording; not a real model response",
+  "httpStatus": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "id": "resp_evaluation_workout-weekday-invented",
+    "model": "synthetic-evaluation-v1",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"schemaVersion\":\"1.0\",\"kind\":\"workout\",\"outcome\":\"extracted\",\"title\":\"Programma A/B/C\",\"guidance\":[\"Alternare le sedute A, B e C senza giorni fissi.\"],\"schedule\":\"rotation\",\"cycle\":{\"startDate\":null,\"weeks\":null},\"sessions\":[{\"label\":\"A\",\"title\":\"Seduta A\",\"weekday\":1,\"notes\":[],\"exercises\":[{\"name\":\"Squat\",\"variant\":null,\"equipment\":null,\"measurementMode\":\"reps\",\"sets\":3,\"optionalSets\":null,\"repetitions\":{\"min\":5,\"max\":5},\"durationSeconds\":null,\"restSeconds\":null,\"rir\":null,\"rpe\":null,\"perSide\":null,\"loadUnit\":null,\"loadConvention\":null,\"loadInstruction\":null,\"tempoInstruction\":null,\"prescriptionText\":\"Squat 3 x 5\",\"notes\":[]}]},{\"label\":\"B\",\"title\":\"Seduta B\",\"weekday\":null,\"notes\":[],\"exercises\":[{\"name\":\"Panca piana\",\"variant\":null,\"equipment\":null,\"measurementMode\":\"reps\",\"sets\":3,\"optionalSets\":null,\"repetitions\":{\"min\":5,\"max\":5},\"durationSeconds\":null,\"restSeconds\":null,\"rir\":null,\"rpe\":null,\"perSide\":null,\"loadUnit\":null,\"loadConvention\":null,\"loadInstruction\":null,\"tempoInstruction\":null,\"prescriptionText\":\"Panca piana 3 x 5\",\"notes\":[]}]},{\"label\":\"C\",\"title\":\"Seduta C\",\"weekday\":null,\"notes\":[],\"exercises\":[{\"name\":\"Stacco da terra\",\"variant\":null,\"equipment\":null,\"measurementMode\":\"reps\",\"sets\":1,\"optionalSets\":null,\"repetitions\":{\"min\":5,\"max\":5},\"durationSeconds\":null,\"restSeconds\":null,\"rir\":null,\"rpe\":null,\"perSide\":null,\"loadUnit\":null,\"loadConvention\":null,\"loadInstruction\":null,\"tempoInstruction\":null,\"prescriptionText\":\"Stacco da terra 1 x 5\",\"notes\":[]}]}],\"complexRules\":[],\"evidence\":[{\"path\":\"/title\",\"spans\":[{\"blockId\":\"p:1\",\"quote\":\"Programma A/B/C\"}]},{\"path\":\"/guidance/0\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Alternare le sedute A, B e C senza giorni fissi.\"}]},{\"path\":\"/schedule\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Alternare le sedute A, B e C senza giorni fissi.\"}]},{\"path\":\"/sessions/0/label\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"Seduta A\"}]},{\"path\":\"/sessions/0/title\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"Seduta A\"}]},{\"path\":\"/sessions/0/exercises/0/name\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"Squat\"}]},{\"path\":\"/sessions/0/exercises/0/measurementMode\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"3 x 5\"}]},{\"path\":\"/sessions/0/exercises/0/sets\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"3 x 5\"}]},{\"path\":\"/sessions/0/exercises/0/repetitions\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"3 x 5\"}]},{\"path\":\"/sessions/0/exercises/0/prescriptionText\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"Squat 3 x 5\"}]},{\"path\":\"/sessions/1/label\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"Seduta B\"}]},{\"path\":\"/sessions/1/title\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"Seduta B\"}]},{\"path\":\"/sessions/1/exercises/0/name\",\"spans\":[{\"blockId\":\"p:6\",\"quote\":\"Panca piana\"}]},{\"path\":\"/sessions/1/exercises/0/measurementMode\",\"spans\":[{\"blockId\":\"p:6\",\"quote\":\"3 x 5\"}]},{\"path\":\"/sessions/1/exercises/0/sets\",\"spans\":[{\"blockId\":\"p:6\",\"quote\":\"3 x 5\"}]},{\"path\":\"/sessions/1/exercises/0/repetitions\",\"spans\":[{\"blockId\":\"p:6\",\"quote\":\"3 x 5\"}]},{\"path\":\"/sessions/1/exercises/0/prescriptionText\",\"spans\":[{\"blockId\":\"p:6\",\"quote\":\"Panca piana 3 x 5\"}]},{\"path\":\"/sessions/2/label\",\"spans\":[{\"blockId\":\"p:7\",\"quote\":\"Seduta C\"}]},{\"path\":\"/sessions/2/title\",\"spans\":[{\"blockId\":\"p:7\",\"quote\":\"Seduta C\"}]},{\"path\":\"/sessions/2/exercises/0/name\",\"spans\":[{\"blockId\":\"p:8\",\"quote\":\"Stacco da terra\"}]},{\"path\":\"/sessions/2/exercises/0/measurementMode\",\"spans\":[{\"blockId\":\"p:8\",\"quote\":\"1 x 5\"}]},{\"path\":\"/sessions/2/exercises/0/sets\",\"spans\":[{\"blockId\":\"p:8\",\"quote\":\"1 x 5\"}]},{\"path\":\"/sessions/2/exercises/0/repetitions\",\"spans\":[{\"blockId\":\"p:8\",\"quote\":\"1 x 5\"}]},{\"path\":\"/sessions/2/exercises/0/prescriptionText\",\"spans\":[{\"blockId\":\"p:8\",\"quote\":\"Stacco da terra 1 x 5\"}]},{\"path\":\"/sessions/0/weekday\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"Seduta A\"}]}],\"issues\":[{\"code\":\"missing\",\"path\":\"/sessions/0/exercises/0/restSeconds\",\"sourceRefs\":[\"p:4\"],\"message\":\"Recupero non indicato.\"},{\"code\":\"missing\",\"path\":\"/sessions/1/exercises/0/restSeconds\",\"sourceRefs\":[\"p:6\"],\"message\":\"Recupero non indicato.\"},{\"code\":\"missing\",\"path\":\"/sessions/2/exercises/0/restSeconds\",\"sourceRefs\":[\"p:8\"],\"message\":\"Recupero non indicato.\"}],\"unassigned\":[]}"
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 1200,
+      "output_tokens": 450,
+      "output_tokens_details": {
+        "reasoning_tokens": 50
+      }
+    }
+  },
+  "transportError": false,
+  "latencyMs": 25
+}

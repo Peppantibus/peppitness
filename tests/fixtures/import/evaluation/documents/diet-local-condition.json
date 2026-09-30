@@ -1,0 +1,75 @@
+{
+  "readerVersion": "synthetic-evaluation/1",
+  "sourceHash": "552f321734a46adffc155aaab098da28d85369d35ccd8ebceb5b49e858f9517f",
+  "blocks": [
+    {
+      "id": "p:1",
+      "kind": "heading",
+      "text": "Menu diet-local-condition",
+      "headingIds": [],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:2",
+      "kind": "heading",
+      "text": "Giornata di riposo",
+      "headingIds": [
+        "p:1"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:3",
+      "kind": "list_item",
+      "text": "Spuntino: Pera 1.",
+      "headingIds": [
+        "p:1",
+        "p:2"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:5",
+      "kind": "paragraph",
+      "text": "Solo se hai fame aggiungi 10 g di mandorle.",
+      "headingIds": [
+        "p:1",
+        "p:2"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    }
+  ],
+  "readingIssues": []
+}

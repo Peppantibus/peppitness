@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic HTTP recording; not a real model response",
+  "httpStatus": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "id": "resp_evaluation_diet-local-condition",
+    "model": "synthetic-evaluation-v1",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"schemaVersion\":\"1.0\",\"kind\":\"diet\",\"outcome\":\"extracted\",\"title\":\"Menu diet-local-condition\",\"guidance\":[],\"days\":[{\"name\":\"Giornata di riposo\",\"dayType\":\"rest\",\"notes\":[],\"meals\":[{\"name\":\"Spuntino\",\"timeText\":null,\"foods\":[{\"name\":\"Pera\",\"quantityText\":\"1\",\"notes\":[]}],\"alternatives\":[],\"additions\":[\"Solo se hai fame aggiungi 10 g di mandorle.\"],\"notes\":[]}]}],\"globalRules\":[],\"evidence\":[{\"path\":\"/title\",\"spans\":[{\"blockId\":\"p:1\",\"quote\":\"Menu diet-local-condition\"}]},{\"path\":\"/days/0/meals/0/name\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"Spuntino\"}]},{\"path\":\"/days/0/meals/0/foods/0/name\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"Pera\"}]},{\"path\":\"/days/0/meals/0/foods/0/quantityText\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"1\"}]},{\"path\":\"/days/0/meals/0/additions/0\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"Solo se hai fame aggiungi 10 g di mandorle.\"}]},{\"path\":\"/days/0/name\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Giornata di riposo\"}]},{\"path\":\"/days/0/dayType\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"riposo\"}]}],\"issues\":[],\"unassigned\":[]}"
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 1200,
+      "output_tokens": 450,
+      "output_tokens_details": {
+        "reasoning_tokens": 50
+      }
+    }
+  },
+  "transportError": false,
+  "latencyMs": 25
+}

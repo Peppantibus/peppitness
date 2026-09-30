@@ -1,0 +1,134 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "workout",
+  "outcome": "extracted",
+  "title": "Scheda workout-timeout",
+  "guidance": [],
+  "schedule": "unknown",
+  "cycle": {
+    "startDate": null,
+    "weeks": null
+  },
+  "sessions": [
+    {
+      "label": "A",
+      "title": "Seduta A",
+      "weekday": null,
+      "notes": [],
+      "exercises": [
+        {
+          "name": "Rematore elastico",
+          "variant": null,
+          "equipment": null,
+          "measurementMode": "reps",
+          "sets": 4,
+          "optionalSets": null,
+          "repetitions": {
+            "min": 12,
+            "max": 12
+          },
+          "durationSeconds": null,
+          "restSeconds": {
+            "min": 75,
+            "max": 75
+          },
+          "rir": null,
+          "rpe": null,
+          "perSide": null,
+          "loadUnit": null,
+          "loadConvention": null,
+          "loadInstruction": null,
+          "tempoInstruction": null,
+          "prescriptionText": "Rematore elastico: 4 x 12, recupero 75 secondi.",
+          "notes": []
+        }
+      ]
+    }
+  ],
+  "complexRules": [],
+  "evidence": [
+    {
+      "path": "/title",
+      "spans": [
+        {
+          "blockId": "p:1",
+          "quote": "Scheda workout-timeout"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/label",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "Seduta A"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/title",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "Seduta A"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/name",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Rematore elastico"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/measurementMode",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Rematore elastico: 4 x 12, recupero 75 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/sets",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Rematore elastico: 4 x 12, recupero 75 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/repetitions",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Rematore elastico: 4 x 12, recupero 75 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/restSeconds",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Rematore elastico: 4 x 12, recupero 75 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/prescriptionText",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Rematore elastico: 4 x 12, recupero 75 secondi."
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "unassigned": []
+}

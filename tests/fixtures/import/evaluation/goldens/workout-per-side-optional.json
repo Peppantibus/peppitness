@@ -1,0 +1,152 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "workout",
+  "outcome": "extracted",
+  "title": "Scheda workout-per-side-optional",
+  "guidance": [],
+  "schedule": "unknown",
+  "cycle": {
+    "startDate": null,
+    "weeks": null
+  },
+  "sessions": [
+    {
+      "label": "A",
+      "title": "Seduta A",
+      "weekday": null,
+      "notes": [],
+      "exercises": [
+        {
+          "name": "Affondi inversi",
+          "variant": null,
+          "equipment": null,
+          "measurementMode": "reps",
+          "sets": 2,
+          "optionalSets": 1,
+          "repetitions": {
+            "min": 10,
+            "max": 10
+          },
+          "durationSeconds": null,
+          "restSeconds": {
+            "min": 90,
+            "max": 90
+          },
+          "rir": null,
+          "rpe": null,
+          "perSide": true,
+          "loadUnit": null,
+          "loadConvention": null,
+          "loadInstruction": null,
+          "tempoInstruction": null,
+          "prescriptionText": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi.",
+          "notes": []
+        }
+      ]
+    }
+  ],
+  "complexRules": [],
+  "evidence": [
+    {
+      "path": "/title",
+      "spans": [
+        {
+          "blockId": "p:1",
+          "quote": "Scheda workout-per-side-optional"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/label",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "Seduta A"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/title",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "Seduta A"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/name",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Affondi inversi"
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/measurementMode",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/sets",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/optionalSets",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/repetitions",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/restSeconds",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/perSide",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi."
+        }
+      ]
+    },
+    {
+      "path": "/sessions/0/exercises/0/prescriptionText",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi."
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "unassigned": []
+}

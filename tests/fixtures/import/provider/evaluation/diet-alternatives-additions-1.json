@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic HTTP recording; not a real model response",
+  "httpStatus": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "id": "resp_evaluation_diet-alternatives-additions",
+    "model": "synthetic-evaluation-v1",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"schemaVersion\":\"1.0\",\"kind\":\"diet\",\"outcome\":\"extracted\",\"title\":\"Piano alimentare\",\"guidance\":[],\"days\":[{\"name\":\"Giorno 1\",\"dayType\":null,\"notes\":[],\"meals\":[{\"name\":\"Colazione\",\"timeText\":\"7:30\",\"foods\":[{\"name\":\"Yogurt greco\",\"quantityText\":\"170 g\",\"notes\":[]},{\"name\":\"banana\",\"quantityText\":\"½\",\"notes\":[]}],\"alternatives\":[\"Yogurt → latte 200 ml\",\"Opzione B colazione: pane integrale 60 g e marmellata 20 g.\"],\"additions\":[],\"notes\":[]},{\"name\":\"Pranzo\",\"timeText\":null,\"foods\":[{\"name\":\"Pasta di semola\",\"quantityText\":\"80 g a crudo\",\"notes\":[]},{\"name\":\"olio EVO\",\"quantityText\":\"q.b.\",\"notes\":[]}],\"alternatives\":[\"Pasta oppure riso basmati 70 g\"],\"additions\":[],\"notes\":[]},{\"name\":\"Spuntino\",\"timeText\":null,\"foods\":[{\"name\":\"Mela\",\"quantityText\":\"1\",\"notes\":[]}],\"alternatives\":[],\"additions\":[\"Se ti alleni nel pomeriggio aggiungi 30 g di pane\"],\"notes\":[]}]}],\"globalRules\":[{\"kind\":\"addition\",\"text\":\"Nei giorni di allenamento lungo aggiungere 20 g di frutta secca a scelta.\",\"sourceRefs\":[\"p:2\"]}],\"evidence\":[{\"path\":\"/title\",\"spans\":[{\"blockId\":\"p:1\",\"quote\":\"Piano alimentare\"}]},{\"path\":\"/days/0/name\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"Giorno 1\"}]},{\"path\":\"/days/0/meals/0/name\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"Colazione\"}]},{\"path\":\"/days/0/meals/0/timeText\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"7:30\"}]},{\"path\":\"/days/0/meals/0/foods/0/name\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"Yogurt greco\"}]},{\"path\":\"/days/0/meals/0/foods/0/quantityText\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"170 g\"}]},{\"path\":\"/days/0/meals/0/foods/1/name\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"banana\"}]},{\"path\":\"/days/0/meals/0/foods/1/quantityText\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"½\"}]},{\"path\":\"/days/0/meals/0/alternatives/0\",\"spans\":[{\"blockId\":\"t:1:r:1\",\"quote\":\"Yogurt → latte 200 ml\"}]},{\"path\":\"/days/0/meals/0/alternatives/1\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"Opzione B colazione: pane integrale 60 g e marmellata 20 g.\"}]},{\"path\":\"/days/0/meals/1/name\",\"spans\":[{\"blockId\":\"t:1:r:2\",\"quote\":\"Pranzo\"}]},{\"path\":\"/days/0/meals/1/foods/0/name\",\"spans\":[{\"blockId\":\"t:1:r:2\",\"quote\":\"Pasta di semola\"}]},{\"path\":\"/days/0/meals/1/foods/0/quantityText\",\"spans\":[{\"blockId\":\"t:1:r:2\",\"quote\":\"80 g a crudo\"}]},{\"path\":\"/days/0/meals/1/foods/1/name\",\"spans\":[{\"blockId\":\"t:1:r:2\",\"quote\":\"olio EVO\"}]},{\"path\":\"/days/0/meals/1/foods/1/quantityText\",\"spans\":[{\"blockId\":\"t:1:r:2\",\"quote\":\"q.b.\"}]},{\"path\":\"/days/0/meals/1/alternatives/0\",\"spans\":[{\"blockId\":\"t:1:r:2\",\"quote\":\"Pasta oppure riso basmati 70 g\"}]},{\"path\":\"/days/0/meals/2/name\",\"spans\":[{\"blockId\":\"t:1:r:3\",\"quote\":\"Spuntino\"}]},{\"path\":\"/days/0/meals/2/foods/0/name\",\"spans\":[{\"blockId\":\"t:1:r:3\",\"quote\":\"Mela\"}]},{\"path\":\"/days/0/meals/2/foods/0/quantityText\",\"spans\":[{\"blockId\":\"t:1:r:3\",\"quote\":\"Mela 1\"}]},{\"path\":\"/days/0/meals/2/additions/0\",\"spans\":[{\"blockId\":\"t:1:r:3\",\"quote\":\"Se ti alleni nel pomeriggio aggiungi 30 g di pane\"}]},{\"path\":\"/globalRules/0/text\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Nei giorni di allenamento lungo aggiungere 20 g di frutta secca a scelta.\"}]}],\"issues\":[{\"code\":\"missing\",\"path\":\"/days/0/dayType\",\"sourceRefs\":[\"p:3\"],\"message\":\"«Giorno 1» non indica se vale per allenamento, riposo o qualsiasi giorno.\"}],\"unassigned\":[]}"
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 1200,
+      "output_tokens": 450,
+      "output_tokens_details": {
+        "reasoning_tokens": 50
+      }
+    }
+  },
+  "transportError": false,
+  "latencyMs": 25
+}

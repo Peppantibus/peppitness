@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic HTTP recording; not a real model response",
+  "httpStatus": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "id": "resp_evaluation_workout-out-of-bounds",
+    "model": "synthetic-evaluation-v1",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"schemaVersion\":\"1.0\",\"kind\":\"workout\",\"outcome\":\"extracted\",\"title\":\"Programma di allenamento sperimentale con un titolo volutamente molto lungo per verificare che il limite di centosessanta caratteri del dominio venga segnalato e mai troncato in bozza\",\"guidance\":[],\"schedule\":\"weekly\",\"cycle\":{\"startDate\":\"1990-01-01\",\"weeks\":60},\"sessions\":[{\"label\":\"X\",\"title\":\"Seduta X\",\"weekday\":7,\"notes\":[],\"exercises\":[{\"name\":\"Burpee\",\"variant\":null,\"equipment\":null,\"measurementMode\":\"reps\",\"sets\":5000,\"optionalSets\":2.5,\"repetitions\":{\"min\":0,\"max\":20000},\"durationSeconds\":null,\"restSeconds\":{\"min\":100000,\"max\":100000},\"rir\":null,\"rpe\":{\"min\":12,\"max\":12},\"perSide\":null,\"loadUnit\":null,\"loadConvention\":null,\"loadInstruction\":null,\"tempoInstruction\":null,\"prescriptionText\":\"Burpee: 5000 serie + 2,5 facoltative x 0-20000, RPE 12, recupero 100000 s\",\"notes\":[]}]}],\"complexRules\":[],\"evidence\":[{\"path\":\"/title\",\"spans\":[{\"blockId\":\"pdf:1:b:1\",\"quote\":\"Programma di allenamento sperimentale con un titolo volutamente molto lungo per verificare che il limite di centosessanta caratteri del dominio venga segnalato e mai troncato in bozza\"}]},{\"path\":\"/cycle/startDate\",\"spans\":[{\"blockId\":\"pdf:1:b:2\",\"quote\":\"dal 1990-01-01\"}]},{\"path\":\"/cycle/weeks\",\"spans\":[{\"blockId\":\"pdf:1:b:2\",\"quote\":\"60 settimane\"}]},{\"path\":\"/schedule\",\"spans\":[{\"blockId\":\"pdf:1:b:3\",\"quote\":\"Domenica\"}]},{\"path\":\"/sessions/0/label\",\"spans\":[{\"blockId\":\"pdf:1:b:3\",\"quote\":\"Seduta X\"}]},{\"path\":\"/sessions/0/title\",\"spans\":[{\"blockId\":\"pdf:1:b:3\",\"quote\":\"Seduta X\"}]},{\"path\":\"/sessions/0/weekday\",\"spans\":[{\"blockId\":\"pdf:1:b:3\",\"quote\":\"Domenica\"}]},{\"path\":\"/sessions/0/exercises/0/name\",\"spans\":[{\"blockId\":\"pdf:1:b:4\",\"quote\":\"Burpee\"}]},{\"path\":\"/sessions/0/exercises/0/measurementMode\",\"spans\":[{\"blockId\":\"pdf:1:b:4\",\"quote\":\"x 0-20000\"}]},{\"path\":\"/sessions/0/exercises/0/sets\",\"spans\":[{\"blockId\":\"pdf:1:b:4\",\"quote\":\"5000 serie\"}]},{\"path\":\"/sessions/0/exercises/0/optionalSets\",\"spans\":[{\"blockId\":\"pdf:1:b:4\",\"quote\":\"2,5 facoltative\"}]},{\"path\":\"/sessions/0/exercises/0/repetitions\",\"spans\":[{\"blockId\":\"pdf:1:b:4\",\"quote\":\"0-20000\"}]},{\"path\":\"/sessions/0/exercises/0/rpe\",\"spans\":[{\"blockId\":\"pdf:1:b:4\",\"quote\":\"RPE 12\"}]},{\"path\":\"/sessions/0/exercises/0/restSeconds\",\"spans\":[{\"blockId\":\"pdf:1:b:4\",\"quote\":\"recupero 100000 s\"}]},{\"path\":\"/sessions/0/exercises/0/prescriptionText\",\"spans\":[{\"blockId\":\"pdf:1:b:4\",\"quote\":\"Burpee: 5000 serie + 2,5 facoltative x 0-20000, RPE 12, recupero 100000 s\"}]}],\"issues\":[],\"unassigned\":[]}"
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 1200,
+      "output_tokens": 450,
+      "output_tokens_details": {
+        "reasoning_tokens": 50
+      }
+    }
+  },
+  "transportError": false,
+  "latencyMs": 25
+}

@@ -173,3 +173,28 @@ node scripts/import-e2e-local-check.mjs                   # E2E dei due domini
 ```
 
 Il runner valida il loopback prima di ogni scrittura, crea una build PWA isolata in `artifacts/import-e2e/dist` con URL e chiave publishable dello stack locale (senza toccare `.env.local`), la serve su 127.0.0.1:4173 con la CSP di `_headers`, abilita temporaneamente il budget locale con un marcatore e lo ripristina, crea e rimuove due account sintetici e un template comune. Copre: scheda DOCX e PDF (existing/new/shared, correzione del recupero, follow, reload, seduta avviata e snapshot uguale all'anteprima, nessuna serie registrata), dieta DOCX e PDF (quantità vuota confermata, tipo di giornata, regola globale con scelta di ambito, revisione ripresa offline, risposta del commit persa dopo la scrittura e riconciliata con la ricevuta, pasto registrato con alternative conservate, copia esplicita), doppio clic con adozione unica, 413 reale del budget con selezione esplicita delle sezioni, scarto sul server dell'import concluso alla riapertura, RLS di B, precache solo asset (worker DOCX/PDF inclusi), cambio account. Report rigenerabile in `artifacts/import-e2e/report.json` (impronte dei file sintetici, versioni, esito, pulizia); la prova su iPhone reale resta `NOT_RUN` finché non è eseguita a mano.
+
+## Importazione: corpus e gate di rilascio (task 25)
+
+`node scripts/import-evaluate.mjs --offline`: 40 casi etichettati (29 sviluppo,
+11 held-out), adapter 16 con registrazioni HTTP sintetiche, validator 06 reale,
+report deterministico `artifacts/import-evaluation/report.json`. Zero rete,
+nessuna mutazione DB o budget, nessun requisito Edge/Chrome. PASS verifica il
+runner/pipeline, non certifica un modello reale. Numeri, associazioni, omissioni,
+condizioni, errori critici non segnalati, latenza, token/costo stimato e tempo
+di correzione annotato sono metriche separate.
+
+Modalità reale, scoring dei records privati, confronto candidati e ordine di
+applicazione migration/Edge/secrets/budget: [IMPORT_EVALUATION.md](IMPORT_EVALUATION.md).
+Il template è fail-closed: `tests/fixtures/import/evaluation/real-config.example.json`
+(disabled, nessun modello/prezzo/chiave); soltanto secrets server e autorizzazione
+di spesa distinta consentono chiamate reali. Il benchmark server usa un journal
+privato di spesa; l'app conserva il ledger atomico 15 e lo stesso modello per
+standard/retry. Nessuna estensione del ledger o provider aggiuntivo.
+
+Stato della ripresa S9/24: 14 migration già applicate nel cloud, retention 23
+installata; i paragrafi precedenti descrivono le verifiche locali dei rispettivi
+task. Nessuna nuova migration in 25. Cloud ancora senza deploy Edge/secrets e
+budget disabilitato. Gate modello held-out reale, iPhone fisico e rilascio cloud
+restano aperti. Servono account/credito OpenAI, chiave server, candidati autorizzati
+e limiti espliciti prima della prima valutazione pagata.

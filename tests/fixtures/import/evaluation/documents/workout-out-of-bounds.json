@@ -1,0 +1,94 @@
+{
+  "readerVersion": "synthetic-fixture/1",
+  "sourceHash": "b1b2c5c609cfd1ac7bc550ff74c0dee044772090c4545d5ebfdf599c520c8e8a",
+  "blocks": [
+    {
+      "id": "pdf:1:b:1",
+      "kind": "heading",
+      "text": "Programma di allenamento sperimentale con un titolo volutamente molto lungo per verificare che il limite di centosessanta caratteri del dominio venga segnalato e mai troncato in bozza",
+      "page": 1,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [],
+      "origin": "native",
+      "bbox": [
+        0.08,
+        0.04,
+        0.84,
+        0.08
+      ]
+    },
+    {
+      "id": "pdf:1:b:2",
+      "kind": "paragraph",
+      "text": "Ciclo di 60 settimane dal 1990-01-01.",
+      "page": 1,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "pdf:1:b:1"
+      ],
+      "origin": "native",
+      "bbox": [
+        0.08,
+        0.14,
+        0.6,
+        0.03
+      ]
+    },
+    {
+      "id": "pdf:1:b:3",
+      "kind": "heading",
+      "text": "Domenica – Seduta X",
+      "page": 1,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "pdf:1:b:1"
+      ],
+      "origin": "native",
+      "bbox": [
+        0.08,
+        0.2,
+        0.4,
+        0.04
+      ]
+    },
+    {
+      "id": "pdf:1:b:4",
+      "kind": "list_item",
+      "text": "Burpee: 5000 serie + 2,5 facoltative x 0-20000, RPE 12, recupero 100000 s",
+      "page": 1,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "pdf:1:b:1",
+        "pdf:1:b:3"
+      ],
+      "origin": "native",
+      "bbox": [
+        0.1,
+        0.26,
+        0.8,
+        0.03
+      ]
+    }
+  ],
+  "readingIssues": []
+}

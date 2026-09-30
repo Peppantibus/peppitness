@@ -1,0 +1,57 @@
+{
+  "readerVersion": "synthetic-evaluation/1",
+  "sourceHash": "cd6b72f2cf213c222403743b4dfd1c3d617521e8ff18aec4cf00690f70915a0f",
+  "blocks": [
+    {
+      "id": "p:1",
+      "kind": "heading",
+      "text": "Scheda workout-per-side-optional",
+      "headingIds": [],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:2",
+      "kind": "heading",
+      "text": "Seduta A",
+      "headingIds": [
+        "p:1"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:3",
+      "kind": "list_item",
+      "text": "Affondi inversi: 2 + 1 facoltativa x 10 per lato, recupero 90 secondi.",
+      "headingIds": [
+        "p:1",
+        "p:2"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    }
+  ],
+  "readingIssues": []
+}

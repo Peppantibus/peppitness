@@ -1,0 +1,15 @@
+{
+  "provenance": "synthetic HTTP recording; not a real model response",
+  "httpStatus": 429,
+  "headers": {
+    "content-type": "application/json",
+    "retry-after": "1"
+  },
+  "body": {
+    "error": {
+      "code": "rate_limit_exceeded"
+    }
+  },
+  "transportError": false,
+  "latencyMs": 25
+}

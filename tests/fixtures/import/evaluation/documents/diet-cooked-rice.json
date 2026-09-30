@@ -1,0 +1,57 @@
+{
+  "readerVersion": "synthetic-evaluation/1",
+  "sourceHash": "e2949eeeadca820457487b3c6e6ebd66282e8bbe58d2fabb469ff31708c823bd",
+  "blocks": [
+    {
+      "id": "p:1",
+      "kind": "heading",
+      "text": "Menu diet-cooked-rice",
+      "headingIds": [],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:2",
+      "kind": "heading",
+      "text": "Giornata di riposo",
+      "headingIds": [
+        "p:1"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:3",
+      "kind": "list_item",
+      "text": "Cena: Riso 150 g cotto. Pesare dopo la cottura.",
+      "headingIds": [
+        "p:1",
+        "p:2"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    }
+  ],
+  "readingIssues": []
+}

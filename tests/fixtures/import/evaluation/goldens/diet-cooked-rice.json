@@ -1,0 +1,89 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "diet",
+  "outcome": "extracted",
+  "title": "Menu diet-cooked-rice",
+  "guidance": [],
+  "days": [
+    {
+      "name": "Giornata di riposo",
+      "dayType": "rest",
+      "notes": [],
+      "meals": [
+        {
+          "name": "Cena",
+          "timeText": null,
+          "foods": [
+            {
+              "name": "Riso",
+              "quantityText": "150 g cotto",
+              "notes": []
+            }
+          ],
+          "alternatives": [],
+          "additions": [],
+          "notes": []
+        }
+      ]
+    }
+  ],
+  "globalRules": [],
+  "evidence": [
+    {
+      "path": "/title",
+      "spans": [
+        {
+          "blockId": "p:1",
+          "quote": "Menu diet-cooked-rice"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/0/name",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Cena"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/0/foods/0/name",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Riso"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/0/foods/0/quantityText",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "150 g cotto"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/name",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "Giornata di riposo"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/dayType",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "riposo"
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "unassigned": []
+}

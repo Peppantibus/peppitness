@@ -1,0 +1,33 @@
+{
+  "provenance": "synthetic HTTP recording; not a real model response",
+  "httpStatus": 200,
+  "headers": {
+    "content-type": "application/json"
+  },
+  "body": {
+    "id": "resp_evaluation_workout-per-side-doubled",
+    "model": "synthetic-evaluation-v1",
+    "status": "completed",
+    "output": [
+      {
+        "type": "message",
+        "role": "assistant",
+        "content": [
+          {
+            "type": "output_text",
+            "text": "{\"schemaVersion\":\"1.0\",\"kind\":\"workout\",\"outcome\":\"extracted\",\"title\":\"Scheda ipertrofia – settimana tipo\",\"guidance\":[],\"schedule\":\"weekly\",\"cycle\":{\"startDate\":null,\"weeks\":null},\"sessions\":[{\"label\":\"A\",\"title\":\"Seduta A\",\"weekday\":1,\"notes\":[],\"exercises\":[{\"name\":\"Trazioni all’elastico\",\"variant\":null,\"equipment\":null,\"measurementMode\":\"reps\",\"sets\":3,\"optionalSets\":null,\"repetitions\":{\"min\":8,\"max\":12},\"durationSeconds\":null,\"restSeconds\":{\"min\":90,\"max\":120},\"rir\":{\"min\":2,\"max\":2},\"rpe\":null,\"perSide\":null,\"loadUnit\":null,\"loadConvention\":null,\"loadInstruction\":null,\"tempoInstruction\":null,\"prescriptionText\":\"Trazioni all’elastico: 3 x 8–12, RIR 2, recupero 90–120 s\",\"notes\":[]},{\"name\":\"Plank laterale\",\"variant\":null,\"equipment\":null,\"measurementMode\":\"seconds\",\"sets\":3,\"optionalSets\":null,\"repetitions\":null,\"durationSeconds\":{\"min\":60,\"max\":60},\"restSeconds\":{\"min\":90,\"max\":90},\"rir\":null,\"rpe\":null,\"perSide\":true,\"loadUnit\":null,\"loadConvention\":null,\"loadInstruction\":null,\"tempoInstruction\":null,\"prescriptionText\":\"Plank laterale: 3 x 30 secondi per lato, recupero 1'30\\\"\",\"notes\":[]},{\"name\":\"Stacco rumeno\",\"variant\":null,\"equipment\":\"bilanciere\",\"measurementMode\":\"reps\",\"sets\":4,\"optionalSets\":null,\"repetitions\":{\"min\":6,\"max\":6},\"durationSeconds\":null,\"restSeconds\":null,\"rir\":null,\"rpe\":{\"min\":8,\"max\":8},\"perSide\":null,\"loadUnit\":\"kg\",\"loadConvention\":null,\"loadInstruction\":\"60 kg\",\"tempoInstruction\":\"3-1-1\",\"prescriptionText\":\"Stacco rumeno con bilanciere: 4 x 6, RPE 8, carico 60 kg, tempo 3-1-1\",\"notes\":[]}]}],\"complexRules\":[],\"evidence\":[{\"path\":\"/title\",\"spans\":[{\"blockId\":\"p:1\",\"quote\":\"Scheda ipertrofia – settimana tipo\"}]},{\"path\":\"/schedule\",\"spans\":[{\"blockId\":\"p:1\",\"quote\":\"settimana tipo\"},{\"blockId\":\"p:2\",\"quote\":\"Lunedì\"}]},{\"path\":\"/sessions/0/label\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Seduta A\"}]},{\"path\":\"/sessions/0/title\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Seduta A\"}]},{\"path\":\"/sessions/0/weekday\",\"spans\":[{\"blockId\":\"p:2\",\"quote\":\"Lunedì\"}]},{\"path\":\"/sessions/0/exercises/0/name\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"Trazioni all’elastico\"}]},{\"path\":\"/sessions/0/exercises/0/measurementMode\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"3 x 8–12\"}]},{\"path\":\"/sessions/0/exercises/0/sets\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"3 x 8–12\"}]},{\"path\":\"/sessions/0/exercises/0/repetitions\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"3 x 8–12\"}]},{\"path\":\"/sessions/0/exercises/0/restSeconds\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"recupero 90–120 s\"}]},{\"path\":\"/sessions/0/exercises/0/rir\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"RIR 2\"}]},{\"path\":\"/sessions/0/exercises/0/prescriptionText\",\"spans\":[{\"blockId\":\"p:3\",\"quote\":\"Trazioni all’elastico: 3 x 8–12, RIR 2, recupero 90–120 s\"}]},{\"path\":\"/sessions/0/exercises/1/name\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"Plank laterale\"}]},{\"path\":\"/sessions/0/exercises/1/measurementMode\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"30 secondi\"}]},{\"path\":\"/sessions/0/exercises/1/sets\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"3 x 30 secondi\"}]},{\"path\":\"/sessions/0/exercises/1/durationSeconds\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"30 secondi\"}]},{\"path\":\"/sessions/0/exercises/1/perSide\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"per lato\"}]},{\"path\":\"/sessions/0/exercises/1/restSeconds\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"recupero 1'30\\\"\"}]},{\"path\":\"/sessions/0/exercises/1/prescriptionText\",\"spans\":[{\"blockId\":\"p:4\",\"quote\":\"Plank laterale: 3 x 30 secondi per lato, recupero 1'30\\\"\"}]},{\"path\":\"/sessions/0/exercises/2/name\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"Stacco rumeno\"}]},{\"path\":\"/sessions/0/exercises/2/equipment\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"bilanciere\"}]},{\"path\":\"/sessions/0/exercises/2/measurementMode\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"4 x 6\"}]},{\"path\":\"/sessions/0/exercises/2/sets\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"4 x 6\"}]},{\"path\":\"/sessions/0/exercises/2/repetitions\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"4 x 6\"}]},{\"path\":\"/sessions/0/exercises/2/rpe\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"RPE 8\"}]},{\"path\":\"/sessions/0/exercises/2/loadUnit\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"60 kg\"}]},{\"path\":\"/sessions/0/exercises/2/loadInstruction\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"carico 60 kg\"}]},{\"path\":\"/sessions/0/exercises/2/tempoInstruction\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"tempo 3-1-1\"}]},{\"path\":\"/sessions/0/exercises/2/prescriptionText\",\"spans\":[{\"blockId\":\"p:5\",\"quote\":\"Stacco rumeno con bilanciere: 4 x 6, RPE 8, carico 60 kg, tempo 3-1-1\"}]}],\"issues\":[{\"code\":\"missing\",\"path\":\"/sessions/0/exercises/2/restSeconds\",\"sourceRefs\":[\"p:5\"],\"message\":\"Recupero non indicato per lo stacco rumeno.\"}],\"unassigned\":[]}"
+          }
+        ]
+      }
+    ],
+    "usage": {
+      "input_tokens": 1200,
+      "output_tokens": 450,
+      "output_tokens_details": {
+        "reasoning_tokens": 50
+      }
+    }
+  },
+  "transportError": false,
+  "latencyMs": 25
+}

@@ -1,0 +1,57 @@
+{
+  "readerVersion": "synthetic-evaluation/1",
+  "sourceHash": "c4d97de4bd8a2c6093fc6c3dafe8f62c6b8480ded76c34ca594ab7659360cefa",
+  "blocks": [
+    {
+      "id": "p:1",
+      "kind": "heading",
+      "text": "Scheda workout-timeout",
+      "headingIds": [],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:2",
+      "kind": "heading",
+      "text": "Seduta A",
+      "headingIds": [
+        "p:1"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:3",
+      "kind": "list_item",
+      "text": "Rematore elastico: 4 x 12, recupero 75 secondi.",
+      "headingIds": [
+        "p:1",
+        "p:2"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    }
+  ],
+  "readingIssues": []
+}

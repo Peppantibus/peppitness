@@ -1,0 +1,128 @@
+{
+  "readerVersion": "synthetic-fixture/1",
+  "sourceHash": "4fbf65c8c409e581cc5da1b0943d08767030dfd1fa2f464ce660e85c8a4d6606",
+  "blocks": [
+    {
+      "id": "p:1",
+      "kind": "heading",
+      "text": "Scheda con recupero generale",
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:2",
+      "kind": "paragraph",
+      "text": "Recupero 90 s per tutti gli esercizi salvo diversa indicazione.",
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "p:1"
+      ],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:3",
+      "kind": "heading",
+      "text": "Seduta A",
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "p:1"
+      ],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "t:1:r:0",
+      "kind": "table_row",
+      "text": "Esercizio | Serie x Rip | Recupero",
+      "page": null,
+      "tableId": "t:1",
+      "row": 0,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "p:1",
+        "p:3"
+      ],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "t:1:r:1",
+      "kind": "table_row",
+      "text": "Squat | 4 x 6 | 2'",
+      "page": null,
+      "tableId": "t:1",
+      "row": 1,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "p:1",
+        "p:3"
+      ],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "t:1:r:2",
+      "kind": "table_row",
+      "text": "Affondi | 3 x 10 |",
+      "page": null,
+      "tableId": "t:1",
+      "row": 2,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "p:1",
+        "p:3"
+      ],
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "t:1:r:3",
+      "kind": "table_row",
+      "text": "Crunch | 3 x 15 | 45\"",
+      "page": null,
+      "tableId": "t:1",
+      "row": 3,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "headingIds": [
+        "p:1",
+        "p:3"
+      ],
+      "origin": "native",
+      "bbox": null
+    }
+  ],
+  "readingIssues": []
+}

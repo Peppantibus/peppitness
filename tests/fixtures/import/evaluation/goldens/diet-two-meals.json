@@ -1,0 +1,153 @@
+{
+  "schemaVersion": "1.0",
+  "kind": "diet",
+  "outcome": "extracted",
+  "title": "Menu diet-two-meals",
+  "guidance": [],
+  "days": [
+    {
+      "name": "Giornata di riposo",
+      "dayType": "rest",
+      "notes": [],
+      "meals": [
+        {
+          "name": "Pranzo",
+          "timeText": null,
+          "foods": [
+            {
+              "name": "Pasta",
+              "quantityText": "75 g a crudo",
+              "notes": []
+            }
+          ],
+          "alternatives": [],
+          "additions": [],
+          "notes": []
+        },
+        {
+          "name": "Cena",
+          "timeText": null,
+          "foods": [
+            {
+              "name": "Patate",
+              "quantityText": "200 g cotte",
+              "notes": []
+            },
+            {
+              "name": "Carote",
+              "quantityText": "q.b.",
+              "notes": []
+            }
+          ],
+          "alternatives": [],
+          "additions": [],
+          "notes": []
+        }
+      ]
+    }
+  ],
+  "globalRules": [],
+  "evidence": [
+    {
+      "path": "/title",
+      "spans": [
+        {
+          "blockId": "p:1",
+          "quote": "Menu diet-two-meals"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/0/name",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Pranzo"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/0/foods/0/name",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "Pasta"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/0/foods/0/quantityText",
+      "spans": [
+        {
+          "blockId": "p:3",
+          "quote": "75 g a crudo"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/1/name",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "Cena"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/1/foods/0/name",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "Patate"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/1/foods/0/quantityText",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "200 g cotte"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/name",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "Giornata di riposo"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/dayType",
+      "spans": [
+        {
+          "blockId": "p:2",
+          "quote": "riposo"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/1/foods/1/name",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "Carote"
+        }
+      ]
+    },
+    {
+      "path": "/days/0/meals/1/foods/1/quantityText",
+      "spans": [
+        {
+          "blockId": "p:4",
+          "quote": "q.b."
+        }
+      ]
+    }
+  ],
+  "issues": [],
+  "unassigned": []
+}

@@ -1,6 +1,6 @@
 # Corpus sintetico dei contratti import
 
-Dati **inventati** per i contratti V1 di `src/import/contracts/` e per i reader di `src/import/readers/`. Nessun documento personale, nessun file di `docs/` o `private-imports/`; nulla di questa cartella entra nel bundle pubblico. Li legge soltanto `tests/import-contracts.test.ts` (`npm test`).
+Dati **inventati** per i contratti V1 di `src/import/contracts/`, i reader di `src/import/readers/` e la valutazione. Nessun documento personale, nessun file di `docs/` o `private-imports/`; nulla di questa cartella entra nel bundle pubblico. Li leggono i test import e il runner offline (`npm test`, `node scripts/import-evaluate.mjs --offline`).
 
 ## Struttura
 
@@ -67,3 +67,14 @@ Se una modifica del reader cambia blocchi, ID o problemi per lo stesso file, alz
 - Casi: `pdf-simple`, `pdf-two-columns` (numeri simili, stesso valore in due colonne), `pdf-table` (numero fuori riga, colonne senza spazio), `pdf-rotated`, `pdf-scan-only`, `pdf-mixed`, `pdf-last-page-scan`, `pdf-unreadable-text` (font senza mappa Unicode, testo invisibile), `pdf-ccitt-scan`, `pdf-damaged-page`, `pdf-password`, `pdf-corrupt`. Il PDF oltre il limite di pagine e la fixture limite di quasi 10 MiB sono costruiti in memoria dai test e dalla prova browser.
 
 Se una modifica del reader o di PDF.js cambia blocchi, ID o problemi per lo stesso file, alzare `PDF_READER_VERSION` (`src/import/readers/pdf-version.ts`) e aggiornare i golden rivedendoli.
+
+## Valutazione del corpus (task 25)
+
+`evaluation/manifest.json`: 40 casi annotati rispetto alla fonte, split sviluppo
+29 / held-out 11 isolato per famiglia/hash; 21 fonti normalizzate distinte.
+`evaluation/{documents,goldens}/`: input e verità; `provider/evaluation/`: risposte
+HTTP sintetiche con errori intenzionali, rifiuti, retry e usage mancante.
+Nessuna risposta E2E del 24 viene usata per qualità. Dettagli delle labels,
+limiti del campione e riproducibilità in [evaluation/README.md](evaluation/README.md).
+Il report offline prova il runner/pipeline e mantiene aperti i gate del modello
+reale. Runbook di spesa e rilascio: [supabase/IMPORT_EVALUATION.md](../../../supabase/IMPORT_EVALUATION.md).

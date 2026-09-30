@@ -1,0 +1,75 @@
+{
+  "readerVersion": "synthetic-evaluation/1",
+  "sourceHash": "c2956461cb91ab94ca291343d9a2783e461906ae4c2c5f1653d90ada4f8b6053",
+  "blocks": [
+    {
+      "id": "p:1",
+      "kind": "heading",
+      "text": "Menu diet-two-meals",
+      "headingIds": [],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:2",
+      "kind": "heading",
+      "text": "Giornata di riposo",
+      "headingIds": [
+        "p:1"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:3",
+      "kind": "list_item",
+      "text": "Pranzo: Pasta 75 g a crudo.",
+      "headingIds": [
+        "p:1",
+        "p:2"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    },
+    {
+      "id": "p:4",
+      "kind": "list_item",
+      "text": "Cena: Patate 200 g cotte; Carote q.b.",
+      "headingIds": [
+        "p:1",
+        "p:2"
+      ],
+      "page": null,
+      "tableId": null,
+      "row": null,
+      "column": null,
+      "rowSpan": null,
+      "columnSpan": null,
+      "parentId": null,
+      "origin": "native",
+      "bbox": null
+    }
+  ],
+  "readingIssues": []
+}
