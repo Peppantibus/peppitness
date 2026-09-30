@@ -136,3 +136,25 @@ node scripts/import-edge-local-check.mjs --summary        # altro terminale
 ```
 
 Lo script accetta solo lo stack su `127.0.0.1`, rifiuta un `.env` non sintetico, abilita temporaneamente il budget locale via SQL e lo ripristina, crea e rimuove tre account inventati. Il gateway Kong locale risponde da sé ai preflight `OPTIONS` e riscrive `Access-Control-Allow-Origin` in `*`: il 403 per origini non configurate è del handler, il valore esatto dell'header è provato nei test Node. Dopo la prova fermare `functions serve` e, se resta attivo, il contenitore `supabase_edge_runtime_peppitness`.
+
+## Importazione: conservazione e cancellazione effettiva (task 23, solo locale)
+
+Migration `20260930132402_import_retention.sql` (**non applicata al cloud**: servirà un'applicazione autorizzata, che attiva anche `pg_cron` nel progetto). `expires_at` da solo non cancella nulla: la cancellazione è fatta da un job pianificato verificato.
+
+**Politica applicata (cicli di vita separati):**
+
+| Dato | Dove | Conservazione |
+|---|---|---|
+| Documento normalizzato, estrazione, problemi | `import_drafts` | Eliminati alla scadenza (7 giorni dall'ultima attività del job: creazione, completamento o `touch_import_job`) oppure subito con lo scarto esplicito |
+| Metadati del job | `import_jobs` | Restano con stato `expired` e senza testo (ID, dominio, impronte, versioni, tentativi, esito provider, usage, tempi) per replay, budget e diagnosi; eliminati con l'account |
+| Riserve e consumo provider | `peppitness_private.import_usage_ledger` | Mai toccati dalla scadenza: `reserved`/`sent`/`uncertain` restano contati finché `reconcile_import_usage` non li chiude; alla cancellazione dell'account restano solo i totali mensili anonimi |
+| Ricevute e tombstone | `import_receipts` | Per la vita dell'account; la retention non le legge né le modifica |
+| File originale | — | Mai caricato: nessun bucket Storage né URL firmata |
+
+**Job pianificato:** `pg_cron` (1.6.4 nello stack locale, già precaricato), nome stabile `peppitness-import-retention`, pianificazione `17 * * * *` nel fuso di pg_cron (`cron.timezone` = GMT/UTC): i contenuti scaduti spariscono entro un'ora, senza dipendere dall'app aperta. Comando `select peppitness_private.run_import_retention(500)`: fino a 500 job per esecuzione, i più vecchi prima, `FOR UPDATE SKIP LOCKED` (esecuzioni concorrenti o job in uso non si bloccano), un'analisi con lease ancora valida non viene toccata, una sola transazione per esecuzione (un'interruzione annulla tutto e la successiva riprende), idempotente. L'installazione `peppitness_private.schedule_import_retention()` usa lo stesso nome: ripeterla aggiorna il job, mai un doppione.
+
+**Monitoraggio (senza testi né account):** ogni esecuzione scrive `peppitness_private.import_retention_runs` (stato, job scaduti, analisi saltate, arretrato, SQLSTATE in caso di errore; conservati 90 giorni); `peppitness_private.import_retention_status()` riassume job pianificato, ultimo esito, ultimo run di `cron.job_run_details` e job scaduti ancora da pulire. Solo il proprietario (ruolo `postgres`) esegue queste funzioni: nessun EXECUTE per `anon`, `authenticated`, `service_role`.
+
+**Scarto esplicito:** `public.discard_import_job(p_job_id uuid)` solo `authenticated`, owner da `auth.uid()`: elimina subito i contenuti del proprio job e lo marca `expired` (tentativi, usage e ledger restano); un job altrui o inesistente restituisce `null`; un'analisi in corso con lease valida → `PT409 Import analysis in progress`. L'app lo chiama quando un'importazione viene rimossa, scartata o sostituita, mai con un comando inviato e non riconciliato (resta la scadenza automatica). Un commit già riuscito resta recuperabile: nelle RPC 19/20 il replay della ricevuta precede ogni lettura del job; un comando nuovo su un job scaduto riceve `PT410`, senza scritture.
+
+**Verifiche locali:** pgTAP `012_import_retention.test.sql` (job registrato e reinstallazione, privilegi, lotti interrotti/ripresi/idempotenti, analisi in corso saltata, ledger identico, ricevuta e replay dopo il cleanup, PT410, scarto A/B/anonimo, tombstone, cancellazione dell'account); HTTP `scripts/lib/import-retention-api-fixture.mjs` nel runner (`test:api:local`): scarto A/B, cleanup con un commit reale in volo, esecuzione reale di pg_cron con pianificazione accelerata a 5 secondi e ripristino; `supabase/checks/verify_import_schema.sql` (colonne `retention_*` e `discard_rpc_ok`). Per lo stato del job: `select peppitness_private.import_retention_status();` dal SQL editor o con `supabase db query --local`.

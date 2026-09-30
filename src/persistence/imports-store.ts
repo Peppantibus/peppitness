@@ -21,7 +21,7 @@ import { commandHash, contentHash } from '../import/mapping/canonical.ts'
 import { mapReviewedDiet, type DietMapping, type DietMappingIds } from '../import/mapping/diet.ts'
 import { mapReviewedWorkout, type WorkoutMapping, type WorkoutMappingIds } from '../import/mapping/workout.ts'
 import { createReviewDraft, pointerOf, randomLocalIds, type LocalIdFactory } from '../import/review/draft.ts'
-import { ImportStateError, type ImportEvent, type ImportSession } from '../import/review/state.ts'
+import { hasUncertainCommand, ImportStateError, type ImportEvent, type ImportSession } from '../import/review/state.ts'
 import { validateDraft } from '../import/validation/validate.ts'
 import { CommitRejected, ImportsFailure, type CommitRejection, type DuplicateImport, type ImportsRepository } from './imports-repository.ts'
 
@@ -156,6 +156,8 @@ export class ImportsStore {
   private readonly poll: NonNullable<ImportsStoreOptions['poll']>
   /** Un'operazione di rete per slot: doppio click e retry concorrenti non producono seconde richieste. */
   private readonly running = new Map<ExtractionKind, Promise<void>>()
+  /** Ultimo rinnovo riuscito per job (solo in memoria). */
+  private readonly renewed = new Map<string, number>()
 
   constructor(host: ImportSessionHost, repository: ImportsRepository, options: ImportsStoreOptions = {}) {
     if (repository.ownerId !== host.ownerId) throw new Error('Repository e journal di account diversi.')
@@ -297,11 +299,45 @@ export class ImportsStore {
     return session?.status === 'saved' && session.receipt ? this.runRefresh(kind, session, session.receipt, this.host.ticket()) : Promise.resolve()
   }
 
+  /**
+   * Importazione lasciata esplicitamente (rimossa, scartata, sostituita): i contenuti delle sue analisi si
+   * eliminano subito anche sul server (23). Mai con un comando inviato e non riconciliato: un retry potrebbe
+   * ancora servirsene, e la scadenza automatica li eliminerà comunque. Nessun effetto su ricevute o ledger.
+   */
+  async discardServerContent(session: ImportSession) {
+    if (hasUncertainCommand(session) || session.status === 'saving') return
+    const jobs = new Set([session.jobId, session.draft?.proposal.jobId, session.reanalysis?.draft?.proposal.jobId, ...session.previousDrafts.map(draft => draft.proposal.jobId)]
+      .filter((id): id is string => typeof id === 'string'))
+    const ticket = this.host.ticket()
+    for (const jobId of jobs) {
+      try { await this.repository.discardAnalysis(jobId, ticket.signal) } catch { return /* rete o sessione: resta la scadenza automatica */ }
+    }
+  }
+
+  /**
+   * Revisione ancora in corso sul dispositivo: la stessa inattività di 7 giorni vale per l'analisi sul server,
+   * che viene rinnovata (al più una volta ogni 6 ore per job). Se è già scaduta lo si dice subito: il
+   * salvataggio riceverebbe PT410 e serve una nuova analisi.
+   */
+  async renew(kind: ExtractionKind) {
+    const session = this.host.current(kind)
+    const jobId = session?.draft?.proposal.jobId
+    if (!session || !jobId || (session.status !== 'reviewing' && session.status !== 'ready') || !this.online()) return
+    if (Date.now() - (this.renewed.get(jobId) ?? 0) < RENEW_INTERVAL_MS) return
+    const ticket = this.host.ticket()
+    let job: ImportJobResult | null
+    try { job = await this.repository.renewAnalysis(jobId, ticket.signal) } catch { return /* nuovo tentativo alla prossima ripresa */ }
+    if (this.stale(kind, session, ticket)) return
+    this.renewed.set(jobId, Date.now())
+    if (job === null || job.status === 'expired') this.host.setNetwork(kind, { problem: rejectionProblems.analysis_expired })
+  }
+
   /** Dopo la riapertura o il ritorno della rete: riconcilia i salvataggi incerti e cerca le analisi interrotte. */
   async resume() {
     for (const kind of ['workout', 'diet'] as const) {
       const session = this.host.current(kind)
       if (!session || this.busy(kind) || !this.online()) continue
+      if (session.status === 'reviewing' || session.status === 'ready') await this.renew(kind)
       if (session.status === 'save_unknown') await this.reconcile(kind)
       else if (session.status === 'failed' && session.analysisRequestId && session.document && session.error?.code === 'interrupted') await this.recoverAnalysis(kind)
       else if (session.reanalysis?.status === 'failed' && session.reanalysis.error === null) await this.recoverAnalysis(kind)
@@ -519,6 +555,7 @@ export class ImportsStore {
   }
 }
 
+const RENEW_INTERVAL_MS = 6 * 60 * 60 * 1000
 const runningProblem: NetworkProblem = { code: 'analysis_running', title: 'Analisi ancora in corso', message: 'L’analisi è ancora in corso sul server e non continua in background su questo dispositivo: verifica più tardi, senza avviarne una nuova.' }
 
 function wait(ms: number, signal: AbortSignal) {

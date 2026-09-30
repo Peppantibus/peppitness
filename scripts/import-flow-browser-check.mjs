@@ -142,6 +142,7 @@ async function run() {
   await tab.until(`Boolean(document.querySelector('[data-preview=workout]'))`, 'revisione ripresa dopo la ricarica')
   assert.deepEqual(await previewIds(), ids, 'stessi ID prenotati dopo la ricarica')
   assert.deepEqual((await records()).map(record => [record.ownerId, record.kind, record.bytes]), [[owner, 'workout', false]])
+  assert.ok(mock.importFlow.renewed?.length >= 1, 'revisione ripresa: analisi rinnovata sul server (23)')
   pass('revisione: edit tracciati, anteprima dal mapping, zero scritture, ricarica con decisioni e ID prenotati conservati')
 
   // 3. Conferma: segui spento per default (anche senza piani), una sola RPC, comando = anteprima, esito e rilettura.
@@ -163,13 +164,14 @@ async function run() {
   await tab.until(`[...document.querySelectorAll('.plan-choices button')].some(button => button.textContent === 'Scheda esempio')`, 'programma importato fra quelli da seguire')
   pass('conferma: segui spento per default, una RPC con il comando dell’anteprima, programma creato e riletto, non seguito')
 
-  // 4. Stesso file di nuovo: analisi pronta riaperta senza costi, duplicato, conflitto di selezione, copia seguita.
+  // 4. Stesso file di nuovo: l'import concluso e lasciato non ha più contenuti sul server (23), quindi nuova analisi;
+  //    duplicato, conflitto di selezione, copia seguita.
+  const firstJob = first.command.provenance.analysis.jobId
   await choose('workout')
+  assert.equal(mock.importFlow.jobs.get(firstJob).status, 'expired', 'contenuti dell’import lasciato scartati sul server')
   await press(`document.querySelector('.import-analyze')`, 'Analizza')
-  await tab.until(`Boolean(document.querySelector('.import-reopen'))`, 'analisi compatibile proposta')
-  await press(`document.querySelector('.import-reopen')`, 'Riapri')
   await resolveWorkout()
-  assert.equal(mock.importFlow.providerCalls, 1, 'riapertura senza nuova analisi')
+  assert.equal(mock.importFlow.providerCalls, 2, 'nessuna analisi compatibile rimasta: nuova analisi esplicita')
   await pressText('Continua alla conferma')
   await tab.until(`Boolean(document.querySelector('[data-confirmation=workout]'))`)
   await press(`document.querySelector('.import-follow input')`, 'Inizia a seguirlo')
@@ -190,13 +192,23 @@ async function run() {
   assert.deepEqual(copied.command.selectionOptions, { follow: true, expectedActiveRevision: 3 })
   await tab.evaluate(`location.hash = '#/scheda'`)
   await tab.until(`${text('main')}.includes('Squat')`, 'Scheda con il programma importato seguito')
-  pass('riapertura senza costi, duplicato con copia esplicita, PT409 di selezione visibile, nuova chiave e follow atomico')
+  pass('import lasciato scartato sul server, duplicato con copia esplicita, PT409 di selezione visibile, nuova chiave e follow atomico')
 
-  // 5. Dieta: dato mancante completato, offline blocca l'invio, risposta persa riconciliata con la ricevuta.
+  // 5. Dieta: analisi già pronta della stessa fonte riaperta senza costi, dato mancante completato, offline blocca
+  //    l'invio, risposta persa riconciliata con la ricevuta.
+  const readyDiet = crypto.randomUUID()
+  mock.importFlow.jobs.set(readyDiet, { owner, document: structuredClone(documents.diet), jobId: readyDiet, analysisRequestId: crypto.randomUUID(), kind: 'diet', status: 'ready',
+    extraction: structuredClone(proposals.diet), validationIssues: [], usageSummary: { providerCalls: 1, inputTokens: 1, outputTokens: 1, reasoningTokens: null, cached: false, costEstimate: null },
+    error: null, expiresAt: new Date(Date.now() + 86_400_000).toISOString() })
+  const calls = mock.importFlow.providerCalls
   await choose('diet')
   await press(`document.querySelector('.import-analyze')`, 'Analizza la dieta')
+  await tab.until(`Boolean(document.querySelector('.import-reopen'))`, 'analisi compatibile proposta')
+  assert.match(await tab.evaluate(text('.import-compatible')), /senza costi/)
+  await press(`document.querySelector('.import-reopen')`, 'Riapri l’analisi pronta')
   await tab.until(`Boolean(document.querySelector('[data-review=diet] .dr-food'))`, 'revisione dieta')
   assert.ok(await tab.evaluate(noOverflow), 'revisione senza scorrimento orizzontale a 390 px')
+  assert.equal(mock.importFlow.providerCalls, calls, 'riapertura senza nuova analisi')
   assert.equal(await tab.evaluate(`document.querySelectorAll('[data-preview=diet]').length`), 0, 'quantità mancante: nessuna anteprima')
   const food = await tab.evaluate(`document.querySelector('.dr-food').dataset.localId`)
   await type(`#rv-${food}-quantityText`, '170 g')
@@ -219,7 +231,7 @@ async function run() {
   assert.equal(saved.document.days[0].meals[0].foods[0].quantity, '170 g', 'valore completato nel comando')
   await tab.evaluate(`location.hash = '#/dieta'`)
   await tab.until(`${text('main')}.includes('Colazione')`, 'Dieta con il piano importato')
-  pass('dieta: mancante completato, offline senza invii, risposta persa riconciliata, piano seguito solo per scelta')
+  pass('dieta: analisi pronta riaperta senza costi, mancante completato, offline senza invii, risposta persa riconciliata, piano seguito solo per scelta')
 
   // 6. Dominio sbagliato: proposta senza contenuto, passaggio all'altro percorso senza analisi automatica.
   const analyses = mock.importFlow.analyses.length
@@ -229,6 +241,8 @@ async function run() {
   await press(`document.querySelector('.import-switch')`, 'Importa come piano alimentare')
   await tab.until(`location.hash === '#/dieta/importa' && ${text('.import-summary h2')} === 'Documento letto'`, 'documento passato alla dieta')
   assert.equal(mock.importFlow.analyses.length, analyses + 1, 'nessuna analisi automatica nel nuovo percorso')
+  // Le importazioni concluse e poi sostituite lasciano il server senza contenuti (scarto esplicito, 23).
+  assert.ok(mock.importFlow.discarded?.length >= 1 && mock.importFlow.discarded.every(id => mock.importFlow.jobs.get(id)?.status === 'expired'), 'contenuti scartati sul server')
   pass('dominio sbagliato: nulla salvabile, cambio di percorso con lo stesso testo letto e nuova analisi solo esplicita')
 
   // 7. Cambio account: nessun dato di A resta o compare per B.

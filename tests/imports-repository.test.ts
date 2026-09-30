@@ -184,3 +184,31 @@ test('21: letture di job, fonte, compatibili e duplicati validate e limitate all
   const failing = createImportsRepository(fakeClient({ reply: () => ({ data: null, error: { code: '', message: 'fetch failed' } }) }).client, OWNER)
   await assert.rejects(failing.getReceipt(REQUEST, signal()), (error: unknown) => error instanceof ImportsFailure && error.kind === 'unavailable', 'una lettura fallita non è un esito incerto')
 })
+
+test('23: scarto esplicito — job proprio expired, analisi in corso non scartabile, sessione di un altro account rifiutata', async () => {
+  const expired = readyJob({ status: 'expired', extraction: null, usageSummary: readyJob().usageSummary })
+  let reply: Reply = { data: expired, error: null }
+  const { client, calls } = fakeClient({ reply: () => reply })
+  const repository = createImportsRepository(client, OWNER)
+  assert.equal(await repository.discardAnalysis(JOB, signal()), true)
+  assert.deepEqual([calls[0]!.name, calls[0]!.args, calls[0]!.headers.Authorization, calls[0]!.retry], ['discard_import_job', { p_job_id: JOB }, 'Bearer token-a', false])
+  reply = { data: null, error: { code: 'PT409', message: 'Import analysis in progress' } }
+  assert.equal(await repository.discardAnalysis(JOB, signal()), false)
+  reply = { data: null, error: null }
+  assert.equal(await repository.discardAnalysis(JOB, signal()), true, 'già assente: nulla da scartare')
+  reply = { data: readyJob(), error: null }
+  await assert.rejects(repository.discardAnalysis(JOB, signal()), (error: unknown) => error instanceof ImportsFailure && error.kind === 'invalid_response', 'un job ancora pronto non vale come scartato')
+  await assert.rejects(createImportsRepository(fakeClient({ user: OTHER }).client, OWNER).discardAnalysis(JOB, signal()), (error: unknown) => error instanceof ImportsFailure && error.kind === 'session')
+})
+
+test('23: rinnovo per attività — job proprio validato, altrui null, risposta di un altro job rifiutata', async () => {
+  let reply: Reply = { data: readyJob(), error: null }
+  const { client, calls } = fakeClient({ reply: () => reply })
+  const repository = createImportsRepository(client, OWNER)
+  assert.deepEqual(await repository.renewAnalysis(JOB, signal()), readyJob())
+  assert.deepEqual([calls[0]!.name, calls[0]!.args, calls[0]!.retry], ['renew_import_job', { p_job_id: JOB }, false])
+  reply = { data: null, error: null }
+  assert.equal(await repository.renewAnalysis(JOB, signal()), null)
+  reply = { data: readyJob({ jobId: REQUEST }), error: null }
+  await assert.rejects(repository.renewAnalysis(JOB, signal()), (error: unknown) => error instanceof ImportsFailure && error.kind === 'invalid_response')
+})

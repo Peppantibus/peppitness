@@ -41,7 +41,7 @@ function fakeServer(owner = OWNER) {
   const jobs = new Map<string, ImportJobResult & { document: NormalizedDocument }>()
   const receipts = new Map<string, { hash: string; content: string; receipt: ImportReceipt }>()
   const state = { selectionRevision: null as number | null, extraction: null as unknown, analyzeCalls: 0, providerCalls: 0, commitCalls: 0, commitHook: null as Hook | null,
-    analyzeMode: 'ok' as 'ok' | 'lost_after' | 'lost_before' | 'running' | { error: ImportError; status: number }, running: 0, receiptFailure: 0, requestIds: [] as string[] }
+    analyzeMode: 'ok' as 'ok' | 'lost_after' | 'lost_before' | 'running' | { error: ImportError; status: number }, running: 0, receiptFailure: 0, requestIds: [] as string[], discarded: [] as string[], renewed: [] as string[] }
   const jobResult = ({ document: _document, ...job }: ImportJobResult & { document: NormalizedDocument }): ImportJobResult => structuredClone(job)
   const repository: ImportsRepository = {
     ownerId: owner,
@@ -82,6 +82,8 @@ function fakeServer(owner = OWNER) {
     },
     commitWorkout: (command, signal) => commit(command, signal),
     commitDiet: (command, signal) => commit(command, signal),
+    async discardAnalysis(jobId) { state.discarded.push(jobId); const job = jobs.get(jobId); if (job) Object.assign(job, { status: 'expired', extraction: null }); return true },
+    async renewAnalysis(jobId) { state.renewed.push(jobId); const job = jobs.get(jobId); return job ? jobResult(job) : null },
   }
   async function commit(command: CommitCommand, signal: AbortSignal): Promise<ImportReceipt> {
     state.commitCalls++
@@ -531,3 +533,47 @@ test('21: rilettura dopo il salvataggio fallita → esito salvato distinto dall�
   assert.equal(server.state.commitCalls, 1)
 })
 
+test('23: importazione lasciata → contenuti scartati sul server; mai con un comando incerto', async () => {
+  const item = byId('diet-spec-example'), server = fakeServer(), backend = memoryBackend()
+  server.state.extraction = item.extraction
+  await seedRead(backend, item.kind, item.document)
+  const engine = engineFor(backend, server)
+  await reviewed(engine, item)
+  server.state.commitHook = phase => { if (phase === 'before') throw new ImportsFailure('uncertain') }
+  await engine.imports!.confirm('diet', { ids: item.ids as never, selection: defaultSelectionOptions })
+  const uncertain = session(engine, 'diet')
+  assert.equal(uncertain.status, 'save_unknown')
+  await engine.discard('diet', { acknowledgeUncertain: true })
+  await settle()
+  assert.deepEqual(server.state.discarded, [], 'comando incerto: il job resta fino alla scadenza')
+
+  await seedRead(backend, item.kind, item.document)
+  const next = engineFor(backend, server)
+  await reviewed(next, item)
+  server.state.commitHook = null
+  const ids = { planId: uuid(), items: Object.fromEntries(Object.keys((item.ids as DietMappingIds).items).map(key => [key, uuid()])) }
+  await next.imports!.confirm('diet', { ids, selection: defaultSelectionOptions })
+  assert.equal(session(next, 'diet').status, 'saved')
+  const jobId = session(next, 'diet').jobId!
+  await next.remove('diet')
+  await waitFor(() => server.state.discarded.includes(jobId), 'scarto sul server')
+  assert.equal(server.jobs.get(jobId)!.status, 'expired')
+  assert.equal(server.receipts.size, 1, 'ricevuta intatta')
+})
+
+test('23: revisione in corso → analisi rinnovata sul server alla ripresa (al più ogni 6 ore); già scaduta → avviso immediato', async () => {
+  const item = byId('workout-spec-example'), server = fakeServer(), backend = memoryBackend()
+  server.state.extraction = item.extraction
+  await seedRead(backend, item.kind, item.document)
+  const engine = engineFor(backend, server)
+  await reviewed(engine, item)
+  const jobId = session(engine, 'workout').jobId!
+  await engine.resume()
+  await engine.resume()
+  assert.deepEqual(server.state.renewed, [jobId], 'un solo rinnovo nell’intervallo')
+  engine.stop()
+  server.jobs.get(jobId)!.status = 'expired'
+  const again = engineFor(backend, server)
+  await waitFor(() => again.getSnapshot().slots.workout.network.problem?.code === 'analysis_expired', 'avviso di analisi scaduta')
+  assert.equal(session(again, 'workout').status, 'reviewing', 'la bozza resta consultabile')
+})

@@ -9,6 +9,7 @@ import { exerciseChoiceValues } from '../../src/import/contracts/index.ts'
 export const importFlowPaths = [
   '/functions/v1/extract-plan', '/rest/v1/rpc/get_import_job', '/rest/v1/import_jobs', '/rest/v1/import_drafts',
   '/rest/v1/rpc/get_import_receipt', '/rest/v1/import_receipts', '/rest/v1/rpc/commit_workout_import', '/rest/v1/rpc/commit_diet_import',
+  '/rest/v1/rpc/discard_import_job', '/rest/v1/rpc/renew_import_job',
 ]
 
 function ownerOf(request) {
@@ -70,6 +71,22 @@ export async function importFlowFixture(request, url, state) {
       && (!source || job.document.sourceHash === source) && (!reader || job.document.readerVersion === reader) && job.extraction !== null)
       .map(job => ({ job_id: job.jobId, owner_id: owner, normalized_document: job.document, expires_at: job.expiresAt }))
     return reply(request, rows)
+  }
+  if (path === '/rest/v1/rpc/discard_import_job') {
+    // Scarto esplicito (23): contenuti eliminati subito, job `expired`; altrui o assente → null.
+    const job = flow.jobs.get(body.p_job_id)
+    flow.discarded = [...flow.discarded ?? [], body.p_job_id]
+    if (!job || job.owner !== owner) return { status: 200, data: null }
+    Object.assign(job, { status: 'expired', extraction: null, validationIssues: [], document: { ...job.document, blocks: [], readingIssues: [] } })
+    return { status: 200, data: publicJob(job) }
+  }
+  if (path === '/rest/v1/rpc/renew_import_job') {
+    // Attività sull'analisi (23): un job proprio pronto scade di nuovo fra 7 giorni.
+    const job = flow.jobs.get(body.p_job_id)
+    flow.renewed = [...flow.renewed ?? [], body.p_job_id]
+    if (!job || job.owner !== owner) return { status: 200, data: null }
+    if (job.status === 'ready') job.expiresAt = new Date(Date.now() + 7 * 86_400_000).toISOString()
+    return { status: 200, data: publicJob(job) }
   }
   if (path === '/rest/v1/rpc/get_import_receipt') {
     const found = flow.receipts.get(`${owner}:${body.p_request_id}`)

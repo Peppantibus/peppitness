@@ -62,6 +62,10 @@ export interface ImportsRepository {
   findDuplicate(input: { kind: ExtractionKind; contentHash: string }, signal: AbortSignal): Promise<DuplicateImport[]>
   commitWorkout(command: WorkoutCommitCommand, signal: AbortSignal): Promise<ImportReceipt>
   commitDiet(command: DietCommitCommand, signal: AbortSignal): Promise<ImportReceipt>
+  /** Scarto esplicito (23): contenuti del job proprio eliminati subito sul server; false se non scartabile ora. */
+  discardAnalysis(jobId: string, signal: AbortSignal): Promise<boolean>
+  /** Attività sull'analisi (23): un job proprio pronto scade di nuovo fra 7 giorni; null se non è dell'account. */
+  renewAnalysis(jobId: string, signal: AbortSignal): Promise<ImportJobResult | null>
 }
 
 type Row = Record<string, unknown>
@@ -221,5 +225,26 @@ export function createImportsRepository(client: SupabaseClient, owner: string): 
     },
     commitWorkout: (command, signal) => commit(command, signal),
     commitDiet: (command, signal) => commit(command, signal),
+    renewAnalysis(jobId, signal) {
+      if (!isUuid(jobId)) throw new ImportsFailure('invalid_response', 'ID del job non valido.')
+      return read(signal, (auth, bounded) => client.rpc('renew_import_job', { p_job_id: jobId })
+        .setHeader('Authorization', `Bearer ${auth}`).abortSignal(bounded).retry(false), data => {
+        const job = parseJob(data)
+        return job === null || job.jobId === jobId ? job : invalid()
+      })
+    },
+    async discardAnalysis(jobId, signal) {
+      if (!isUuid(jobId)) throw new ImportsFailure('invalid_response', 'ID del job non valido.')
+      const limit = bounded(signal, IMPORT_RPC_TIMEOUT_MS)
+      const auth = await token(limit.signal).catch(error => { throw limit.signal.aborted ? limit.failure() : error })
+      const { data, error } = await client.rpc('discard_import_job', { p_job_id: jobId })
+        .setHeader('Authorization', `Bearer ${auth}`).abortSignal(limit.signal).retry(false)
+      if (limit.signal.aborted) throw signal.aborted ? new ImportsFailure('aborted') : new ImportsFailure('unavailable', 'Tempo scaduto.')
+      // Analisi ancora in corso sul server: resta alla scadenza automatica.
+      if (error) { if (error.code === 'PT409') return false; throw new ImportsFailure(error.code === '42501' ? 'session' : 'unavailable', 'Scarto non riuscito.') }
+      if (data === null) return true // già assente o non dell'account: nulla da scartare
+      const checked = validateImportJobResult(data)
+      return checked.ok && checked.value.jobId === jobId && checked.value.status === 'expired' ? true : invalid()
+    },
   }
 }

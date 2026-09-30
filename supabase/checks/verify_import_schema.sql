@@ -98,4 +98,29 @@ select
    from pg_proc p where p.oid=to_regprocedure('peppitness_private.import_diet_targets(jsonb)')),false) as diet_commit_helper_private,
  exists(select 1 from pg_trigger where tgname='b_validate_meal_plan' and tgrelid='public.meal_plans'::regclass and tgenabled='O')
    and exists(select 1 from pg_constraint where conrelid='public.meal_plans'::regclass and contype='c'
-     and pg_get_constraintdef(oid) like '%octet_length((document)::text) <= 262144%') as diet_document_schema_unchanged;
+     and pg_get_constraintdef(oid) like '%octet_length((document)::text) <= 262144%') as diet_document_schema_unchanged,
+ -- Task 23: retention effettiva, job pianificato unico, manutenzione privata, scarto solo authenticated, ultimo esito.
+ exists(select 1 from pg_extension where extname='pg_cron')
+   and (select count(*)=1 and bool_and(active and schedule='17 * * * *' and command='select peppitness_private.run_import_retention(500)')
+     from cron.job where jobname='peppitness-import-retention') as retention_job_scheduled,
+ (select count(*)=4 and bool_and(p.proconfig @> array['search_path=""']
+   and not has_function_privilege('anon',p.oid,'execute') and not has_function_privilege('authenticated',p.oid,'execute')
+   and not has_function_privilege('service_role',p.oid,'execute'))
+   from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='peppitness_private'
+   and p.proname in ('expire_import_content','run_import_retention','schedule_import_retention','import_retention_status')) as retention_functions_private,
+ coalesce((select p.prosecdef and p.proconfig @> array['search_path=""']
+   and has_function_privilege('authenticated',p.oid,'execute') and not has_function_privilege('anon',p.oid,'execute')
+   and not has_function_privilege('service_role',p.oid,'execute')
+   from pg_proc p where p.oid=to_regprocedure('public.discard_import_job(uuid)')),false) as discard_rpc_ok,
+ coalesce((select p.prosecdef and p.proconfig @> array['search_path=""']
+   and has_function_privilege('authenticated',p.oid,'execute') and not has_function_privilege('anon',p.oid,'execute')
+   and not has_function_privilege('service_role',p.oid,'execute')
+   from pg_proc p where p.oid=to_regprocedure('public.renew_import_job(uuid)')),false) as renew_rpc_ok,
+ coalesce((select c.relrowsecurity and not has_table_privilege('anon',c.oid,'select,insert,update,delete')
+   and not has_table_privilege('authenticated',c.oid,'select,insert,update,delete')
+   and not has_table_privilege('service_role',c.oid,'select,insert,update,delete')
+   from pg_class c where c.oid=to_regclass('peppitness_private.import_retention_runs')),false) as retention_runs_private,
+ -- Ultimo esito registrato non fallito (vero anche prima della prima esecuzione) e ultimo run pg_cron non fallito.
+ coalesce((select status<>'failed' from peppitness_private.import_retention_runs order by finished_at desc, id desc limit 1),true)
+   and coalesce((select d.status<>'failed' from cron.job_run_details d join cron.job c on c.jobid=d.jobid
+     where c.jobname='peppitness-import-retention' order by d.start_time desc limit 1),true) as retention_last_run_ok;

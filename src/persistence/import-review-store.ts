@@ -220,6 +220,7 @@ export class ImportReviewStore {
     if (hasUncertainCommand(session) && !options.acknowledgeUncertain) return false
     this.nextGeneration(kind)
     this.setSlot(kind, emptySlot({ notice: { tone: 'info', text: 'Importazione scartata da questo dispositivo.' } }))
+    void this.imports?.discardServerContent(session)
     if (session.revision !== null) await this.journal.discard(this.ownerId, session.sessionId, { acknowledgeUncertain: true }).catch(() => undefined)
     await this.refreshRisks()
     return true
@@ -474,8 +475,9 @@ export class ImportReviewStore {
     return this.dispatch(kind, session.sessionId, event)
   }
 
-  /** Elimina una sessione superata dal journal (se vi era scritta). */
+  /** Elimina una sessione superata dal journal (se vi era scritta) e, se non serve più, i contenuti delle sue analisi sul server. */
   private async forget(session: ImportSession) {
+    void this.imports?.discardServerContent(session)
     if (session.revision === null) return
     await this.journal.discard(this.ownerId, session.sessionId).catch(() => undefined)
     await this.refreshRisks()

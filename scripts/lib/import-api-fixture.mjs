@@ -8,8 +8,9 @@ import { importReceiptsApiChecks } from './import-receipts-api-fixture.mjs'
 import { importWorkoutCommitApiChecks } from './import-workout-commit-api-fixture.mjs'
 import { importDietCommitApiChecks } from './import-diet-commit-api-fixture.mjs'
 import { importClientApiChecks } from './import-client-api-fixture.mjs'
+import { importRetentionApiChecks } from './import-retention-api-fixture.mjs'
 
-// Unico punto di estensione import per 15/18/19/20/21. Privilegi admin ammessi SOLO
+// Unico punto di estensione import per 15/18/19/20/21/23. Privilegi admin ammessi SOLO
 // per queste API server, oltre al bootstrap Auth già presente nel runner.
 export const importServerPaths = Object.freeze([...Object.values(jobServerRpcNames), ...Object.values(budgetRpcNames)].map(name => `/rest/v1/rpc/${name}`))
 const fixture = name => JSON.parse(readFileSync(new URL(`../../tests/fixtures/import/${name}.json`, import.meta.url), 'utf8'))
@@ -108,4 +109,5 @@ export async function importApiChecks(context, a, b) {
   await importWorkoutCommitApiChecks(context, a, b)
   await importDietCommitApiChecks(context, a, b)
   await importClientApiChecks(context, a, b)
+  await importRetentionApiChecks(context, a, b)
 }
