@@ -20,7 +20,7 @@
     "test:diary:browser": "node scripts/diary-browser-check.mjs",
     "test:wizard:browser": "node scripts/wizard-browser-check.mjs",
     "test:pwa:browser": "node scripts/pwa-browser-check.mjs",
-    "test:api:local": "node scripts/test-supabase-api.mjs",
+    "test:api:local": "node --experimental-strip-types scripts/test-supabase-api.mjs",
     "test:infra": "node --test tests/local-supabase.test.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "build:pwa": "npm run typecheck && vite build --config vite.pwa.config.mjs"

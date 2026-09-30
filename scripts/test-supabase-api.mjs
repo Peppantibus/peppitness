@@ -1,8 +1,9 @@
 import { randomUUID, randomBytes } from 'node:crypto'
 import { readLocalStatus, publicErrorCode } from './lib/local-supabase.mjs'
+import { importApiChecks, importServerPaths } from './lib/import-api-fixture.mjs'
 
-// Usa privilegi amministrativi solo per creare/rimuovere le fixture Auth.
-// Tutti i test delle tabelle usano la chiave pubblica e sessioni utente reali.
+// Admin solo bootstrap Auth e API server jobs elencate nella fixture import.
+// Test accessi alle tabelle con chiave pubblica e sessioni utente reali.
 let checks = 0
 const summaryOnly = process.argv.includes('--summary')
 const cleanupIds = new Set()
@@ -31,7 +32,7 @@ async function concurrentRequests(requests) {
 }
 
 async function request(path, { method = 'GET', body, token, admin = false, representation = false } = {}) {
-  if (admin && !path.startsWith('/auth/v1/admin/users')) throw new Error('Privilegi amministrativi limitati alle fixture Auth.')
+  if (admin && !path.startsWith('/auth/v1/admin/users') && !importServerPaths.includes(path)) throw new Error('Privilegi amministrativi limitati alle fixture Auth e API server import.')
   const key = admin ? config.adminKey : config.publicKey
   const headers = { apikey: key, 'Content-Type': 'application/json' }
   if (token) headers.Authorization = `Bearer ${token}`
@@ -309,6 +310,8 @@ async function run() {
   await tableChecks('exercises', a, b)
   const program = await workoutChecks(a, b)
   await diaryChecks(a, b, program)
+  if (summaryOnly) console.log('IN CORSO import: jobs, isolamento, replay e concorrenza.')
+  await importApiChecks({ request, check, expectOk, expectDenied, concurrentRequests, isRevisionConflict }, a, b)
   if (summaryOnly) console.log('IN CORSO sessione: rinnovo e logout.')
   const renewed = expectOk(await request('/auth/v1/token?grant_type=refresh_token', {
     method: 'POST', body: { refresh_token: a.refreshToken },
