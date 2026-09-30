@@ -158,3 +158,18 @@ Migration `20260930132402_import_retention.sql` (**non applicata al cloud**: ser
 **Scarto esplicito:** `public.discard_import_job(p_job_id uuid)` solo `authenticated`, owner da `auth.uid()`: elimina subito i contenuti del proprio job e lo marca `expired` (tentativi, usage e ledger restano); un job altrui o inesistente restituisce `null`; un'analisi in corso con lease valida → `PT409 Import analysis in progress`. L'app lo chiama quando un'importazione viene rimossa, scartata o sostituita, mai con un comando inviato e non riconciliato (resta la scadenza automatica). Un commit già riuscito resta recuperabile: nelle RPC 19/20 il replay della ricevuta precede ogni lettura del job; un comando nuovo su un job scaduto riceve `PT410`, senza scritture.
 
 **Verifiche locali:** pgTAP `012_import_retention.test.sql` (job registrato e reinstallazione, privilegi, lotti interrotti/ripresi/idempotenti, analisi in corso saltata, ledger identico, ricevuta e replay dopo il cleanup, PT410, scarto A/B/anonimo, tombstone, cancellazione dell'account); HTTP `scripts/lib/import-retention-api-fixture.mjs` nel runner (`test:api:local`): scarto A/B, cleanup con un commit reale in volo, esecuzione reale di pg_cron con pianificazione accelerata a 5 secondi e ripristino; `supabase/checks/verify_import_schema.sql` (colonne `retention_*` e `discard_rpc_ok`). Per lo stato del job: `select peppitness_private.import_retention_status();` dal SQL editor o con `supabase db query --local`.
+
+## Importazione: E2E locale reale (task 24)
+
+`scripts/import-e2e-local-check.mjs`: browser reale (Chrome CDP 9223), SDK e Auth reali, Edge `extract-plan` locale, PostgreSQL/RLS reali; **solo il provider è simulato** lato server (`_shared/import/synthetic-e2e.ts`, risposte congelate uguali a `tests/fixtures/import/e2e/*.json`, attive solo con `IMPORT_TEST_TRANSPORT=synthetic` e `SUPABASE_URL` locale). Nessuna richiesta verso cloud o provider: il browser blocca ogni origine diversa da preview e stack locale.
+
+Preparazione (stack locale attivo, ambiente esclusivo):
+
+```powershell
+node scripts/import-edge-local-check.mjs --write-env      # .env sintetico, ignorato da git (origine 4173 ammessa)
+npx.cmd supabase functions serve extract-plan             # terminale dedicato
+node scripts/import-edge-local-check.mjs --summary        # 75 controlli Edge
+node scripts/import-e2e-local-check.mjs                   # E2E dei due domini
+```
+
+Il runner valida il loopback prima di ogni scrittura, crea una build PWA isolata in `artifacts/import-e2e/dist` con URL e chiave publishable dello stack locale (senza toccare `.env.local`), la serve su 127.0.0.1:4173 con la CSP di `_headers`, abilita temporaneamente il budget locale con un marcatore e lo ripristina, crea e rimuove due account sintetici e un template comune. Copre: scheda DOCX e PDF (existing/new/shared, correzione del recupero, follow, reload, seduta avviata e snapshot uguale all'anteprima, nessuna serie registrata), dieta DOCX e PDF (quantità vuota confermata, tipo di giornata, regola globale con scelta di ambito, revisione ripresa offline, risposta del commit persa dopo la scrittura e riconciliata con la ricevuta, pasto registrato con alternative conservate, copia esplicita), doppio clic con adozione unica, 413 reale del budget con selezione esplicita delle sezioni, scarto sul server dell'import concluso alla riapertura, RLS di B, precache solo asset (worker DOCX/PDF inclusi), cambio account. Report rigenerabile in `artifacts/import-e2e/report.json` (impronte dei file sintetici, versioni, esito, pulizia); la prova su iPhone reale resta `NOT_RUN` finché non è eseguita a mano.

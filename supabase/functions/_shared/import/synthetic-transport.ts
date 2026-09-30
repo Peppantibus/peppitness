@@ -5,6 +5,7 @@
  * (marcatori SINTETICO:*), mai da un campo della richiesta; il profilo retry si riconosce dal tetto di output.
  */
 import { DOCUMENT_MESSAGE_HEADER } from './prompts.ts'
+import { e2eExtraction } from './synthetic-e2e.ts'
 import type { ProviderConfig, ProviderTransport } from './provider.ts'
 
 interface PayloadBlock { id: string; kind: string; text: string; row: number | null; headingIds: string[] }
@@ -85,7 +86,7 @@ export function createSyntheticTransport(config: ProviderConfig): ProviderTransp
     if (has(syntheticMarkers.rateLimitedOnce) && !isRetry) return json(429, { error: { message: 'synthetic', type: 'requests', code: 'rate_limit_exceeded' } }, { 'retry-after': '1' })
     if (has(syntheticMarkers.refuse)) return json(200, response('completed', [{ type: 'refusal', refusal: 'synthetic refusal' }], usage))
     if (has(syntheticMarkers.incomplete)) return json(200, response('incomplete', [], usage, { incomplete_details: { reason: 'max_output_tokens' } }))
-    let value: unknown = extraction(kind, payload.blocks)
+    let value: unknown = e2eExtraction(kind, payload.blocks) ?? extraction(kind, payload.blocks)
     if (has(syntheticMarkers.invalidOnce) && !isRetry) value = { ...(value as object), confidence: 0.99 }
     if (has(syntheticMarkers.wrongDomain)) {
       value = kind === 'workout'

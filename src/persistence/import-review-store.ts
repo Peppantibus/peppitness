@@ -100,6 +100,7 @@ export function problemOf(error: unknown): ImportProblem {
   return { code: 'read_failed', title: 'Lettura non riuscita', message: 'Il documento non è stato letto per un errore imprevisto. Puoi riprovare o scegliere un altro file.', retry: true }
 }
 
+const concluded: ReadonlySet<ImportSession['status']> = new Set(['saved', 'cancelled', 'expired'])
 /** Sessioni del journal da riprendere nella pagina: con documento letto o con un comando da riconciliare. */
 const resumable = (session: ImportSession) =>
   !['cancelled', 'expired', 'saved'].includes(session.status) && (session.document !== null || hasUncertainCommand(session))
@@ -375,6 +376,24 @@ export class ImportReviewStore {
     this.emit()
     // Un salvataggio interrotto si verifica subito con la sua chiave; un'analisi interrotta si cerca, non si ripete.
     void this.resume()
+    void this.forgetConcluded(opened.sessions.filter(item => concluded.has(item.status)).map(item => item.sessionId), ticket)
+  }
+
+  /**
+   * Importazioni concluse (salvate, annullate, scadute) che non si riprendono: lasciano il journal del dispositivo e,
+   * se ancora presenti, i contenuti delle loro analisi lasciano il server (23). Uno scarto non riuscito resta alla
+   * scadenza automatica; ricevute e piani salvati non sono toccati.
+   */
+  private async forgetConcluded(sessionIds: string[], ticket: ReturnType<ImportAccountScope['ticket']>) {
+    for (const sessionId of sessionIds) {
+      if (!this.scope.isCurrent(ticket)) return
+      if (importKinds.some(kind => this.state.slots[kind].session?.sessionId === sessionId)) continue
+      const loaded = await this.journal.load(this.ownerId, sessionId).catch(() => null)
+      if (!this.scope.isCurrent(ticket)) return
+      if (loaded?.status === 'ok') await this.imports?.discardServerContent(loaded.session)
+      await this.journal.discard(this.ownerId, sessionId).catch(() => undefined)
+    }
+    if (sessionIds.length) await this.refreshRisks()
   }
 
   private async runRead(kind: ImportKind, generation: number, mediaType: string | null) {

@@ -577,3 +577,20 @@ test('23: revisione in corso → analisi rinnovata sul server alla ripresa (al p
   await waitFor(() => again.getSnapshot().slots.workout.network.problem?.code === 'analysis_expired', 'avviso di analisi scaduta')
   assert.equal(session(again, 'workout').status, 'reviewing', 'la bozza resta consultabile')
 })
+
+test('23/24: importazione salvata e poi riaperta → voce locale rimossa e contenuti scartati sul server; ricevuta intatta', async () => {
+  const item = byId('diet-spec-example'), server = fakeServer(), backend = memoryBackend()
+  server.state.extraction = item.extraction
+  const sessionId = await seedRead(backend, item.kind, item.document)
+  const engine = engineFor(backend, server)
+  await reviewed(engine, item)
+  await engine.imports!.confirm('diet', { ids: item.ids as never, selection: defaultSelectionOptions })
+  const jobId = session(engine, 'diet').jobId!
+  assert.equal(session(engine, 'diet').status, 'saved')
+  engine.stop() // chiusura o ricarica della pagina: la sessione salvata non viene ripresa
+  const again = engineFor(backend, server)
+  await waitFor(() => ![...backend.records.values()].some(record => record.sessionId === sessionId), 'voce conclusa rimossa dal dispositivo')
+  await waitFor(() => server.state.discarded.includes(jobId), 'contenuti scartati sul server')
+  assert.equal(again.getSnapshot().slots.diet.session, null)
+  assert.equal(server.receipts.size, 1, 'ricevuta intatta')
+})

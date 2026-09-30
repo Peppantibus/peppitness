@@ -209,8 +209,12 @@ async function run() {
     check(spoof.status === 400 && errorCode(spoof) === 'invalid_request', 'owner dichiarato nel corpo respinto')
     const version = await fn({ ...body(document('version')), expectedSchemaVersion: '2.0' }, a.token)
     check(version.status === 400 && errorCode(version) === 'unsupported_schema_version', 'Versione schema sconosciuta: 400')
-    const oversized = await http('/functions/v1/extract-plan', { method: 'POST', raw: true, body: `{"pad":"${'x'.repeat(8 * 1024 * 1024)}"}`, token: a.token, headers: { 'Content-Type': 'application/json' } })
-    check(oversized.status === 413 && oversized.data?.error?.limit?.limit === 'requestBodyBytes', `Corpo oltre 8 MiB: 413 (HTTP ${oversized.status})`)
+    // Il server rifiuta dal Content-Length senza leggere il corpo: a seconda dei tempi il gateway locale chiude la
+    // connessione mentre il client sta ancora inviando (502). Il rifiuto è senza effetti, quindi si ripete: serve un 413.
+    let oversized, tries = 0
+    do { tries++; oversized = await http('/functions/v1/extract-plan', { method: 'POST', raw: true, body: `{"pad":"${'x'.repeat(8 * 1024 * 1024)}"}`, token: a.token, headers: { 'Content-Type': 'application/json' } }) }
+    while (oversized.status === 502 && tries < 3)
+    check(oversized.status === 413 && oversized.data?.error?.limit?.limit === 'requestBodyBytes', `Corpo oltre 8 MiB: 413 (HTTP ${oversized.status}, tentativi ${tries})`)
 
     phase('analisi, persistenza, replay, cache e isolamento')
     const first = body(fixtureDoc('workout-spec-example'))

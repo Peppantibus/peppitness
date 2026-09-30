@@ -43,7 +43,7 @@ export function parseLocalStatus(output) {
   if (typeof publicKey !== 'string' || !publicKey || typeof adminKey !== 'string' || !adminKey) {
     throw new Error('Lo stato CLI non contiene le chiavi necessarie ai test locali.')
   }
-  return { apiUrl, publicKey, adminKey }
+  return { apiUrl, publicKey, adminKey, publishableKey: status.PUBLISHABLE_KEY }
 }
 
 export function readLocalStatus() {

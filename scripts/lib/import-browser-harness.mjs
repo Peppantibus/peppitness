@@ -180,7 +180,7 @@ export async function buildComponentHarness({ name, entry }) {
  * Server statico su 127.0.0.1 con la CSP dell'app (o `csp` indicata); `extra` mappa percorsi URL → file
  * consentiti (fixture). `setDist()` cambia la cartella servita (per esempio una build successiva della PWA).
  */
-export async function serveStatic({ dist, extra = new Map(), csp: policy }) {
+export async function serveStatic({ dist, extra = new Map(), csp: policy, port = 0 }) {
   const csp = policy ?? await appCsp()
   const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.json': 'application/json', '.webmanifest': 'application/manifest+json', '.svg': 'image/svg+xml', '.png': 'image/png', '.pdf': 'application/pdf', '.docx': 'application/octet-stream' }
   let served = dist
@@ -197,7 +197,7 @@ export async function serveStatic({ dist, extra = new Map(), csp: policy }) {
       response.end(body)
     } catch { response.writeHead(404); response.end() }
   })
-  await new Promise(done => server.listen(0, '127.0.0.1', done))
+  await new Promise((done, fail) => { server.once('error', fail); server.listen(port, '127.0.0.1', done) })
   return {
     origin: `http://127.0.0.1:${server.address().port}`,
     setDist: next => { served = next },

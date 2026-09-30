@@ -25,7 +25,7 @@ test('stato incompleto o remoto rifiutato senza riportarne credenziali', () => {
 test('stato CLI locale con chiavi legacy o publishable/secret riconosciuto', () => {
   for (const keys of [{ ANON_KEY: 'public-fixture', SERVICE_ROLE_KEY: 'admin-fixture' }, { PUBLISHABLE_KEY: 'public-fixture', SECRET_KEY: 'admin-fixture' }]) {
     assert.deepEqual(parseLocalStatus(JSON.stringify({ API_URL: 'http://localhost:54321', ...keys })), {
-      apiUrl: 'http://127.0.0.1:54321', publicKey: 'public-fixture', adminKey: 'admin-fixture',
+      apiUrl: 'http://127.0.0.1:54321', publicKey: 'public-fixture', adminKey: 'admin-fixture', publishableKey: keys.PUBLISHABLE_KEY,
     })
   }
 })
