@@ -341,7 +341,10 @@ a.meal-card-link:hover, .exercise-card:hover, a.history-card:hover, button.histo
 .empty-state h1, .empty-state h2 { font-size: var(--text-2xl); }
 .empty-state h3 { font-size: var(--text-lg); }
 .empty-state p { max-width: 27rem; margin: var(--space-3) auto var(--space-6); font-size: var(--text-md); color: var(--color-text-muted); }
-.plan-empty { display: grid; justify-items: center; gap: var(--space-3); }
+.plan-empty { display: grid; justify-items: center; gap: var(--space-3); margin-top: var(--space-4); }
+.plan-empty > .empty-icon { margin: 0; }
+.plan-empty > p { margin: 0 0 var(--space-3); }
+.plan-empty > .text-link { margin-top: var(--space-2); padding: var(--space-2) 0; }
 .plan-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); }
 .plan-choice { max-width: 100%; overflow-wrap: anywhere; }
 .detail-note, .detail-facts { margin: var(--space-4) 0; padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-sage); font-size: var(--text-md); line-height: var(--leading-normal); overflow-wrap: anywhere; }

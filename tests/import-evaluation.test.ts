@@ -14,8 +14,8 @@ const observed = (id: string) => {
   return { c, document: fixture(c.input), data: JSON.parse(response.body.output[0].content[0].text) }
 }
 
-test('evaluation corpus: 40 manual source cases, family split isolated, both domains held out; no E2E truth', () => {
-  assert.equal(corpus.cases.length, 40)
+test('evaluation corpus: 42 manual source cases, family split isolated, both domains held out; no E2E truth', () => {
+  assert.equal(corpus.cases.length, 42)
   const hashes = new Map<string, string>(), families = new Map<string, string>()
   for (const c of corpus.cases) {
     assert.equal(c.annotation.reviewed, true)
@@ -100,7 +100,7 @@ test('offline: zero network, exact repeated reports, refusals/429/retry/incomple
     const a = await runOffline(), b = await runOffline()
     assert.deepEqual(a, b)
     assert.equal(network, 0)
-    assert.equal(a.rows.length, 118)
+    assert.equal(a.rows.length, 124)
     assert.ok(Object.values(a.releaseGates).every(g => g === 'OPEN'))
     const retry = a.rows.find((r: any) => r.id === 'diet-global-training')!
     assert.deepEqual(retry.attempts.map((t: any) => t.status), ['rate_limited','completed'])

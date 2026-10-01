@@ -238,7 +238,7 @@ test('server config: trasporto sintetico solo su stack locale, origini esatte, m
   assert.equal(readServerConfig({ ...baseEnv, IMPORT_ANALYSIS_DEADLINE_MS: '1' }).invalid, 'IMPORT_ANALYSIS_DEADLINE_MS')
   for (const url of ['http://kong:8000', 'http://127.0.0.1:54321', 'http://supabase_kong_peppitness:8000']) assert.equal(isLocalSupabaseUrl(url), true, url)
   for (const url of ['https://kong:8000', 'http://abc.supabase.co', 'http://user:pw@127.0.0.1:54321', undefined]) assert.equal(isLocalSupabaseUrl(url), false, String(url))
-  assert.equal(ANALYSIS_RULES_VERSION, 'peppitness.import-validation.v1+segments.v1')
+  assert.equal(ANALYSIS_RULES_VERSION, 'peppitness.import-validation.v2+segments.v1')
 })
 
 // ---------------------------------------------------------------------------

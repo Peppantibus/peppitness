@@ -12,6 +12,7 @@ import { importLocalSql, sqlLiteral as lit } from './lib/import-local-db.mjs'
 import { validateImportJobResult } from '../src/import/contracts/jobs.ts'
 import { createOpenAIProvider } from '../supabase/functions/_shared/import/openai-provider.ts'
 import { readProviderConfig } from '../supabase/functions/_shared/import/provider.ts'
+import { IMPORT_PROMPT_VERSION } from '../supabase/functions/_shared/import/prompts.ts'
 import { syntheticMarkers } from '../supabase/functions/_shared/import/synthetic-transport.ts'
 
 const envPath = new URL('../supabase/functions/.env', import.meta.url)
@@ -19,7 +20,7 @@ const MODEL = 'synthetic-edge-2026-01-01'
 const ORIGIN = 'http://127.0.0.1:4173'
 const SECRET_MARK = 'Contenuto riservato sintetico'
 const syntheticEnv = {
-  IMPORT_PROVIDER: 'openai', IMPORT_MODEL: MODEL, IMPORT_PROMPT_VERSION: 'peppitness.import-prompts.v1',
+  IMPORT_PROVIDER: 'openai', IMPORT_MODEL: MODEL, IMPORT_PROMPT_VERSION,
   IMPORT_MAX_OUTPUT_TOKENS: '4000', IMPORT_RETRY_MAX_OUTPUT_TOKENS: '6000', IMPORT_PROVIDER_TIMEOUT_MS: '3000',
   IMPORT_ANALYSIS_DEADLINE_MS: '30000', IMPORT_MAX_RETRY_WAIT_SECONDS: '5', IMPORT_ALLOWED_ORIGINS: `${ORIGIN},http://127.0.0.1:5173`,
   IMPORT_TEST_TRANSPORT: 'synthetic', OPENAI_API_KEY: 'sk-synthetic-local-edge-not-a-real-key',

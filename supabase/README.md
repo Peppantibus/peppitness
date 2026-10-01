@@ -93,7 +93,7 @@ Riferimenti: [migrazioni Supabase](https://supabase.com/docs/guides/deployment/d
 
 ## Importazione: provider di estrazione (server, task 16)
 
-Adapter server in `supabase/functions/_shared/import/`: `provider.ts` (interfaccia 01, configurazione, `prepare`/`send`), `openai-provider.ts` (primo adapter, OpenAI Responses API), `prompts.ts` (due prompt distinti, versione `peppitness.import-prompts.v1`), `provider-errors.ts` (errori tipizzati). Nessun modulo di `src/` li importa; la chiave non ha mai prefisso `VITE_`.
+Adapter server in `supabase/functions/_shared/import/`: `provider.ts` (interfaccia 01, configurazione, `prepare`/`send`), `openai-provider.ts` (primo adapter, OpenAI Responses API), `prompts.ts` (due prompt distinti, versione `peppitness.import-prompts.v2`), `provider-errors.ts` (errori tipizzati). Nessun modulo di `src/` li importa; la chiave non ha mai prefisso `VITE_`.
 
 **Capacità del primo adapter:** output strutturato strict sì; immagini e PDF diretto no. Richiesta: `instructions` = prompt del dominio, un solo messaggio utente con i blocchi del documento in JSON (id, tipo, testo canonico, struttura di tabella, titoli; niente hash del file o bbox), `text.format` `json_schema` strict con radice distinta per dominio, `store: false` (non equivale a Zero Data Retention), `tools: []`, `truncation: "disabled"`, `max_output_tokens` e, solo se configurato, `reasoning.effort`. Nessun `temperature`, nessuna storia di chat, nessun retry o fallback nell'adapter: ogni `send` è un solo invio e il coordinatore dell'endpoint (17) passa ogni chiamata dal budget 15.
 
@@ -108,7 +108,7 @@ Adapter server in `supabase/functions/_shared/import/`: `provider.ts` (interfacc
 | `IMPORT_PROVIDER` | sì | `openai` (unico valore accettato) |
 | `IMPORT_MODEL` | sì | modello/snapshot del profilo standard, scelto dal corpus 25; nessun default |
 | `IMPORT_RETRY_MODEL` | no | profilo `retry`; se assente coincide con lo standard |
-| `IMPORT_PROMPT_VERSION` | sì | deve essere `peppitness.import-prompts.v1` |
+| `IMPORT_PROMPT_VERSION` | sì | deve essere `peppitness.import-prompts.v2` |
 | `IMPORT_MAX_OUTPUT_TOKENS` | sì | tetto output (reasoning compreso), 1–128000 |
 | `IMPORT_RETRY_MAX_OUTPUT_TOKENS` | no | tetto del profilo retry |
 | `IMPORT_REASONING_EFFORT` | no | solo se provato con il modello scelto |

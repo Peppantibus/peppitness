@@ -271,7 +271,7 @@ test('richiesta: solo parametri autorizzati, prompt separati, documento come dat
 })
 
 test('prompt: due testi versionati distinti, esempi richiesti, nessuna istruzione dell’altro dominio', () => {
-  assert.equal(IMPORT_PROMPT_VERSION, 'peppitness.import-prompts.v1')
+  assert.equal(IMPORT_PROMPT_VERSION, 'peppitness.import-prompts.v2')
   const { workout, diet } = extractionPrompts
   assert.notEqual(workout, diet)
   assert.match(workout, /tipo richiesto: workout/)

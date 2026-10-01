@@ -34,7 +34,7 @@ export { issueCatalog, validationIssueCodes, type RuleItem, type ValidationFindi
 export { readingIssueClasses } from './coverage.ts'
 export { pointerTokens, resolvePointer } from './evidence.ts'
 
-export const VALIDATION_RULES_VERSION = 'peppitness.import-validation.v1'
+export const VALIDATION_RULES_VERSION = 'peppitness.import-validation.v2'
 
 // ---------------------------------------------------------------------------
 // Risultati

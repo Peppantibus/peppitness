@@ -1,8 +1,8 @@
 # Corpus di valutazione, task 25
 
-40 casi pubblicabili, tutti inventati e annotati rispetto alla fonte: 26 scheda,
-14 dieta; 29 sviluppo e 11 held-out. Ci sono 21 documenti normalizzati distinti:
-le varianti di errore condividono una fonte, non sono 40 documenti indipendenti.
+42 casi pubblicabili, tutti inventati e annotati rispetto alla fonte: 26 scheda,
+16 dieta; 31 sviluppo e 11 held-out. Ci sono 22 documenti normalizzati distinti:
+le varianti di errore condividono una fonte, non sono 42 documenti indipendenti.
 Questo corpus piccolo e sbilanciato non garantisce rappresentatività dei file reali.
 
 `manifest.json` è l'indice della valutazione, separato dal manifest dei contratti.
@@ -13,6 +13,13 @@ nove fonti held-out sono aggiunte qui con valori scritti a mano. I golden della
 fonte differiscono intenzionalmente dalle risposte sbagliate: ad esempio Crunch
 45 secondi contro 90 della risposta, serie reali contro istruzione ostile,
 seconda seduta PDF presente nella fonte contro risposta che la omette.
+
+La regressione `diet-week-evidence` aggiunge una fonte sintetica di sette giornate
+e due casi **di sviluppo**: citazioni complete e citazioni mancanti dopo la prima
+giornata, con una regola parafrasata. I 54 campi senza evidence e la parafrasi
+restano bloccanti; il golden deriva solo dai paragrafi inventati. Held-out invariato.
+Il prompt v2 e il validatore v2 sono verificati offline; queste registrazioni non
+dimostrano che un modello reale seguirà le nuove istruzioni.
 
 Per caso: `input`, `golden`, `family`, `split`, `tags`, `critical`, `labels`,
 `expectedProblems`, `offlineExpectedValidation`, `offlineAttempts`, `annotation`.

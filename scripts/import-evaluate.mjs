@@ -35,7 +35,7 @@ export function reportFor(manifest, rows, mode, metadata = {}) {
       split: Object.fromEntries(['development','held-out'].map(k=>[k,manifest.cases.filter(c=>c.split===k).length])),
       limitation: 'Small synthetic corpus; several fault cases share a source. No production representativeness or scan/OCR support claim.' },
     summary, releaseGates: modelGates(rows, manifest, mode),
-    externalEvidence: { atomicityAuth: 'Task 24 report inspected: local real pipeline PASS 8/8, synthetic provider', retention: 'Task 23 prior real local verification; not rerun by this benchmark', iphone: 'NOT_RUN', cloud: 'Not deployed; no secrets; budget disabled' },
+    externalEvidence: { atomicityAuth: 'Task 24 report inspected: local real pipeline PASS 8/8, synthetic provider', retention: 'Task 23 prior real local verification; not rerun by this benchmark', iphone: 'NOT_RUN', cloud: 'NOT_CHECKED: this runner does not inspect deployed functions, secrets or cloud budget' },
     costPerAcceptedImportMicros: rows.some(r=>r.acceptedByReviewer === true) ? rows.reduce((n,r)=>n+r.attempts.reduce((s,a)=>s+a.accountedCostMicros,0),0)/rows.filter(r=>r.acceptedByReviewer===true).length : null,
     rows,
   }

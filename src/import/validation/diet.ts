@@ -65,6 +65,30 @@ const dayTypePatterns = { training: TRAINING, rest: REST, any: ANY } as const
 
 interface Region { blockId: string; start: number; end: number }
 const regionsOf = (spans: readonly VerifiedSpan[]): Region[] => spans.flatMap(span => span.offsets.map(offset => ({ blockId: span.blockId, start: offset, end: offset + span.quote.length })))
+/**
+ * Una frase completa può citare il cibo base insieme alla sostituzione fra parentesi:
+ * «Yogurt 170 g (in alternativa latte 200 ml)». Solo la parentesi è un'alternativa.
+ * Il restringimento richiede questa forma esplicita e chiusa; opzioni/alternative già
+ * dichiarate prima della parentesi conservano l'intera regione, come i casi ambigui.
+ */
+function alternativeRegionsOf(spans: readonly VerifiedSpan[]): Region[] {
+  return spans.flatMap(span => {
+    const markers = [...span.quote.matchAll(/\(\s*in alternativa\b/giu)]
+    if (markers.length !== 1 || markers[0]!.index === 0) return regionsOf([span])
+    const start = markers[0]!.index!
+    let depth = 1, end = start + 1
+    for (; end < span.quote.length && depth > 0; end++) {
+      if (span.quote[end] === '(') depth++
+      else if (span.quote[end] === ')') depth--
+    }
+    if (depth !== 0) return regionsOf([span])
+    return span.offsets.map(offset => {
+      const prefix = span.block.text.slice(0, offset + start)
+      const alreadyOptional = /\b(?:opzion[ei]|alternativ[ae]|oppure|scegli|scelta)\b/iu.test(prefix)
+      return { blockId: span.blockId, start: offset + (alreadyOptional ? 0 : start), end: offset + (alreadyOptional ? span.quote.length : end) }
+    })
+  })
+}
 /** Tutte le occorrenze della citazione cadono dentro una delle regioni. */
 const insideRegions = (span: VerifiedSpan, regions: readonly Region[]) =>
   regions.length > 0 && span.offsets.every(offset => regions.some(region => region.blockId === span.blockId && offset >= region.start && offset + span.quote.length <= region.end))
@@ -146,7 +170,7 @@ export function dietSourceFindings(input: DietSourceInput): { findings: Validati
           if (field !== 'notes' && (ruleBlocks.has(span.blockId) || aboveDay)) { findings.push(finding('global_rule_in_meal', meal, field, 'Regola generale collocata in un pasto: va riportata una sola volta fra le regole del piano.', { refs: [span.blockId], path })); break }
         }
       }
-      const alternativeRegions = regionsOf(spansOf(meal, 'alternatives'))
+      const alternativeRegions = alternativeRegionsOf(spansOf(meal, 'alternatives'))
       const additionRegions = [...regionsOf(spansOf(meal, 'additions')), ...globalAdditionRegions]
       for (const food of children(meal.key, 'foods')) {
         let reported = false

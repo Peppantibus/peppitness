@@ -70,8 +70,8 @@ Se una modifica del reader o di PDF.js cambia blocchi, ID o problemi per lo stes
 
 ## Valutazione del corpus (task 25)
 
-`evaluation/manifest.json`: 40 casi annotati rispetto alla fonte, split sviluppo
-29 / held-out 11 isolato per famiglia/hash; 21 fonti normalizzate distinte.
+`evaluation/manifest.json`: 42 casi annotati rispetto alla fonte, split sviluppo
+31 / held-out 11 isolato per famiglia/hash; 22 fonti normalizzate distinte.
 `evaluation/{documents,goldens}/`: input e verità; `provider/evaluation/`: risposte
 HTTP sintetiche con errori intenzionali, rifiuti, retry e usage mancante.
 Nessuna risposta E2E del 24 viene usata per qualità. Dettagli delle labels,

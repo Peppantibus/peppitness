@@ -17071,6 +17071,3600 @@
           "profile": "standard"
         }
       ]
+    },
+    {
+      "id": "diet-week-complete-evidence",
+      "domain": "diet",
+      "family": "diet-week-evidence",
+      "split": "development",
+      "summary": "Sette giornate con nomi, quantità e note citati per ogni campo.",
+      "tags": [
+        "multi-day",
+        "field-evidence",
+        "verbatim-text"
+      ],
+      "critical": true,
+      "input": "evaluation/documents/diet-week-evidence.json",
+      "golden": "evaluation/goldens/diet-week-complete-evidence.json",
+      "labels": {
+        "numeric": [
+          {
+            "path": "/days/0/meals/0/foods/0/quantityText",
+            "value": "40 g",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/1/quantityText",
+            "value": "170 g",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/0/quantityText",
+            "value": "40 g",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/1/quantityText",
+            "value": "170 g",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/0/quantityText",
+            "value": "45 g",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/1/quantityText",
+            "value": "175 g",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/0/quantityText",
+            "value": "45 g",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/1/quantityText",
+            "value": "175 g",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/0/quantityText",
+            "value": "50 g",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/1/quantityText",
+            "value": "180 g",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/0/quantityText",
+            "value": "50 g",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/1/quantityText",
+            "value": "180 g",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/0/quantityText",
+            "value": "55 g",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/1/quantityText",
+            "value": "185 g",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/0/quantityText",
+            "value": "55 g",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/1/quantityText",
+            "value": "185 g",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/0/quantityText",
+            "value": "60 g",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/1/quantityText",
+            "value": "190 g",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/0/quantityText",
+            "value": "60 g",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/1/quantityText",
+            "value": "190 g",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/0/quantityText",
+            "value": "65 g",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/1/quantityText",
+            "value": "195 g",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/0/quantityText",
+            "value": "65 g",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/1/quantityText",
+            "value": "195 g",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/0/quantityText",
+            "value": "70 g",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/1/quantityText",
+            "value": "200 g",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/0/quantityText",
+            "value": "70 g",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/1/quantityText",
+            "value": "200 g",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          }
+        ],
+        "associations": [
+          {
+            "path": "/days/0/name",
+            "value": "Giorno A - riposo",
+            "sourceRefs": [
+              "h:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/name",
+            "value": "Giorno B - riposo",
+            "sourceRefs": [
+              "h:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/name",
+            "value": "Giorno C - riposo",
+            "sourceRefs": [
+              "h:2"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/name",
+            "value": "Giorno D - riposo",
+            "sourceRefs": [
+              "h:3"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/name",
+            "value": "Giorno E - riposo",
+            "sourceRefs": [
+              "h:4"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/name",
+            "value": "Giorno F - riposo",
+            "sourceRefs": [
+              "h:5"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/name",
+            "value": "Giorno G - riposo",
+            "sourceRefs": [
+              "h:6"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          }
+        ],
+        "conditions": [
+          {
+            "path": "/globalRules/0/text",
+            "value": "Nei giorni di allenamento lungo aggiungere 20 g di frutta secca.",
+            "sourceRefs": [
+              "p:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/notes/0",
+            "value": "Nota per Giorno A: mangia lentamente.",
+            "sourceRefs": [
+              "n:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/notes/0",
+            "value": "Nota per Giorno B: mangia lentamente.",
+            "sourceRefs": [
+              "n:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/notes/0",
+            "value": "Nota per Giorno C: mangia lentamente.",
+            "sourceRefs": [
+              "n:2"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/notes/0",
+            "value": "Nota per Giorno D: mangia lentamente.",
+            "sourceRefs": [
+              "n:3"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/notes/0",
+            "value": "Nota per Giorno E: mangia lentamente.",
+            "sourceRefs": [
+              "n:4"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/notes/0",
+            "value": "Nota per Giorno F: mangia lentamente.",
+            "sourceRefs": [
+              "n:5"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/notes/0",
+            "value": "Nota per Giorno G: mangia lentamente.",
+            "sourceRefs": [
+              "n:6"
+            ],
+            "warningPolicy": "prescription"
+          }
+        ],
+        "elements": [
+          {
+            "path": "/globalRules/0",
+            "sourceRefs": [
+              "p:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0",
+            "sourceRefs": [
+              "h:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0",
+            "sourceRefs": [
+              "h:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/0",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/1",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1",
+            "sourceRefs": [
+              "h:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/0",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/1",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1",
+            "sourceRefs": [
+              "h:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0",
+            "sourceRefs": [
+              "h:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/0",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/1",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1",
+            "sourceRefs": [
+              "h:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/0",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/1",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2",
+            "sourceRefs": [
+              "h:2"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0",
+            "sourceRefs": [
+              "h:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/0",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/1",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1",
+            "sourceRefs": [
+              "h:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/0",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/1",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3",
+            "sourceRefs": [
+              "h:3"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0",
+            "sourceRefs": [
+              "h:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/0",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/1",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1",
+            "sourceRefs": [
+              "h:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/0",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/1",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4",
+            "sourceRefs": [
+              "h:4"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0",
+            "sourceRefs": [
+              "h:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/0",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/1",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1",
+            "sourceRefs": [
+              "h:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/0",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/1",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5",
+            "sourceRefs": [
+              "h:5"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0",
+            "sourceRefs": [
+              "h:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/0",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/1",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1",
+            "sourceRefs": [
+              "h:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/0",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/1",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6",
+            "sourceRefs": [
+              "h:6"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0",
+            "sourceRefs": [
+              "h:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/0",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/1",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1",
+            "sourceRefs": [
+              "h:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/0",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/1",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          }
+        ]
+      },
+      "expectedProblems": [
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/0/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/0/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/1/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/1/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/2/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/2/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/3/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/3/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/4/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/4/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/5/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/5/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/6/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/6/meals/1/timeText",
+          "sourceRefs": []
+        }
+      ],
+      "offlineExpectedValidation": {
+        "status": "draft",
+        "issues": [
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/0/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/0/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/1/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/1/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/2/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/2/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/3/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/3/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/4/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/4/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/5/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/5/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/6/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/6/meals/1/timeText",
+            "sourceRefs": []
+          }
+        ]
+      },
+      "annotation": {
+        "reviewed": true,
+        "basis": "Invented seven-day source with explicit quantities above; every label and golden reviewed against its source paragraph. No personal document or model truth. Development only; held-out unchanged.",
+        "offlineCorrectionSeconds": 10,
+        "timingKind": "manual synthetic scenario estimate; not measured user time"
+      },
+      "offlineAttempts": [
+        {
+          "response": "provider/evaluation/diet-week-complete-evidence-1.json",
+          "expectedStatus": "completed",
+          "profile": "standard"
+        }
+      ]
+    },
+    {
+      "id": "diet-week-missing-evidence",
+      "domain": "diet",
+      "family": "diet-week-evidence",
+      "split": "development",
+      "summary": "Sette giornate: citazioni solo nella prima e regola parafrasata, problemi sempre segnalati.",
+      "tags": [
+        "multi-day",
+        "field-evidence",
+        "verbatim-text"
+      ],
+      "critical": true,
+      "input": "evaluation/documents/diet-week-evidence.json",
+      "golden": "evaluation/goldens/diet-week-missing-evidence.json",
+      "labels": {
+        "numeric": [
+          {
+            "path": "/days/0/meals/0/foods/0/quantityText",
+            "value": "40 g",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/1/quantityText",
+            "value": "170 g",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/0/quantityText",
+            "value": "40 g",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/1/quantityText",
+            "value": "170 g",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/0/quantityText",
+            "value": "45 g",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/1/quantityText",
+            "value": "175 g",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/0/quantityText",
+            "value": "45 g",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/1/quantityText",
+            "value": "175 g",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/0/quantityText",
+            "value": "50 g",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/1/quantityText",
+            "value": "180 g",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/0/quantityText",
+            "value": "50 g",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/1/quantityText",
+            "value": "180 g",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/0/quantityText",
+            "value": "55 g",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/1/quantityText",
+            "value": "185 g",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/0/quantityText",
+            "value": "55 g",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/1/quantityText",
+            "value": "185 g",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/0/quantityText",
+            "value": "60 g",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/1/quantityText",
+            "value": "190 g",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/0/quantityText",
+            "value": "60 g",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/1/quantityText",
+            "value": "190 g",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/0/quantityText",
+            "value": "65 g",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/1/quantityText",
+            "value": "195 g",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/0/quantityText",
+            "value": "65 g",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/1/quantityText",
+            "value": "195 g",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/0/quantityText",
+            "value": "70 g",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/1/quantityText",
+            "value": "200 g",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/0/quantityText",
+            "value": "70 g",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/1/quantityText",
+            "value": "200 g",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          }
+        ],
+        "associations": [
+          {
+            "path": "/days/0/name",
+            "value": "Giorno A - riposo",
+            "sourceRefs": [
+              "h:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/name",
+            "value": "Giorno B - riposo",
+            "sourceRefs": [
+              "h:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/name",
+            "value": "Giorno C - riposo",
+            "sourceRefs": [
+              "h:2"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/name",
+            "value": "Giorno D - riposo",
+            "sourceRefs": [
+              "h:3"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/name",
+            "value": "Giorno E - riposo",
+            "sourceRefs": [
+              "h:4"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/name",
+            "value": "Giorno F - riposo",
+            "sourceRefs": [
+              "h:5"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/name",
+            "value": "Giorno G - riposo",
+            "sourceRefs": [
+              "h:6"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/name",
+            "value": "Colazione",
+            "sourceRefs": [
+              "h:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/name",
+            "value": "Cena",
+            "sourceRefs": [
+              "h:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/0/name",
+            "value": "Pane",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/1/name",
+            "value": "Yogurt greco",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          }
+        ],
+        "conditions": [
+          {
+            "path": "/globalRules/0/text",
+            "value": "Nei giorni di allenamento lungo aggiungere 20 g di frutta secca.",
+            "sourceRefs": [
+              "p:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/notes/0",
+            "value": "Nota per Giorno A: mangia lentamente.",
+            "sourceRefs": [
+              "n:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/notes/0",
+            "value": "Nota per Giorno B: mangia lentamente.",
+            "sourceRefs": [
+              "n:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/notes/0",
+            "value": "Nota per Giorno C: mangia lentamente.",
+            "sourceRefs": [
+              "n:2"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/notes/0",
+            "value": "Nota per Giorno D: mangia lentamente.",
+            "sourceRefs": [
+              "n:3"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/notes/0",
+            "value": "Nota per Giorno E: mangia lentamente.",
+            "sourceRefs": [
+              "n:4"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/notes/0",
+            "value": "Nota per Giorno F: mangia lentamente.",
+            "sourceRefs": [
+              "n:5"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/notes/0",
+            "value": "Nota per Giorno G: mangia lentamente.",
+            "sourceRefs": [
+              "n:6"
+            ],
+            "warningPolicy": "prescription"
+          }
+        ],
+        "elements": [
+          {
+            "path": "/globalRules/0",
+            "sourceRefs": [
+              "p:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0",
+            "sourceRefs": [
+              "h:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0",
+            "sourceRefs": [
+              "h:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/0",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/0/foods/1",
+            "sourceRefs": [
+              "p:0:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1",
+            "sourceRefs": [
+              "h:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/0",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/0/meals/1/foods/1",
+            "sourceRefs": [
+              "p:0:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1",
+            "sourceRefs": [
+              "h:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0",
+            "sourceRefs": [
+              "h:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/0",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/0/foods/1",
+            "sourceRefs": [
+              "p:1:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1",
+            "sourceRefs": [
+              "h:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/0",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/1/meals/1/foods/1",
+            "sourceRefs": [
+              "p:1:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2",
+            "sourceRefs": [
+              "h:2"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0",
+            "sourceRefs": [
+              "h:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/0",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/0/foods/1",
+            "sourceRefs": [
+              "p:2:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1",
+            "sourceRefs": [
+              "h:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/0",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/2/meals/1/foods/1",
+            "sourceRefs": [
+              "p:2:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3",
+            "sourceRefs": [
+              "h:3"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0",
+            "sourceRefs": [
+              "h:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/0",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/0/foods/1",
+            "sourceRefs": [
+              "p:3:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1",
+            "sourceRefs": [
+              "h:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/0",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/3/meals/1/foods/1",
+            "sourceRefs": [
+              "p:3:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4",
+            "sourceRefs": [
+              "h:4"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0",
+            "sourceRefs": [
+              "h:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/0",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/0/foods/1",
+            "sourceRefs": [
+              "p:4:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1",
+            "sourceRefs": [
+              "h:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/0",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/4/meals/1/foods/1",
+            "sourceRefs": [
+              "p:4:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5",
+            "sourceRefs": [
+              "h:5"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0",
+            "sourceRefs": [
+              "h:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/0",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/0/foods/1",
+            "sourceRefs": [
+              "p:5:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1",
+            "sourceRefs": [
+              "h:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/0",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/5/meals/1/foods/1",
+            "sourceRefs": [
+              "p:5:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6",
+            "sourceRefs": [
+              "h:6"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0",
+            "sourceRefs": [
+              "h:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/0",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/0/foods/1",
+            "sourceRefs": [
+              "p:6:0"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1",
+            "sourceRefs": [
+              "h:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/0",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          },
+          {
+            "path": "/days/6/meals/1/foods/1",
+            "sourceRefs": [
+              "p:6:1"
+            ],
+            "warningPolicy": "prescription"
+          }
+        ]
+      },
+      "expectedProblems": [
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/0/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/0/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/1/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/1/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/2/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/2/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/3/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/3/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/4/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/4/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/5/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/5/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/6/meals/0/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "meal_time_missing",
+          "severity": "info",
+          "sourcePath": "/days/6/meals/1/timeText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/1/dayType",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/notes/0",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/1/meals/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/meals/0/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/meals/0/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/meals/0/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/meals/0/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/1/meals/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/meals/1/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/meals/1/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/meals/1/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/1/meals/1/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/2/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/2/dayType",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/notes/0",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/2/meals/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/meals/0/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/meals/0/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/meals/0/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/meals/0/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/2/meals/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/meals/1/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/meals/1/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/meals/1/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/2/meals/1/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/3/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/3/dayType",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/notes/0",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/3/meals/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/meals/0/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/meals/0/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/meals/0/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/meals/0/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/3/meals/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/meals/1/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/meals/1/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/meals/1/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/3/meals/1/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/4/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/4/dayType",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/notes/0",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/4/meals/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/meals/0/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/meals/0/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/meals/0/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/meals/0/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/4/meals/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/meals/1/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/meals/1/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/meals/1/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/4/meals/1/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/5/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/5/dayType",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/notes/0",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/5/meals/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/meals/0/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/meals/0/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/meals/0/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/meals/0/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/5/meals/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/meals/1/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/meals/1/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/meals/1/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/5/meals/1/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/6/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/6/dayType",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/notes/0",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/6/meals/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/meals/0/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/meals/0/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/meals/0/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/meals/0/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "unverified_detail",
+          "severity": "confirmation",
+          "sourcePath": "/days/6/meals/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/meals/1/foods/0/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/meals/1/foods/0/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/meals/1/foods/1/name",
+          "sourceRefs": []
+        },
+        {
+          "code": "missing_evidence",
+          "severity": "blocking",
+          "sourcePath": "/days/6/meals/1/foods/1/quantityText",
+          "sourceRefs": []
+        },
+        {
+          "code": "text_not_in_quote",
+          "severity": "blocking",
+          "sourcePath": "/globalRules/0/text",
+          "sourceRefs": [
+            "p:1"
+          ]
+        },
+        {
+          "code": "section_not_covered",
+          "severity": "confirmation",
+          "sourcePath": "",
+          "sourceRefs": [
+            "h:1",
+            "n:1",
+            "h:1:0",
+            "p:1:0",
+            "h:1:1",
+            "p:1:1"
+          ]
+        },
+        {
+          "code": "section_not_covered",
+          "severity": "confirmation",
+          "sourcePath": "",
+          "sourceRefs": [
+            "h:2",
+            "n:2",
+            "h:2:0",
+            "p:2:0",
+            "h:2:1",
+            "p:2:1"
+          ]
+        },
+        {
+          "code": "section_not_covered",
+          "severity": "confirmation",
+          "sourcePath": "",
+          "sourceRefs": [
+            "h:3",
+            "n:3",
+            "h:3:0",
+            "p:3:0",
+            "h:3:1",
+            "p:3:1"
+          ]
+        },
+        {
+          "code": "section_not_covered",
+          "severity": "confirmation",
+          "sourcePath": "",
+          "sourceRefs": [
+            "h:4",
+            "n:4",
+            "h:4:0",
+            "p:4:0",
+            "h:4:1",
+            "p:4:1"
+          ]
+        },
+        {
+          "code": "section_not_covered",
+          "severity": "confirmation",
+          "sourcePath": "",
+          "sourceRefs": [
+            "h:5",
+            "n:5",
+            "h:5:0",
+            "p:5:0",
+            "h:5:1",
+            "p:5:1"
+          ]
+        },
+        {
+          "code": "section_not_covered",
+          "severity": "confirmation",
+          "sourcePath": "",
+          "sourceRefs": [
+            "h:6",
+            "n:6",
+            "h:6:0",
+            "p:6:0",
+            "h:6:1",
+            "p:6:1"
+          ]
+        }
+      ],
+      "offlineExpectedValidation": {
+        "status": "draft",
+        "issues": [
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/0/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/0/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/1/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/1/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/2/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/2/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/3/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/3/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/4/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/4/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/5/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/5/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/6/meals/0/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "meal_time_missing",
+            "severity": "info",
+            "sourcePath": "/days/6/meals/1/timeText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/1/dayType",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/notes/0",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/1/meals/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/meals/0/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/meals/0/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/meals/0/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/meals/0/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/1/meals/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/meals/1/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/meals/1/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/meals/1/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/1/meals/1/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/2/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/2/dayType",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/notes/0",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/2/meals/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/meals/0/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/meals/0/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/meals/0/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/meals/0/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/2/meals/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/meals/1/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/meals/1/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/meals/1/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/2/meals/1/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/3/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/3/dayType",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/notes/0",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/3/meals/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/meals/0/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/meals/0/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/meals/0/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/meals/0/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/3/meals/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/meals/1/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/meals/1/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/meals/1/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/3/meals/1/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/4/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/4/dayType",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/notes/0",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/4/meals/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/meals/0/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/meals/0/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/meals/0/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/meals/0/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/4/meals/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/meals/1/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/meals/1/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/meals/1/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/4/meals/1/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/5/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/5/dayType",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/notes/0",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/5/meals/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/meals/0/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/meals/0/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/meals/0/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/meals/0/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/5/meals/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/meals/1/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/meals/1/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/meals/1/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/5/meals/1/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/6/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/6/dayType",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/notes/0",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/6/meals/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/meals/0/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/meals/0/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/meals/0/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/meals/0/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "unverified_detail",
+            "severity": "confirmation",
+            "sourcePath": "/days/6/meals/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/meals/1/foods/0/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/meals/1/foods/0/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/meals/1/foods/1/name",
+            "sourceRefs": []
+          },
+          {
+            "code": "missing_evidence",
+            "severity": "blocking",
+            "sourcePath": "/days/6/meals/1/foods/1/quantityText",
+            "sourceRefs": []
+          },
+          {
+            "code": "text_not_in_quote",
+            "severity": "blocking",
+            "sourcePath": "/globalRules/0/text",
+            "sourceRefs": [
+              "p:1"
+            ]
+          },
+          {
+            "code": "section_not_covered",
+            "severity": "confirmation",
+            "sourcePath": "",
+            "sourceRefs": [
+              "h:1",
+              "n:1",
+              "h:1:0",
+              "p:1:0",
+              "h:1:1",
+              "p:1:1"
+            ]
+          },
+          {
+            "code": "section_not_covered",
+            "severity": "confirmation",
+            "sourcePath": "",
+            "sourceRefs": [
+              "h:2",
+              "n:2",
+              "h:2:0",
+              "p:2:0",
+              "h:2:1",
+              "p:2:1"
+            ]
+          },
+          {
+            "code": "section_not_covered",
+            "severity": "confirmation",
+            "sourcePath": "",
+            "sourceRefs": [
+              "h:3",
+              "n:3",
+              "h:3:0",
+              "p:3:0",
+              "h:3:1",
+              "p:3:1"
+            ]
+          },
+          {
+            "code": "section_not_covered",
+            "severity": "confirmation",
+            "sourcePath": "",
+            "sourceRefs": [
+              "h:4",
+              "n:4",
+              "h:4:0",
+              "p:4:0",
+              "h:4:1",
+              "p:4:1"
+            ]
+          },
+          {
+            "code": "section_not_covered",
+            "severity": "confirmation",
+            "sourcePath": "",
+            "sourceRefs": [
+              "h:5",
+              "n:5",
+              "h:5:0",
+              "p:5:0",
+              "h:5:1",
+              "p:5:1"
+            ]
+          },
+          {
+            "code": "section_not_covered",
+            "severity": "confirmation",
+            "sourcePath": "",
+            "sourceRefs": [
+              "h:6",
+              "n:6",
+              "h:6:0",
+              "p:6:0",
+              "h:6:1",
+              "p:6:1"
+            ]
+          }
+        ]
+      },
+      "annotation": {
+        "reviewed": true,
+        "basis": "Invented seven-day source with explicit quantities above; every label and golden reviewed against its source paragraph. No personal document or model truth. Development only; held-out unchanged.",
+        "offlineCorrectionSeconds": 300,
+        "timingKind": "manual synthetic scenario estimate; not measured user time"
+      },
+      "offlineAttempts": [
+        {
+          "response": "provider/evaluation/diet-week-missing-evidence-1.json",
+          "expectedStatus": "completed",
+          "profile": "standard"
+        }
+      ]
     }
   ],
   "warningPolicies": {

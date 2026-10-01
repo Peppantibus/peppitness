@@ -14,6 +14,7 @@ import { buildPdf, text as pdfText } from './lib/pdf-fixtures.mjs'
 import { readDocx } from '../src/import/readers/docx.ts'
 import { createOpenAIProvider } from '../supabase/functions/_shared/import/openai-provider.ts'
 import { readProviderConfig } from '../supabase/functions/_shared/import/provider.ts'
+import { IMPORT_PROMPT_VERSION } from '../supabase/functions/_shared/import/prompts.ts'
 
 const out = join(root, 'artifacts/import-e2e'), origin = 'http://127.0.0.1:4173'
 const report = { mode: 'local-real-provider-synthetic', checks: [], iphone: 'NOT_RUN', result: 'FAIL' }
@@ -297,7 +298,7 @@ async function run() {
   const providerConfig = readProviderConfig(Object.fromEntries(env.split(/\r?\n/).filter(l=>l.includes('=')).map(l=>[l.slice(0,l.indexOf('=')),l.slice(l.indexOf('=')+1)])))
   assert.equal(providerConfig.enabled,true)
   const provider = createOpenAIProvider(providerConfig.config)
-  const measured = Buffer.byteLength(provider.prepare({kind:'workout',document:two,schemaId:'peppitness.workout-extraction.v1',promptVersion:'peppitness.import-prompts.v1',profile:'standard',signal:new AbortController().signal}).serializedRequest)+256
+  const measured = Buffer.byteLength(provider.prepare({kind:'workout',document:two,schemaId:'peppitness.workout-extraction.v1',promptVersion:IMPORT_PROMPT_VERSION,profile:'standard',signal:new AbortController().signal}).serializedRequest)+256
   await importLocalSql(`update peppitness_private.import_budget_config set max_input_tokens=${measured-200} where config_version=${lit(marker)} returning singleton`)
   await writeFile(join(out,'sections.docx'),segmentedFile(3))
   await tab.evaluate(`location.hash='#/scheda/importa'`)

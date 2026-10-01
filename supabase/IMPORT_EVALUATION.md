@@ -1,10 +1,31 @@
 # Valutazione e gate di rilascio dell'importazione
 
-Stato al task 25: parte offline disponibile. Nessun modello MVP scelto,
-nessuna valutazione pagata eseguita, nessuna autorizzazione alla spesa.
-Cloud: 14 migration applicate secondo la ripresa S9, retention con pg_cron;
-nessuna Edge deployata/secrets, budget `enabled=false`. Non attivare il cloud
-per eseguire il benchmark offline. Non modificare la specifica per chiudere gate.
+Parte offline disponibile; nessun modello qualificato per il rilascio.
+Dopo il task 25 l'utente ha autorizzato il deploy di `extract-plan`, i secrets
+server e le prove manuali con `gpt-6-luna`. Ultimo stato cloud verificato: 15
+migration (inclusa la correzione della concorrenza), Edge con prompt v1,
+budget abilitato con tetti USD 1/mese progetto e USD 0,20/mese account;
+20 analisi/giorno/account e due chiamate massime per analisi.
+Il benchmark reale del corpus non è stato autorizzato né eseguito; le prove
+manuali hanno evidenziato timeout e citazioni insufficienti. I gate restano aperti.
+Le correzioni attuali (prompt v2, validatore v2) sono locali: nessun nuovo deploy,
+secret, budget o invio al provider. Il runner offline non controlla lo stato cloud.
+Non modificare la specifica per chiudere gate.
+
+## Aggiornamento della correzione v2, solo dopo autorizzazione
+
+Per provarla dalla PWA collegata al cloud occorre aggiornare sia `extract-plan`
+sia il secret `IMPORT_PROMPT_VERSION=peppitness.import-prompts.v2`. La v1 del
+secret con codice v2 (o viceversa) disabilita l'endpoint: non cambiare solo uno.
+Prima verificare configurazione e consumi; sospendere il budget durante
+l'aggiornamento coordinato e ripristinare soltanto lo stato autorizzato dall'utente.
+Non cambiare modello, prezzi, limiti o chiave; non servono nuove migration per
+questa correzione. Il profilo di cache include prompt e validatore, quindi una
+nuova analisi v2 non riusa la proposta prodotta con v1. Le vecchie bozze restano
+rivedibili; nessuna analisi è avviata automaticamente.
+Verificare CORS/auth/configurazione senza inviare documenti, poi effettuare solo
+la prova manuale espressamente autorizzata. Il successo di quella prova non
+chiude il benchmark reale né i gate di rilascio.
 
 ## Prova locale senza rete o costi
 
@@ -71,7 +92,7 @@ richieste dell'app. Non eseguire il benchmark su dispositivi client.
    profilo, condizioni di fatturazione e snapshot scelto.
 4. In un ambiente server impostare da secret manager `OPENAI_API_KEY` e
    `IMPORT_PROVIDER=openai`, `IMPORT_MODEL`,
-   `IMPORT_PROMPT_VERSION=peppitness.import-prompts.v1`,
+   `IMPORT_PROMPT_VERSION=peppitness.import-prompts.v2`,
    `IMPORT_MAX_OUTPUT_TOKENS`, eventualmente `IMPORT_RETRY_MAX_OUTPUT_TOKENS`,
    `IMPORT_REASONING_EFFORT`, `IMPORT_PROVIDER_TIMEOUT_MS` (contratti 16).
    `IMPORT_RETRY_MODEL` deve essere assente o uguale al primario; il ledger
