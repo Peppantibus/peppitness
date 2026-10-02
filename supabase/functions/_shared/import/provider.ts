@@ -114,6 +114,16 @@ export interface ProviderLogEvent {
   code: string | null
   httpStatus: number | null
   providerRequestId: string | null
+  /** ID locale già passato al provider (reservationId), utile anche prima degli header. */
+  clientRequestId: string | null
+  /** Ultima fase raggiunta: nessun corpo o dettaglio libero del trasporto. */
+  phase: 'not_sent' | 'headers' | 'body' | 'decode'
+  promptVersion: string
+  formatVersion: string
+  reasoningEffort: ProviderProfileConfig['reasoningEffort']
+  maxOutputTokens: number
+  requestBytes: number
+  responseBytes: number | null
   latencyMs: number
   inputTokens: number | null
   outputTokens: number | null

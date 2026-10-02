@@ -155,7 +155,7 @@ async function run() {
   let boot
   for (let i = 0; i < 30; i++) {
     boot = await fn('{', a.token)
-    if (boot.status === 400 || boot.status === 503) break
+    if (boot.status === 400) break
     await new Promise(resolve => setTimeout(resolve, 2000))
   }
   check(boot.status === 400 && errorCode(boot) === 'invalid_request', `Edge avviata: moduli Deno e contratti condivisi caricati, JSON non valido respinto dal handler (HTTP ${boot.status})`)

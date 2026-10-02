@@ -91,8 +91,9 @@ export const hasBlockingIssue = (issues: readonly ValidationIssue[]) => issues.s
 
 /**
  * Valori di un esercizio come li vede o li conferma l'utente (ExerciseValues senza archivedAt).
- * Per existing/shared è l'identità vista nella preview; per new sono i metadati confermati:
- * kg, false o total proposti dall'app restano scelte dell'utente, non contenuto estratto.
+ * Per existing/shared è l'identità vista nella preview; per new i dati sono predisposti
+ * dalla fonte e dalle impostazioni visibili dell'app oppure modificati dall'utente.
+ * La conferma finale li accetta: kg, false o total dell'app non sono contenuto estratto.
  */
 export const catalogExerciseValuesSchema = object({
   name: trimmedDomainText(domainLimits.exercise.name),

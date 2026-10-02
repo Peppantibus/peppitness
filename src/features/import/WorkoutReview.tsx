@@ -21,6 +21,8 @@ import {
 } from './review-model'
 import { SourceViewer } from './SourceViewer'
 import { WorkoutImportPreview } from './WorkoutImportPreview'
+import { WorkoutBatchReview } from './WorkoutBatchReview'
+import { catalogPreparationSummary, prepareWorkoutReview } from '../../import/review/prepare-workout.ts'
 import './review.css'
 import './workout-review.css'
 
@@ -86,9 +88,9 @@ export function WorkoutReview({
   /** ID locali degli elementi aggiunti (UUID casuali per default). */
   newId?: () => string
 }) {
-  const { draft } = value
+  const draft = useMemo(() => prepareWorkoutReview(sourceDocument, value.draft, catalog), [sourceDocument, value.draft, catalog])
   const ids = useMemo(() => reserveWorkoutIds(draft, value.ids), [draft, value.ids])
-  useEffect(() => { if (ids !== value.ids) onChange({ draft, ids }) }, [ids, value.ids, draft, onChange])
+  useEffect(() => { if (draft !== value.draft || ids !== value.ids) onChange({ draft, ids }) }, [ids, value.ids, value.draft, draft, onChange])
   const outcome = useMemo(() => workoutReviewOutcome(sourceDocument, draft, ids), [sourceDocument, draft, ids])
   const index = useMemo(() => new ReviewIndex(draft, outcome.validation), [draft, outcome.validation])
   const stale = useMemo(() => staleConfirmations(draft), [draft])
@@ -126,6 +128,7 @@ export function WorkoutReview({
   const rules = childrenOf(draft, root.localId, 'complexRules') as Item<ExtractedComplexRule>[]
   const exercisesOf = (sessionId: string) => childrenOf(draft, sessionId, 'exercises') as (Item<ExtractedExercise> & { catalog: ExerciseChoice | null })[]
   const allExercises = sessions.flatMap(session => exercisesOf(session.localId))
+  const catalogSummary = useMemo(() => catalogPreparationSummary(draft), [draft])
   const byId = new Map((draft.current as readonly ReviewItem[]).map(item => [item.localId, item]))
 
   const issues = (localId: string, field: string | null): FieldIssue[] => index.findingsOf(localId, field).map(finding => ({ finding, state: findingState(draft, finding, stale) }))
@@ -250,9 +253,9 @@ export function WorkoutReview({
       <Field id={fieldId(item.localId, 'catalog')} group label="Esercizio del catalogo" issues={issues(item.localId, null).filter(issue => issue.finding.issue.stage === 'catalog')}>
         {item.catalog ? <div className="wr-choice">
           <strong>{exerciseChoiceValues(item.catalog).name}</strong>
-          <span className="rv-origin">{item.catalog.source === 'new' ? 'Nuovo esercizio, dati confermati da te' : item.catalog.source === 'shared' ? 'Scelto dal catalogo comune' : 'Scelto dal catalogo'}</span>
+          <span className="rv-origin">{item.catalog.source === 'new' ? 'Verrà creato al salvataggio' : item.catalog.source === 'shared' ? 'Dal catalogo comune' : 'Dal tuo catalogo'}</span>
           <span className="small muted">{[exerciseChoiceValues(item.catalog).variant, exerciseChoiceValues(item.catalog).equipment].filter(Boolean).join(' · ')}</span>
-        </div> : <p className="small muted">Non ancora scelto.</p>}
+        </div> : <p className="small muted">{catalog.complete ? 'Scegli come risolvere questo abbinamento.' : 'Lettura del catalogo in corso…'}</p>}
         <div className="rv-field-actions">
           <button type="button" id={`${fieldId(item.localId, 'catalog')}-pick`} className="button secondary" onClick={() => setPicker(item.localId)}>{item.catalog ? 'Cambia esercizio' : 'Scegli l’esercizio'}</button>
           {item.catalog && <button type="button" className="text-button" onClick={() => apply(current => chooseCatalog(current, item.localId, null))}>Togli la scelta</button>}
@@ -319,6 +322,11 @@ export function WorkoutReview({
     complex={complexKinds.includes(rule.values.kind)} targets={ruleTargets(rule)} issues={issues(rule.localId, null)}
     mapping={outcome.mapping.issues.filter(issue => issue.localId === rule.localId && issue.stage === 'mapping' && !issue.code.endsWith('_review_required'))}
     onSource={sourceButton(rule.localId, null)}
+    scopeOptions={draft.localIds.flatMap(entry => {
+      const item = byId.get(entry.localId)
+      return item && ['sessions', 'exercises'].includes(item.collection) ? [{ path: entry.pointer, label: context(item.localId) }] : []
+    })}
+    onRetarget={path => apply(current => setField(current, rule.localId, 'targetPaths', path === '' ? [] : [path], 'scope_choice'))}
     onResolve={(nextText, reason) => apply(current => {
       let next = setField(current, rule.localId, 'text', nextText, reason)
       const finding = index.findings.find(entry => entry.issue.localId === rule.localId && (entry.issue.code === 'complex_rule_unresolved' || entry.issue.code === 'complex_rule_review'))
@@ -376,6 +384,13 @@ export function WorkoutReview({
       {settled.length > 0 && <details className="rv-more"><summary>Confermati e informazioni ({settled.length})</summary><ul className="rv-finding-list" data-list="settled">{settled.map(issueCard)}</ul></details>}
     </section>
 
+    <WorkoutBatchReview draft={draft} document={sourceDocument} catalog={catalog} issues={outcome.validation.issues} onApply={change => apply(current => change(current as WorkoutReviewDraft))} />
+    {catalogSummary.length > 0 && <section className="panel wr-catalog-summary" aria-labelledby="rv-catalog-summary-title">
+      <h2 id="rv-catalog-summary-title">Esercizi pronti per il salvataggio</h2>
+      <p>{catalogSummary.filter(i => i.source === 'new').length} nuovi · {catalogSummary.filter(i => i.source === 'existing').length} già nel tuo catalogo · {catalogSummary.filter(i => i.source === 'shared').length} dal catalogo comune</p>
+      <p className="field-help">I nuovi esercizi vengono creati insieme alla scheda quando salvi. Se il documento non indica i dati del carico, usiamo kg, carico totale e non per lato; puoi cambiarli nei dettagli.</p>
+      <details><summary>Nomi e impostazioni</summary><ul>{catalogSummary.map((i,index) => <li key={index}><strong>{i.name}</strong> · {i.source === 'new' ? 'verrà creato' : i.source === 'shared' ? 'catalogo comune' : 'tuo catalogo'} · {[i.variant, i.equipment, i.measurementMode === 'seconds' ? 'secondi' : 'ripetizioni', i.loadUnit, i.loadConvention === 'single-dumbbell' ? 'un manubrio' : i.loadConvention === 'bodyweight' ? 'corpo libero' : 'carico totale', i.perSide ? 'per lato' : 'non per lato'].filter(Boolean).join(' · ')}</li>)}</ul></details>
+    </section>}
     <div className="rv-layout">
       <div className="rv-main">
         <section className="panel" aria-labelledby="rv-plan-title" id={itemId(root.localId)} tabIndex={-1}>
@@ -426,7 +441,7 @@ export function WorkoutReview({
 
         {rules.length > 0 && <section className="panel" aria-labelledby="rv-rules-title">
           <h2 id="rv-rules-title">Fasi, progressioni e altre regole</h2>
-          <p className="field-help">Il programma ripete le prescrizioni scelte: fasi, progressioni, scarichi, superserie e circuiti non si eseguono da soli. Per ciascuna regola scrivi quale fase o settimana importi, oppure come la gestirai a mano. Il testo originale resta nelle indicazioni.</p>
+          <p className="field-help">Le indicazioni vengono conservate nel programma e gestite a mano: fasi, progressioni, scarichi, superserie e circuiti non si eseguono da soli. Ti chiediamo una scelta quando la dose base o l’ambito non sono chiari.</p>
           <div className="wr-rules">{rules.map(ruleCard)}</div>
         </section>}
 
@@ -435,7 +450,7 @@ export function WorkoutReview({
         {onConfirm && <section className="panel rv-confirm" aria-labelledby="rv-confirm-title">
           <h2 id="rv-confirm-title">Conferma</h2>
           <p className="small muted">Qui non viene salvato nulla: la conferma passa la scheda rivista al passo successivo.</p>
-          <button type="button" className="button primary" disabled={!readiness.ready || !outcome.mapping.ok}
+          <button type="button" className="button primary" disabled={draft !== value.draft || !readiness.ready || !outcome.mapping.ok}
             onClick={() => { if (readiness.ready && outcome.mapping.ok) onConfirm({ draft, ids, mapping: outcome.mapping.value }) }}>{confirmLabel}</button>
           {!readiness.ready && <p className="field-help">Disponibile quando non restano punti da risolvere o da confermare.</p>}
         </section>}
@@ -484,43 +499,53 @@ function CycleField({ id, value, origin, issues, onSource, onCommit }: {
 }
 
 /**
- * Regola della scheda. Per fasi, progressioni, scarichi, superserie e circuiti una spunta non basta: si scrive
- * quale fase o settimana si importa o come si gestisce a mano (`scope_choice`), e la scelta va confermata di
- * nuovo se la scheda cambia dopo. Il testo originale resta visibile e finisce comunque nelle indicazioni.
+ * Regole utilizzabili conservate come indicazioni modificabili, accettate alla conferma finale.
+ * Dosi o ambiti irrisolti richiedono una scelta mirata; il testo originale resta nelle indicazioni.
  */
-function RuleCard({ rule, draft, complex, targets, issues, mapping, onSource, onResolve, onReconfirm }: {
+function RuleCard({ rule, draft, complex, targets, issues, mapping, onSource, onResolve, onReconfirm, scopeOptions, onRetarget }: {
   rule: Item<ExtractedComplexRule>; draft: ReviewDraft; complex: boolean; targets: string; issues: FieldIssue[]; mapping: ValidationIssue[]
   onSource?: () => void; onResolve: (text: string, reason: 'scope_choice' | 'user_edit') => void; onReconfirm: () => void
+  scopeOptions: { path: string; label: string }[]; onRetarget: (path: string) => void
 }) {
   const originalText = proposalValue(draft, rule.localId, 'text')
   const [text, setText] = useState(rule.values.text)
+  const [editing, setEditing] = useState(false)
   useEffect(() => setText(rule.values.text), [rule.values.text])
   const lastEdit = draft.decisions.filter(decision => decision.op === 'set' && decision.localId === rule.localId && decision.field === 'text').at(-1)
   const chosen = lastEdit?.op === 'set' && lastEdit.reason === 'scope_choice'
   const stale = mapping.some(issue => issue.code === 'workout_scope_stale')
   const open = issues.filter(issue => issue.state === 'open' || issue.state === 'stale')
   const changed = text.trim() !== '' && text !== rule.values.text
+  const preserved = issues.some(i => i.finding.issue.code === 'complex_rule_preserved') && !open.length && !mapping.length
   return <article className={`wr-rule${open.length || mapping.length ? ' has-issue' : ''}`} id={itemId(rule.localId)} tabIndex={-1} data-local-id={rule.localId}>
     <div className="wr-rule-head">
       <h3>{ruleLabels[rule.values.kind]}</h3>
-      {complex && <span className="rv-badge is-confirmation">Gestione manuale</span>}
+      <span className={`rv-badge ${preserved ? 'is-ok' : 'is-confirmation'}`}>{preserved ? 'Conservata nelle indicazioni' : 'Da risolvere'}</span>
       {onSource && <button type="button" className="text-button rv-source-link" onClick={onSource}>Fonte</button>}
     </div>
     <p className="small muted">Si applica a: {targets}</p>
-    {typeof originalText === 'string' && <div className="rv-field"><span className="rv-label">Nel documento</span><p className="rv-readonly">{originalText}</p></div>}
-    <div className="rv-field">
+    {mapping.some(issue => issue.code === 'workout_rule_target_missing') && <label className="rv-field">A quale parte si applica questa indicazione?
+      <select id={fieldId(rule.localId, 'targetPaths')} value="choose" onChange={event => onRetarget(event.target.value)}>
+        <option value="choose" disabled>Scegli il destinatario</option>
+        <option value="">Intera scheda</option>
+        {scopeOptions.map(option => <option key={option.path} value={option.path}>{option.label}</option>)}
+      </select>
+    </label>}
+    {typeof originalText === 'string' && (!preserved || originalText !== rule.values.text) && <div className="rv-field"><span className="rv-label">Nel documento</span><p className="rv-readonly">{originalText}</p></div>}
+    {preserved && !editing ? <div className="rv-field"><p className="rv-readonly">{rule.values.text}</p><button type="button" className="text-button" onClick={() => setEditing(true)}>Modifica</button></div> : <div className="rv-field">
       <label className="rv-label" htmlFor={fieldId(rule.localId, 'text')}>{complex ? 'Cosa importi e come la gestirai' : 'Testo della regola'}</label>
       {chosen && <span className="rv-origin is-user">Scelta scritta da te</span>}
       <textarea id={fieldId(rule.localId, 'text')} rows={3} value={text} onChange={event => setText(event.target.value)} />
       {complex && <p className="field-help">Per esempio «Importo la settimana 1: 3 × 10; dalla settimana 2 aumento a mano» oppure «Superserie: eseguo i due esercizi di seguito, gestita a mano».</p>}
-    </div>
+    </div>}
     {open.map(issue => <p key={issue.finding.issue.code} className={`rv-field-issue is-${issue.finding.issue.severity}`}>{issue.finding.issue.message}</p>)}
     {mapping.map(issue => <p key={issue.code} className="rv-field-issue is-blocking">{issue.message}</p>)}
-    <div className="rv-field-actions">
-      {complex
+    {(!preserved || editing) && <div className="rv-field-actions">
+      {complex && !preserved
         ? <button type="button" className="button secondary" disabled={!changed && !(chosen && open.length > 0)} onClick={() => onResolve(text, 'scope_choice')}>Conferma questa scelta</button>
-        : <button type="button" className="button secondary" disabled={!changed} onClick={() => onResolve(text, 'user_edit')}>Salva il testo</button>}
+        : <button type="button" className="button secondary" disabled={!changed} onClick={() => { onResolve(text, 'user_edit'); setEditing(false) }}>Salva il testo</button>}
+      {preserved && editing && <button type="button" className="text-button" onClick={() => { setText(rule.values.text); setEditing(false) }}>Annulla</button>}
       {complex && stale && <button type="button" className="button secondary" onClick={onReconfirm}>Conferma di nuovo</button>}
-    </div>
+    </div>}
   </article>
 }

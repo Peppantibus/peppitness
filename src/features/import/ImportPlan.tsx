@@ -247,6 +247,7 @@ function AnalysisPanel({ kind, store, session, slot, online }: { kind: ImportKin
       {network.compatible && network.compatible.length > 0 && imports && <div className="import-callout import-compatible"><Icon name="history" size={20} /><div>
         <strong>Hai già analizzato questo documento</strong>
         <p>Puoi riaprire la proposta già pronta, senza una nuova analisi e senza costi, oppure chiederne una nuova.</p>
+        <p>Riaprire conserva il risultato precedente, comprese eventuali parti mancanti. Per rigenerarlo scegli «Nuova analisi».</p>
         <div className="button-row">
           <button type="button" className="button primary import-reopen" disabled={network.activity !== null} onClick={() => void imports.reopen(kind, network.compatible![0]!.jobId)}>Riapri l’analisi pronta</button>
           <button type="button" className="button secondary import-analyze-again" disabled={!canAnalyze} onClick={() => void analyze(true)}>Nuova analisi</button>
@@ -316,7 +317,7 @@ function ReviewStep({ kind, store, session, slot, context, originalUnavailable, 
   return <>
     <section className="panel import-review-actions" aria-labelledby="import-review-title">
       <h2 id="import-review-title">Proposta da rivedere</h2>
-      <p>Controlla ogni punto con la fonte, correggi e conferma ciò che manca. Le modifiche restano su questo dispositivo{session.persistence === 'durable' ? ` per ${IMPORT_INACTIVITY_DAYS} giorni senza attività` : ', ma solo in questa pagina'}.</p>
+      <p>Controlla la proposta con la fonte e risolvi i punti indicati. {kind === 'workout' && 'Gli esercizi mancanti vengono predisposti per la creazione al salvataggio. '}Le modifiche restano su questo dispositivo{session.persistence === 'durable' ? ` per ${IMPORT_INACTIVITY_DAYS} giorni senza attività` : ', ma solo in questa pagina'}.</p>
       {reanalysis?.status === 'running' && <p className="import-phase" role="status"><span className="import-progress" aria-hidden="true" />Nuova analisi in corso: la bozza attuale resta com’è finché non scegli.</p>}
       {reanalysis?.status === 'failed' && <p className="import-notice is-warning">La nuova analisi non è riuscita{reanalysis.error ? `: ${analysisMessage(reanalysis.error)}` : ' o è stata interrotta'}. La bozza attuale resta invariata.</p>}
       <div className="button-row">

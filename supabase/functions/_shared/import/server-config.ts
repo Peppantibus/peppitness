@@ -8,9 +8,10 @@ import { resolveImportLimits, type ImportLimits } from './contracts.ts'
 import { VALIDATION_RULES_VERSION } from './validation.ts'
 import type { AnalysisProfile } from './jobs.ts'
 import { providerEnvNames, readProviderConfig, type ProviderConfig, type ProviderConfigResult, type ProviderEnv } from './provider.ts'
+import { PROVIDER_FORMAT_VERSION } from './compact.ts'
 
 /** Versione delle regole server nella chiave di cache: validazione 06 + segmentazione/ricomposizione. */
-export const ANALYSIS_RULES_VERSION = `${VALIDATION_RULES_VERSION}+segments.v1`
+export const ANALYSIS_RULES_VERSION = `${VALIDATION_RULES_VERSION}+segments.v1+${PROVIDER_FORMAT_VERSION}`
 
 export const serverEnvNames = [
   ...providerEnvNames, 'IMPORT_ALLOWED_ORIGINS', 'IMPORT_ANALYSIS_DEADLINE_MS', 'IMPORT_MAX_RETRY_WAIT_SECONDS', 'IMPORT_TEST_TRANSPORT', 'SUPABASE_URL',
@@ -74,5 +75,7 @@ export function readServerConfig(env: ServerEnv): ServerConfig {
 
 /** Profilo del job (14): solo configurazione server. */
 export function analysisProfile(config: ProviderConfig): AnalysisProfile {
-  return { promptVersion: config.promptVersion, provider: config.provider, model: config.profiles.standard.model, rulesVersion: ANALYSIS_RULES_VERSION }
+  const a = config.profiles.standard, b = config.profiles.retry
+  const settings = `r-${a.reasoningEffort ?? 'default'}-o-${a.maxOutputTokens}-${b.maxOutputTokens}`
+  return { promptVersion: config.promptVersion, provider: config.provider, model: a.model, rulesVersion: `${ANALYSIS_RULES_VERSION}+${settings}` }
 }

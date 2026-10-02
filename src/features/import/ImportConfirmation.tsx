@@ -36,7 +36,8 @@ export function ImportConfirmation({ value, selectionKnown, followedName, networ
   const name = workout ? value.result.mapping.resolved.title : value.result.mapping.plan.name
   const current = value.result.draft.current as readonly ReviewItem[]
   const confirmed = value.result.draft.decisions.filter(decision => decision.op === 'confirm').length
-  const edited = value.result.draft.decisions.filter(decision => decision.op !== 'confirm').length
+  const prepared = value.result.draft.decisions.filter(decision => decision.decisionId.startsWith('prep-catalog-') || decision.decisionId.startsWith('prep-optional-')).length
+  const edited = value.result.draft.decisions.filter(decision => decision.op !== 'confirm' && !decision.decisionId.startsWith('prep-')).length
   const rules = current.filter(item => item.collection === (workout ? 'complexRules' : 'globalRules'))
   const manualKinds = workout ? [...new Set(rules.map(item => ruleKinds[(item.values as { kind: string }).kind] ?? 'altre regole'))] : []
   const section = workout ? 'Scheda' : 'Dieta'
@@ -49,6 +50,7 @@ export function ImportConfirmation({ value, selectionKnown, followedName, networ
     <ul className="import-confirmation-facts">
       <li><Icon name="check" size={16} />{workout ? `Nuovo programma con ${value.result.mapping.resolved.days.length} ${value.result.mapping.resolved.days.length === 1 ? 'seduta' : 'sedute'}, pubblicato al salvataggio` : `Nuovo piano alimentare con ${value.result.mapping.plan.document.days.length} ${value.result.mapping.plan.document.days.length === 1 ? 'giornata' : 'giornate'}`}.</li>
       <li><Icon name="edit" size={16} />{edited ? `${edited} ${edited === 1 ? 'modifica tua' : 'modifiche tue'}` : 'Nessuna modifica'} e {confirmed} {confirmed === 1 ? 'punto confermato' : 'punti confermati'} nella revisione.</li>
+      {prepared > 0 && <li><Icon name="check" size={16} />Abbinamenti e dosi base predisposti dall’app sono inclusi in questa conferma. I nuovi esercizi mostrati nell’anteprima verranno creati al salvataggio.</li>}
       {rules.length > 0 && <li className="is-manual"><Icon name="alert" size={16} />{workout
         ? `Da seguire a mano: ${rules.length} ${rules.length === 1 ? 'regola' : 'regole'} (${manualKinds.join(', ')}) riportate nelle indicazioni, non trasformate in sedute automatiche.`
         : `${rules.length} ${rules.length === 1 ? 'regola generale riportata' : 'regole generali riportate'} nelle indicazioni del piano: vanno applicate a mano.`}</li>}

@@ -12,6 +12,7 @@ import assert from 'node:assert/strict'
 import { mkdir, readdir, readFile, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { buildComponentHarness, ensureChrome, openTab, pause, root, serveStatic } from './lib/import-browser-harness.mjs'
+import { threeSessionFixture } from '../tests/fixtures/import/recovery/workout-three-sessions.ts'
 
 const fixtures = join(root, 'tests', 'fixtures', 'import')
 const readJson = async path => JSON.parse(await readFile(join(fixtures, path), 'utf8'))
@@ -183,7 +184,7 @@ async function run() {
   await tab.until(`!document.querySelector('dialog[open]')`)
   const chosen = await lastDecision(tab)
   assert.equal(chosen.op, 'catalog'); assert.equal(chosen.after.source, 'existing'); assert.equal(chosen.after.personalId, '11111111-1111-4111-8111-111111111111')
-  assert.ok(await tab.evaluate(`${text('#rv-detail-i2')}.includes('Scelto dal catalogo')`))
+  assert.ok(await tab.evaluate(`${text('#rv-detail-i2')}.includes('Dal tuo catalogo')`))
   pass('picker: candidati 08 con identità, Annulla/Esc senza decisioni e focus alla riga, scelta existing come sola decisione')
 
   // Ora pronta: anteprima dal mapper, conferma, ID prenotati invariati.
@@ -266,32 +267,26 @@ async function run() {
   assert.deepEqual((await tab.evaluate('harness.outcome()')).value.program.days[0].exercises[0].restSeconds, golden.expected.program.days[0].exercises[0].restSeconds)
   pass('intervallo del recupero: scelta del timer esplicita, intervallo originale e valore scelto in anteprima')
 
-  // 5. Fasi e regole: descrizione scritta + conferma, poi nuova conferma dopo un cambio della scheda.
+  // 5. Valid base doses: rules are preserved without separate scope confirmations.
   const partial = await fixtureCase('workout-partially-interpretable')
   await mount({ document: partial.document, extraction: partial.extraction, decisions: partial.entry.userDecisions, catalog })
   await pressText(tab, 'A rotazione')
-  assert.equal(await tab.evaluate(`${confirmButton}.disabled`), true)
+  assert.equal(await tab.evaluate(`${confirmButton}.disabled`), false)
   assert.ok(await tab.evaluate(`${text('#rv-rules-title')}.length > 0 && document.querySelectorAll('.wr-rule').length === 3`))
-  assert.equal(await tab.evaluate(`${buttonByText('Conferma questa scelta', '#rv-item-i6')}.disabled`), true, 'senza descrizione nessuna conferma')
-  const scopes = { i6: 'Importo la settimana 1 così com’è; la progressione la applico a mano.', i7: 'Nessuno scarico importato: lo gestisco a mano.', i8: 'Superserie eseguita a mano, esercizi in sequenza.' }
-  for (const [localId, description] of Object.entries(scopes)) {
-    await type(tab, `#rv-${localId}-text`, description, { leave: false })
-    await pressText(tab, 'Conferma questa scelta', `#rv-item-${localId}`)
-    const [set, confirm] = (await tab.evaluate('harness.state()')).decisions.slice(-2)
-    assert.deepEqual([set.op, set.field, set.after, set.reason, confirm.op, confirm.issueCode, confirm.reason], ['set', 'text', description, 'scope_choice', 'confirm', 'complex_rule_unresolved', 'scope_choice'])
-  }
-  await tab.until(`!${buttonByText('Conferma la revisione')}.disabled`, 'pronta dopo le scelte di fase')
+  assert.equal(await tab.evaluate(`document.querySelectorAll('.wr-rule textarea').length`), 0)
+  assert.ok(await tab.evaluate(`[...document.querySelectorAll('.wr-rule')].every(e => e.textContent.includes('Conservata nelle indicazioni'))`))
+  await pressText(tab, 'Modifica', '#rv-item-i6')
+  await type(tab, '#rv-i6-text', 'Progressione da gestire manualmente.', { leave: false })
+  await pressText(tab, 'Salva il testo', '#rv-item-i6')
+  await tab.until(`!${buttonByText('Conferma la revisione')}.disabled`, 'pronta senza conferme di fase')
   const phased = await tab.evaluate('harness.outcome()')
   assert.ok(phased.value.program.guidance.includes('Limite di esecuzione'))
-  assert.ok(phased.value.program.guidance.includes(scopes.i6))
+  assert.ok(phased.value.program.guidance.includes('Progressione da gestire manualmente.'))
   assert.ok(await tab.evaluate(`${text('[data-preview=workout]')}.includes('regola prima della scelta')`), 'testo originale della regola conservato')
   await press(tab, `document.getElementById('rv-item-i2')`, 'apri squat')
   await type(tab, '#rv-i2-restSeconds', '150')
-  await tab.until(`${text('#rv-item-i6')}.includes('confermare di nuovo')`, 'scelta di fase da riconfermare')
-  assert.equal(await tab.evaluate(`${confirmButton}.disabled`), true)
-  for (const localId of ['i6', 'i7', 'i8']) await pressText(tab, 'Conferma di nuovo', `#rv-item-${localId}`)
-  await tab.until(`!${buttonByText('Conferma la revisione')}.disabled`, 'pronta dopo la nuova conferma')
-  pass('fasi/progressioni/superserie: descrizione scritta (scope_choice) + conferma; modifica successiva richiede nuova conferma; testo originale e limite nelle indicazioni')
+  await tab.until(`!${buttonByText('Conferma la revisione')}.disabled`, 'recupero modificato senza riconfermare le indicazioni')
+  pass('regole con dosi base utilizzabili conservate senza textarea/conferme; edit facoltativo, fonte conservata, nessuna riconferma dopo il recupero')
 
   // Conferma superata dall'edit: il valore confermato cambia → «da confermare di nuovo».
   await type(tab, '#rv-i2-sets', '4')
@@ -371,6 +366,61 @@ async function run() {
   await press(tab, buttonByText('Vai al punto', '[data-list=open]'), 'vai al primo problema')
   await tab.until(`document.activeElement && document.activeElement !== document.body`, 'focus al punto del problema')
   pass('viewport 320/390/768/1440 senza overflow; dettaglio da tastiera; «Vai al punto» porta il focus')
+
+  const recovery = threeSessionFixture()
+  await mount({ ...recovery, catalog: { complete: true, personal: [], shared: [] } })
+  const preparedState = await tab.evaluate('harness.state()')
+  assert.ok(preparedState.current.filter(i => i.collection === 'exercises').every(i => i.catalog?.source === 'new'))
+  assert.ok(await tab.evaluate(`${text('.wr-catalog-summary')}.includes('18 nuovi')`))
+  assert.ok(!(await tab.evaluate(text('[data-list=open]'))).includes('Associare l’esercizio al catalogo'))
+  pass('catalogo vuoto: 18 esercizi predisposti automaticamente, nessuna scelta obbligatoria per riga, impostazioni visibili')
+  await tab.evaluate(`document.getElementById('rv-batch-restSeconds-90-120').closest('details').open = true`)
+  await type(tab, '#rv-batch-restSeconds-90-120', '100')
+  await press(tab, `document.getElementById('rv-batch-restSeconds-90-120').closest('details').querySelector('button')`, 'recupero condiviso')
+  let batchState = await tab.evaluate('harness.state()')
+  assert.equal(batchState.decisions.filter(d => d.reason === 'timer_choice').length, 18)
+  assert.ok(batchState.current.filter(i => i.collection === 'exercises').every(i => i.values.restSeconds.min === 100 && i.values.restSeconds.max === 100))
+  await tab.evaluate(`document.getElementById('rv-batch-rir-2-3').closest('details').open = true`)
+  await type(tab, '#rv-batch-rir-2-3', '2')
+  await press(tab, `document.getElementById('rv-batch-rir-2-3').closest('details').querySelector('button')`, 'RIR condiviso')
+  batchState = await tab.evaluate('harness.state()')
+  assert.equal(batchState.decisions.filter(d => d.field === 'rir').length, 18)
+  await tab.evaluate(`document.getElementById('rv-batch-scope').closest('details').open = true`)
+  await type(tab, '#rv-batch-scope', 'Importo settimane 1–4; gestisco a mano la progressione.')
+  await press(tab, `document.getElementById('rv-batch-scope').closest('details').querySelector('button')`, 'ambito delle regole')
+  batchState = await tab.evaluate('harness.state()')
+  assert.equal(batchState.current.filter(i => i.collection === 'exercises').at(-1).values.optionalSets, null)
+  assert.equal(batchState.current.filter(i => i.collection === 'exercises').at(-1).values.sets, null)
+  assert.ok(batchState.current.find(i => i.collection === 'complexRules').values.text.includes('terza facoltativa dalla settimana 5'))
+  await tab.viewport(320, 844, true)
+  await tab.until(noOverflow, 'scelte in gruppo senza overflow a 320px')
+  pass('scelte in gruppo: 18 recuperi e RIR con decisioni individuali; ambito esplicito conserva la condizione S5 e i campi mancanti')
+
+  const future = threeSessionFixture()
+  const futureText = 'terza facoltativa da S5'
+  future.document.blocks.push({ ...future.document.blocks[0], id: 'future-note', kind: 'paragraph', text: futureText, headingIds: [] })
+  future.extraction.complexRules.push({ kind: 'progression', text: futureText, sourceRefs: ['future-note'], targetPaths: ['/sessions/0/exercises/0'] })
+  const emptyCatalog = { complete: true, personal: [], shared: [] }
+  await mount({ ...future, catalog: emptyCatalog })
+  const futureState = await tab.evaluate('harness.state()')
+  assert.equal(futureState.current.find(i => i.collection === 'exercises').values.optionalSets, 0)
+  const futureRule = futureState.current.find(i => i.collection === 'complexRules' && i.values.text === futureText)
+  assert.ok(await tab.evaluate(`${text(`#rv-item-${futureRule.localId}`)}.includes('Conservata nelle indicazioni')`))
+  assert.equal(await tab.evaluate(`document.querySelectorAll('#rv-item-${futureRule.localId} textarea').length`), 0)
+  await mount({ ...future, catalog: emptyCatalog, decisions: futureState.decisions, ids: futureState.ids })
+  assert.deepEqual(await tab.evaluate('harness.state()'), futureState, 'restored preparation keeps all decisions and reservations')
+  pass('S5 conservata senza conferma separata, serie futura inattiva; riapertura mantiene identità e decisioni')
+
+  await mount({ document: partial.document, extraction: partial.extraction, decisions: partial.entry.userDecisions, catalog })
+  await pressText(tab, 'A rotazione')
+  await press(tab, `document.querySelector('[aria-label="Rimuovi esercizio Curl"]')`, 'remove the original rule recipient')
+  await tab.until(`Boolean(document.getElementById('rv-i8-targetPaths'))`, 'missing recipient asks a targeted scope choice')
+  assert.equal((await tab.evaluate('harness.outcome()')).ok, false)
+  await tab.evaluate(`(() => { const select = document.getElementById('rv-i8-targetPaths'); const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set; setter.call(select, '/sessions/0/exercises/0'); select.dispatchEvent(new Event('change', { bubbles: true })) })()`)
+  await tab.until(`harness.outcome().ok`, 'explicit replacement recipient resolves the missing scope')
+  const scopedState = await tab.evaluate('harness.state()')
+  assert.ok(scopedState.decisions.some(d => d.op === 'set' && d.field === 'targetPaths' && d.reason === 'scope_choice'))
+  pass('destinatario rimosso: salvataggio bloccato e domanda mirata; scelta esplicita del nuovo ambito risolve il problema')
 
   assert.deepEqual(await tab.evaluate('log.network'), [], 'nessuna chiamata di rete (catalogo, programmi, API)')
   assert.ok(tab.requests.every(url => url.startsWith(server.origin) || url.startsWith('data:') || url.startsWith('blob:') || url === 'about:blank'), tab.requests.join('\n'))

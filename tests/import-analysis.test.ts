@@ -238,7 +238,7 @@ test('server config: trasporto sintetico solo su stack locale, origini esatte, m
   assert.equal(readServerConfig({ ...baseEnv, IMPORT_ANALYSIS_DEADLINE_MS: '1' }).invalid, 'IMPORT_ANALYSIS_DEADLINE_MS')
   for (const url of ['http://kong:8000', 'http://127.0.0.1:54321', 'http://supabase_kong_peppitness:8000']) assert.equal(isLocalSupabaseUrl(url), true, url)
   for (const url of ['https://kong:8000', 'http://abc.supabase.co', 'http://user:pw@127.0.0.1:54321', undefined]) assert.equal(isLocalSupabaseUrl(url), false, String(url))
-  assert.equal(ANALYSIS_RULES_VERSION, 'peppitness.import-validation.v2+segments.v1')
+  assert.equal(ANALYSIS_RULES_VERSION, 'peppitness.import-validation.v3+segments.v1+compact.v2')
 })
 
 // ---------------------------------------------------------------------------
@@ -333,7 +333,7 @@ test('handler: analisi completa validata e persistita prima della risposta; repl
   assert.equal(job.usageSummary.providerCalls, 1)
   const stored = backend.jobs.get(job.jobId)!
   assert.deepEqual([stored.status, stored.owner, stored.extraction], ['ready', A, job.extraction], 'persistito sul job del proprietario autenticato')
-  assert.deepEqual(stored.versions, { reader: 'synthetic-fixture/1', schema: '1.0', prompt: IMPORT_PROMPT_VERSION, provider: 'openai', model: MODEL, rules: ANALYSIS_RULES_VERSION })
+  assert.deepEqual(stored.versions, { reader: 'synthetic-fixture/1', schema: '1.0', prompt: IMPORT_PROMPT_VERSION, provider: 'openai', model: MODEL, rules: `${ANALYSIS_RULES_VERSION}+r-default-o-4000-6000` })
   assert.equal(backend.count('settled'), 1)
 
   const replay = await jobOf(await post(body))

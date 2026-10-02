@@ -110,6 +110,7 @@ test('07: le conferme sono legate al valore e al motivo ammesso; un edit success
   assert.throws(() => confirmFinding(draft, find('rest_missing', 'i2'), 'scope_choice'), (error: unknown) => error instanceof DecisionError && error.code === 'not_allowed')
   assert.throws(() => confirmFinding(draft, find('source_not_read', 'i0'), 'confirmed_missing'), (error: unknown) => error instanceof DecisionError && error.code === 'not_allowed')
   // Una conferma di ambito su una regola resta valida finché la regola esiste.
+  draft = setField(draft, 'i4', 'sets', null, 'user_edit', id())
   const rule = find('complex_rule_unresolved', 'i8')
   draft = confirmFinding(draft, rule, 'scope_choice', id())
   assert.ok(isConfirmed(draft, rule))

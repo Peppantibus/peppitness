@@ -5,7 +5,8 @@ import { validateNormalizedDocument, type NormalizedDocument } from '../contract
 import { exerciseChoiceValues, sameJsonValue, type ExerciseChoice, type ValidationIssue, type WorkoutReviewDraft } from '../contracts/review.ts'
 import { identityFields } from '../matching/exercises.ts'
 import { openFindings, verifyDraft } from '../review/decisions.ts'
-import { validateDraft } from '../validation/validate.ts'
+import { draftRuleItems, validateDraft } from '../validation/validate.ts'
+import { instructionCanBeKept } from '../validation/workout-instructions.ts'
 
 /** Reserve once in review state. Keys are local item IDs and exerciseChoiceKey(choice). */
 export interface WorkoutMappingIds {
@@ -56,6 +57,7 @@ export function mapReviewedWorkout(document: NormalizedDocument, draft: WorkoutR
   const root = draft.current.find(item => item.collection === 'root')!
   const sessions = draft.current.filter(item => item.collection === 'sessions')
   const rules = draft.current.filter(item => item.collection === 'complexRules')
+  const ruleItems = draftRuleItems(draft)
   const targets: Record<string, string | null> = { [root.localId]: null }
   const guidance = [...root.values.guidance]
   const catalog = new Map<string, ResolvedWorkoutImport['catalog'][number]>()
@@ -64,15 +66,18 @@ export function mapReviewedWorkout(document: NormalizedDocument, draft: WorkoutR
   for (const rule of rules) {
     targets[rule.localId] = null
     const complex = ['phase', 'progression', 'deload', 'superset', 'circuit'].includes(rule.values.kind)
+    const preserved = instructionCanBeKept(ruleItems.find(i => i.localId === rule.localId)!, ruleItems)
     const resolution = edited(rule.localId, 'text').at(-1)
     // A checkbox acknowledging a limitation does not identify the selected phase/week or manual solution.
-    if (complex && (!resolution || resolution.reason !== 'scope_choice' || !rule.values.text.trim())) {
+    if (complex && !preserved && (!resolution || resolution.reason !== 'scope_choice' || !rule.values.text.trim())) {
       issues.push(problem('workout_scope_instruction_required', 'Descrivere nella regola la fase/settimana scelta o la soluzione manuale (scope_choice), poi confermarla.', rule.localId))
     }
-    if (complex && resolution) {
+    if (complex && !preserved && resolution) {
       const lastAcknowledgement = Math.max(draft.decisions.indexOf(resolution), ...draft.decisions.map((d, index) =>
         d.op === 'confirm' && d.localId === rule.localId && d.issueCode === 'complex_rule_unresolved' && d.reason === 'scope_choice' ? index : -1))
-      const changedExecution = draft.decisions.some((d, index) => index > lastAcknowledgement && d.op !== 'confirm'
+      const changedExecution = draft.decisions.some((d, index) => index > lastAcknowledgement
+        && (d.op === 'move' || d.op === 'remove' || d.op === 'add' || (d.op === 'set'
+          && ['sets', 'optionalSets', 'repetitions', 'durationSeconds', 'measurementMode'].includes(d.field)))
         && !rules.some(r => r.localId === d.localId))
       if (changedExecution) issues.push(problem('workout_scope_stale', 'La scheda è cambiata dopo la scelta della fase: verificarla e confermare di nuovo la regola.', rule.localId))
     }

@@ -6,6 +6,8 @@
  */
 import { DOCUMENT_MESSAGE_HEADER } from './prompts.ts'
 import { e2eExtraction } from './synthetic-e2e.ts'
+import { compactExtraction } from './compact.ts'
+import type { WorkoutExtraction, DietExtraction } from './contracts.ts'
 import type { ProviderConfig, ProviderTransport } from './provider.ts'
 
 interface PayloadBlock { id: string; kind: string; text: string; row: number | null; headingIds: string[] }
@@ -93,6 +95,6 @@ export function createSyntheticTransport(config: ProviderConfig): ProviderTransp
         ? { schemaVersion: '1.0', kind, outcome: 'wrong_document_type', title: null, guidance: [], schedule: 'unknown', cycle: { startDate: null, weeks: null }, sessions: [], complexRules: [], evidence: [], issues: [], unassigned: [] }
         : { schemaVersion: '1.0', kind, outcome: 'wrong_document_type', title: null, guidance: [], days: [], globalRules: [], evidence: [], issues: [], unassigned: [] }
     }
-    return json(200, response('completed', [{ type: 'output_text', text: JSON.stringify(value), annotations: [] }], usage))
+    return json(200, response('completed', [{ type: 'output_text', text: JSON.stringify(compactExtraction(value as WorkoutExtraction | DietExtraction)), annotations: [] }], usage))
   }
 }

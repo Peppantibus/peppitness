@@ -13,7 +13,8 @@ import {
   type ExtractionKind, type ExtractionProviderResponse, type ExtractionRequest, type JsonObject, type JsonValue,
 } from './contracts.ts'
 import type { ProviderUsage } from './budget.ts'
-import { DOCUMENT_MESSAGE_HEADER, documentPayload, extractionPrompts } from './prompts.ts'
+import { DOCUMENT_MESSAGE_HEADER, extractionPrompts } from './prompts.ts'
+import { compactDocumentPayload, compactExtractionSchema, expandCompactExtraction, PROVIDER_FORMAT_VERSION, WORKOUT_RULE_TARGET_PATTERN } from './compact.ts'
 import {
   onceOnly,
   type PreparedProviderCall, type PrepareOptions, type ProviderConfig, type ProviderLogger, type ProviderTransport,
@@ -71,6 +72,18 @@ export function strictExtractionSchema(kind: ExtractionKind): JsonObject {
   return schema
 }
 
+export function strictProviderSchema(kind: ExtractionKind): JsonObject {
+  const schema = translate(compactExtractionSchema(kind), '')
+  if (kind === 'workout') {
+    // Structured Outputs supports string patterns on base models. Keep this
+    // wire-only constraint without changing the legacy DTO schema translation.
+    const rules = (schema.properties as JsonObject).complexRules as JsonObject
+    const targets = ((rules.items as JsonObject).properties as JsonObject).targetPaths as JsonObject
+    ;(targets.items as JsonObject).pattern = WORKOUT_RULE_TARGET_PATTERN
+  }
+  return schema
+}
+
 export interface StrictSchemaStats { properties: number; nesting: number; enumValues: number; stringChars: number }
 export function strictSchemaStats(schema: JsonObject): StrictSchemaStats {
   const stats: StrictSchemaStats = { properties: 0, nesting: 0, enumValues: 0, stringChars: 0 }
@@ -94,11 +107,11 @@ export function strictSchemaStats(schema: JsonObject): StrictSchemaStats {
 const schemaCache = new Map<ExtractionKind, JsonObject>()
 function cachedSchema(kind: ExtractionKind): JsonObject {
   let schema = schemaCache.get(kind)
-  if (!schema) { schema = strictExtractionSchema(kind); schemaCache.set(kind, schema) }
+  if (!schema) { schema = strictProviderSchema(kind); schemaCache.set(kind, schema) }
   return schema
 }
 /** Nome del formato: [A-Za-z0-9_-], massimo 64 caratteri. */
-export const strictSchemaName = (kind: ExtractionKind) => extractionSchemaIds[kind].replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 64)
+export const strictSchemaName = (kind: ExtractionKind) => `${extractionSchemaIds[kind]}_${PROVIDER_FORMAT_VERSION}`.replace(/[^A-Za-z0-9_-]/g, '_').slice(0, 64)
 
 // ---------------------------------------------------------------------------
 // Richiesta
@@ -113,7 +126,7 @@ export function buildOpenAIRequestBody(config: ProviderConfig, request: Extracti
   return {
     model: profile.model,
     instructions: extractionPrompts[request.kind],
-    input: [{ role: 'user', content: [{ type: 'input_text', text: `${DOCUMENT_MESSAGE_HEADER}\n${documentPayload(request.document)}` }] }],
+    input: [{ role: 'user', content: [{ type: 'input_text', text: `${DOCUMENT_MESSAGE_HEADER}\n${compactDocumentPayload(request.document)}` }] }],
     text: { format: { type: 'json_schema', name: strictSchemaName(request.kind), schema: structuredClone(cachedSchema(request.kind)), strict: true } },
     max_output_tokens: profile.maxOutputTokens,
     // Nessuna conservazione applicativa della risposta; non equivale a Zero Data Retention.
@@ -181,13 +194,18 @@ export function createOpenAIProvider(config: ProviderConfig, options: OpenAIProv
       ...(clientRequestId === undefined ? {} : { 'X-Client-Request-Id': clientRequestId }),
     }
 
-    async function send(signal: AbortSignal): Promise<ExtractionProviderResponse> {
+    async function perform(signal: AbortSignal, timeout: AbortSignal): Promise<ExtractionProviderResponse> {
       const started = now()
+      let phase: 'not_sent' | 'headers' | 'body' | 'decode' = 'not_sent'
+      let responseBytes: number | null = null
       const log = (entry: { status: ExtractionProviderResponse['status'] | null; code: string | null; httpStatus: number | null; requestId: string | null; usage: ProviderUsage | null }) => {
         try {
           logger?.({
             event: entry.code === null ? 'provider_response' : 'provider_error', provider: 'openai', model: profile.model, profile: request.profile,
             status: entry.status, code: entry.code, httpStatus: entry.httpStatus, providerRequestId: entry.requestId, latencyMs: Math.max(0, now() - started),
+            clientRequestId: clientRequestId ?? null, phase,
+            promptVersion: config.promptVersion, formatVersion: PROVIDER_FORMAT_VERSION, reasoningEffort: profile.reasoningEffort,
+            maxOutputTokens: profile.maxOutputTokens, requestBytes: new TextEncoder().encode(serializedRequest).length, responseBytes,
             inputTokens: entry.usage?.inputTokens ?? null, outputTokens: entry.usage?.outputTokens ?? null, reasoningTokens: entry.usage?.reasoningTokens ?? null,
           })
         } catch { /* il log non cambia l'esito */ }
@@ -200,18 +218,25 @@ export function createOpenAIProvider(config: ProviderConfig, options: OpenAIProv
         })
       }
       if (signal.aborted) fail('aborted', 'not_sent')
-      const timeout = AbortSignal.timeout(config.timeoutMs)
       const combined = AbortSignal.any([signal, timeout])
       // Dopo l'avvio del trasporto la richiesta può essere arrivata: abort, timeout e rete sono incerti.
-      const interrupted = (): never => fail(timeout.aborted ? 'timeout' : signal.aborted ? 'aborted' : 'network', 'uncertain')
+      let httpStatus: number | null = null
+      let requestId: string | null = null
+      const interrupted = (): never => fail(timeout.aborted ? 'timeout' : signal.aborted ? 'aborted' : 'network', 'uncertain', { httpStatus, requestId })
 
       let response: Response
       let text: string
+      phase = 'headers'
       try {
         response = await transport(OPENAI_RESPONSES_URL, { method: 'POST', headers, body: serializedRequest, signal: combined })
+        // Conservare i metadati subito: response.text() può interrompersi anche dopo HTTP 200.
+        httpStatus = response.status
+        requestId = safeId(response.headers.get('x-request-id'))
+        phase = 'body'
         text = await response.text()
+        responseBytes = new TextEncoder().encode(text).length
       } catch { return interrupted() }
-      const requestId = safeId(response.headers.get('x-request-id'))
+      phase = 'decode'
       if (!response.ok) {
         // Errore HTTP del provider prima di un oggetto Response: nessun output generato né usage.
         return fail(httpErrorCode(response.status), 'rejected', {
@@ -240,7 +265,7 @@ export function createOpenAIProvider(config: ProviderConfig, options: OpenAIProv
           if (parts.some(part => isObject(part) && part.type === 'refusal')) return done('refused', null)
           const texts = parts.filter(part => isObject(part) && part.type === 'output_text' && typeof part.text === 'string') as { text: string }[]
           if (texts.length !== 1) return received('invalid_response')
-          try { return done('completed', JSON.parse(texts[0]!.text) as unknown) }
+          try { return done('completed', expandCompactExtraction(request.kind, request.document, JSON.parse(texts[0]!.text))) }
           catch { return received('invalid_output') }
         }
         case 'incomplete': {
@@ -254,6 +279,14 @@ export function createOpenAIProvider(config: ProviderConfig, options: OpenAIProv
         }
         default: return received('invalid_response')
       }
+    }
+
+    async function send(signal: AbortSignal): Promise<ExtractionProviderResponse> {
+      // Own and clear the timeout even when the transport has only a pending Promise.
+      const controller = new AbortController()
+      const timer = setTimeout(() => controller.abort(new DOMException('Provider deadline exceeded', 'TimeoutError')), config.timeoutMs)
+      try { return await perform(signal, controller.signal) }
+      finally { clearTimeout(timer) }
     }
 
     return Object.freeze({

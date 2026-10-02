@@ -1,15 +1,61 @@
 # Valutazione e gate di rilascio dell'importazione
 
+**Aggiornamento revisione 01/10:** validatorev3 e cache allineata; extract-planv11 ACTIVE/JWT. Promptv4/compact.v2 e tutti i secret/budget invariati. Preparazione automatica del catalogo e conservazione delle indicazioni in `docs/IMPORT_REVISION_RESULT.md`; PASS376/21browser/75Edge/9E2E/offline42, nessun nuovo invio pagato. Il recupero v4 qui sotto documenta l’intervento precedente, non chiude qualità reale o iPhone.
+
+## Recupero v4 — stato corrente del 1 ottobre
+
+Implementazione locale completa e backend candidato `extract-plan` **v10 ACTIVE**,
+JWT obbligatorio; prompt `peppitness.import-prompts.v4`, wire interno `compact.v2`.
+Aggiornato solo il secret della versione prompt; gli altri digest e il budget
+rimangono invariati: Luna medium/output16000/timeout135000, due chiamate massime,
+USD1/progetto/mese e USD0,20/account/mese. Nessuna migration o nuova chiamata
+pagata. Non ripristinare i comandi v2 storici riportati sotto.
+
+Evidence condivise per riga/paragrafo → DTOpubblico1.0 con citazioni ricavate dalla
+fonte → validatorev2. Stringhe ristrette mantengono le regioni delle alternative;
+numero/colonna/contesto restano controllati. Cache distinta anche per effort e
+output; vecchie bozze leggibili. Log solo metadati: effort, formato, prompt, byte,
+ID/fase, conteggi e sezioni non coperte. Timer provider esplicito pulito in finally.
+Azioni batch di revisione mantengono decisioni per campo e prescrizioni originali.
+
+**PASS:** Node369, build/typecheck, infra5, corpus offline deterministico42,
+Edge75, browser18, E2E8+cleanup, cloud204/CORSesatto/403/401. Worker locale
+`oneshot` dopo un'attesa sintetica intermittente con concorrenza su worker
+riutilizzato; non attribuire a questa prova la causa dei timeout cloud.
+Report dettagliato ignorato: `docs/IMPORT_RECOVERY_RESULT.md`.
+
+**OPEN/NOT_RUN:** R3 su Luna, benchmark held-out, costi/tempi/correzioni reali,
+iPhone. Prova manuale autenticata sui DOCX correnti; selezionare **Nuova analisi**
+o **Rianalizza**, non riaprire la proposta precedente; verificare `cached:false`.
+Inventario e confronto privati in `private-imports/import-recovery/`, prima coppia
+max4call/riserva teoricaUSD0,049460 dentro i tetti esistenti. Nessun aumento di
+budget, replay incerto, impersonazione o riavvio della diagnostica annullata.
+I due documenti di sviluppo non qualificano il modello sul corpus held-out.
+
+Regressioni finali: citazioni numeriche a colonne incoerenti rifiutate anche
+quando il numero coincide; `complexRules.targetPaths` indirizza sedute/esercizi,
+non i loro campi. Il formato provider impone anche il pattern dei target: supporto
+verificato nella [guida ufficiale Structured Outputs](https://developers.openai.com/api/docs/guides/structured-outputs/).
+
+## Stato storico precedente al recupero v4
+
 Parte offline disponibile; nessun modello qualificato per il rilascio.
 Dopo il task 25 l'utente ha autorizzato il deploy di `extract-plan`, i secrets
 server e le prove manuali con `gpt-6-luna`. Ultimo stato cloud verificato: 15
-migration (inclusa la correzione della concorrenza), Edge con prompt v1,
+migration (inclusa la correzione della concorrenza), Edge `extract-plan` v3 ACTIVE
+con prompt `peppitness.import-prompts.v2` e validatore v2,
 budget abilitato con tetti USD 1/mese progetto e USD 0,20/mese account;
 20 analisi/giorno/account e due chiamate massime per analisi.
 Il benchmark reale del corpus non è stato autorizzato né eseguito; le prove
 manuali hanno evidenziato timeout e citazioni insufficienti. I gate restano aperti.
-Le correzioni attuali (prompt v2, validatore v2) sono locali: nessun nuovo deploy,
-secret, budget o invio al provider. Il runner offline non controlla lo stato cloud.
+Deploy v2 autorizzato ed eseguito il 01/10 dal commit `7b120ca`, dopo che l'utente
+ha aggiornato il secret prompt; verificati i digest della configurazione, JWT
+attivo e HTTP CORS 204/origine estranea 403/senza sessione 401. Budget sospeso
+temporaneamente con marcatore e ripristinato identico; nessun secret cambiato
+dall'agente, nessuna analisi o chiamata provider di verifica. Il download opzionale
+del sorgente remoto via CLI è fallito con `UnsafeFunctionDownloadPathError`
+sugli import condivisi `src/`; ciò non ha impedito il deploy, confermato ACTIVE.
+Il runner offline non controlla lo stato cloud.
 Non modificare la specifica per chiudere gate.
 
 ## Aggiornamento della correzione v2, solo dopo autorizzazione
@@ -143,6 +189,57 @@ valutazione autorizzata separata e annotazioni umane; il runner corrente accetta
 solo il manifest sintetico versionato. Non esportare testi/documenti reali in
 `artifacts/`, fixture, log o report pubblici. Verificare condizioni di retention
 del provider prima di dati personali; `store:false` non promette zero retention.
+
+## Diagnostica di una singola analisi incerta
+
+La prova su un documento personale è distinta da `--real` del benchmark: quel
+runner percorre il corpus e non va lanciato per diagnosticare un solo file.
+Recuperare `public.import_drafts.normalized_document` tramite il job e conservarlo
+soltanto in `private-imports/`. Ricostruire con `planSegments` e `provider.prepare`
+gli stessi body, misurare byte/token prudenziali, hash, parametri e riserva di
+ogni segmento. Il massimo di due chiamate comprende tutti i segmenti e retry;
+due segmenti consumano già entrambe le chiamate disponibili. La preparazione
+offline non è una prenotazione e non autorizza il dispatch.
+
+Il log provider include `clientRequestId` (reservationId), `phase` (`not_sent`,
+`headers` = attesa della risposta HTTP, `body` = lettura, `decode` = corpo ricevuto),
+codice, stato HTTP, request ID, latenza e usage. Gli header già ricevuti devono
+restare disponibili anche quando il corpo si interrompe. HTTP 200 da solo non
+prova risposta completa né costo noto: timeout/rete/abort restano incerti e senza
+retry. Questi nuovi metadati richiedono il deploy del codice aggiornato prima
+di comparire nel cloud; nessun deploy è implicito nella diagnostica locale.
+
+Per conservare anche il JSON grezzo, predisporre **prima dell'unico dispatch**
+un trasporto server locale con cattura privata del body serializzato e dei byte
+ricevuti, tempi/header consentiti/status, risposta completa o marcata parziale,
+usage, risultato adapter e validazione. Non salvare Authorization, chiavi o
+token; nessun testo nei log cloud. Il normale endpoint restituisce il risultato
+del job, non il body provider grezzo: invocarlo da solo non soddisfa questa
+raccolta diagnostica. Non rigenerare per ottenere un dato non registrato.
+Ogni invio richiede Auth verificata e prenotazione/dispatch nel ledger esistente,
+oltre al tetto aggiuntivo della prova; un journal durevole equivalente deve
+rispettare anche i limiti preesistenti, non soltanto il tetto locale. Un nuovo
+analysisRequestId identifica la prova distinta; la riserva incerta precedente
+resta contabilizzata. Se mancano accessi sicuri, lasciare la prova NOT_RUN.
+
+La CLI SQL legge Postgres, non i log Edge. Per questi ultimi occorre una
+connessione Supabase MCP in sola lettura, oppure Management API con accesso ai
+log (`SUPABASE_ACCESS_TOKEN` solo nel processo), oppure un export privato da
+Studio. Usare una finestra UTC stretta e cercare `provider_error`, correlando
+request ID/esecuzione: una sola coincidenza temporale non prova la causa.
+Vedi [query ufficiali dei log](https://supabase.com/docs/guides/observability/advanced-log-filtering).
+
+Verifica ufficiale del 01/10/2026: [Supabase Free](https://supabase.com/docs/guides/functions/limits)
+ha wall clock 150 s e request idle timeout 150 s (CPU 2 s, I/O asincrono escluso).
+Nel codice i default restano 90 s per chiamata e 140 s per l'intera analisi:
+alzare soltanto il primo non risolve due segmenti o la deadline complessiva.
+[GPT-6 Luna](https://developers.openai.com/api/docs/models/gpt-6-luna) usa reasoning
+`medium` quando omesso (supporta none/low/medium/high/xhigh/max), input massimo
+922.000 e output massimo 128.000 token; restano vincolanti i tetti applicativi
+più bassi. Non variare modello/reasoning/schema/segmentazione senza una misura.
+Il [listino Standard](https://developers.openai.com/api/docs/pricing) consultato
+indica USD 0,10 input / 0,50 output per milione per il contesto breve; non prova
+usage o costo effettivo di una chiamata incerta.
 
 ## Rilascio cloud futuro, separato dal benchmark
 

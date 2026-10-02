@@ -8,6 +8,7 @@ import { IMPORT_PROMPT_VERSION } from '../../supabase/functions/_shared/import/p
 import { extractionSchemaIds, validateNormalizedDocument, validateExtraction } from '../../src/import/contracts/index.ts'
 import { validateProposal, VALIDATION_RULES_VERSION, validationIssueCodes } from '../../src/import/validation/validate.ts'
 import { conservativeInputTokens, estimateCostMicros } from '../../supabase/functions/_shared/import/budget.ts'
+import { compactExtraction, PROVIDER_FORMAT_VERSION } from '../../supabase/functions/_shared/import/compact.ts'
 
 export const EVALUATION_VERSION = 'peppitness.import-evaluation.v1'
 export const fixtureRoot = resolve('tests/fixtures/import')
@@ -115,7 +116,20 @@ export function recordedTransport(recording) {
   return async (_url, init) => {
     if (init.signal.aborted) throw new Error('Aborted synthetic request')
     if (recording.transportError) throw new Error('Synthetic transport failure')
-    return new Response(JSON.stringify(recording.body), { status: recording.httpStatus, headers: recording.headers })
+    const body = structuredClone(recording.body)
+    const request = JSON.parse(init.body)
+    const payload = JSON.parse(request.input[0].content[0].text.split('\n').slice(1).join('\n'))
+    const blockIds = new Set(payload.blocks.map(block => block.id))
+    for (const message of body?.output ?? []) for (const content of message.content ?? []) {
+      if (content.type !== 'output_text') continue
+      try {
+        const value = JSON.parse(content.text)
+        // Legacy faults with unknown sources keep their historical validator-level behavior.
+        // Compact unknown-source rejection has independent transport tests.
+        if (validateExtraction(value.kind, value).ok && value.evidence.every(e => e.spans.every(s => blockIds.has(s.blockId)))) content.text = JSON.stringify(compactExtraction(value))
+      } catch { /* Preserve intentionally malformed recordings. */ }
+    }
+    return new Response(JSON.stringify(body), { status: recording.httpStatus, headers: recording.headers })
   }
 }
 
@@ -194,5 +208,6 @@ export function modelGates(rows, manifest, mode) {
 }
 
 export const versions = () => ({ scorer: EVALUATION_VERSION, prompt: IMPORT_PROMPT_VERSION, validator: VALIDATION_RULES_VERSION,
+  providerFormat: PROVIDER_FORMAT_VERSION, codec: digest(readFileSync('supabase/functions/_shared/import/compact.ts')),
   schema: extractionSchemaIds, mapping: { workout: digest(readFileSync('src/import/mapping/workout.ts')), diet: digest(readFileSync('src/import/mapping/diet.ts')) },
   adapter: digest(readFileSync('supabase/functions/_shared/import/openai-provider.ts')) })
