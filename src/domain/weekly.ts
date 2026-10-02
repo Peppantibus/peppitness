@@ -16,7 +16,8 @@ export const weekdays = [
   { code: 'Dom', name: 'Domenica', short: 'D' },
 ] as const
 
-export const muscleGroups = ['Petto', 'Schiena', 'Spalle', 'Bicipiti', 'Tricipiti', 'Gambe', 'Glutei', 'Polpacci', 'Addome', 'Full body', 'Cardio'] as const
+import { muscleGroups } from './muscle-groups.ts'
+export { muscleGroups } from './muscle-groups.ts'
 export const defaultDayTitle = 'Allenamento'
 
 /** Indice 0 = lunedì … 6 = domenica, oppure -1 se l'etichetta non è un giorno. */

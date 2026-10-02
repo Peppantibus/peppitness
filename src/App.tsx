@@ -11,8 +11,9 @@ import { Toast } from './components/Toast'
 import type { ToastMessage } from './components/Toast'
 import { demoMeals, demoWorkoutDays } from './data/demo'
 import { formatDate, localDate, weekDates } from './domain/dates'
+import { withCatalogMuscleGroups } from './domain/programs'
 import { mealLogKey, suggestedDay, workoutDaysFromProgram } from './domain/diary'
-import { daysForType, fitsMealWizard, mealFromPlan } from './domain/meal-plans'
+import { defaultMealPlanDay, daysForType, fitsMealWizard, mealFromPlan } from './domain/meal-plans'
 import { dayForDate, fitsWizard, isWeekly, weekdayOfDate, weekdays } from './domain/weekly'
 import { adherence, cycleInfo, mondayOf, weeklyProgress } from './domain/progress'
 import { Progress } from './features/Progress'
@@ -52,7 +53,7 @@ export function App() {
   const isImport = route === '/scheda/importa' || route === '/dieta/importa'
   const importKind = route === '/dieta/importa' ? 'diet' : 'workout'
   // Il catalogo serve anche alla revisione della scheda importata (scelte esistente/comune/nuovo).
-  const catalog = useExercises(isCatalog || isPrograms || route === '/scheda/importa')
+  const catalog = useExercises(route.startsWith('/scheda'))
   const programs = usePrograms(isPrograms)
   // Rilettura dei piani al ritorno dagli editor verso le pagine quotidiane.
   const plans = usePlans(isCatalog || isPrograms ? 'programs' : isMealPlans ? 'meal-plans' : 'daily')
@@ -90,13 +91,17 @@ export function App() {
   const [online, setOnline] = useState(navigator.onLine)
   const [announcement, setAnnouncement] = useState('')
   const [toast, setToast] = useState<ToastMessage | null>(null)
+  const [discardingSessionId, setDiscardingSessionId] = useState<string | null>(null)
   // Ultima sezione visitata: Impostazioni e pagine non valide riportano lì.
   const lastSection = useRef<'dieta' | 'scheda'>('dieta')
   const section = route.startsWith('/scheda') ? 'scheda' : route.startsWith('/dieta') ? 'dieta' : lastSection.current
 
   // Scheda: versione corrente del programma seguito; nessun programma inventato sotto un account.
+  useEffect(() => {
+    if (catalog.state.phase === 'ready') plans.store?.applyCatalogMuscleGroups(catalog.state.rows)
+  }, [catalog.state.phase, catalog.state.rows, plans.store, plans.state.workout, plans.state.cached])
   const workout = plans.state.workout
-  const workoutDays = useMemo(() => configured ? workout ? workoutDaysFromProgram(workout.document) : [] : demoWorkoutDays, [configured, workout])
+  const workoutDays = useMemo(() => configured ? workout ? workoutDaysFromProgram(withCatalogMuscleGroups(workout.document, catalog.state.rows)) : [] : demoWorkoutDays, [configured, workout, catalog.state.rows])
   const weekly = isWeekly(workoutDays)
   const planned = weekly ? dayForDate(workoutDays, date) : undefined
   const suggestion = weekly ? planned : suggestedDay(workoutDays, view.sessions)
@@ -128,7 +133,8 @@ export function App() {
   const programDayType = weekly && workout ? (planned ? 'training' : 'rest') : undefined
   const dayType = view.dayTypes[date] ?? programDayType ?? 'training'
   const candidateDays = mealPlan ? daysForType(mealPlan.document, dayType) : []
-  const planDay = candidateDays.find(item => item.id === planDayChoice[`${date}:${dayType}`]) ?? candidateDays[0]
+  const planDayChoiceKey = `${mealPlan?.id ?? 'local'}:${date}:${dayType}`
+  const planDay = candidateDays.find(item => item.id === planDayChoice[planDayChoiceKey]) ?? defaultMealPlanDay(candidateDays, date)
   const meals = useMemo(() => configured ? planDay?.meals.map(mealFromPlan) ?? [] : demoMeals, [configured, planDay])
 
   const isHistory = route === `/${section}/storico`
@@ -241,6 +247,7 @@ export function App() {
     if (!day && weekly && workout) return <>
       {finishedCycle}
       {activeSession && <a className="resume-banner" href="#/scheda/seduta"><Icon name="play" /><span><strong>Allenamento in corso</strong><small>{activeSession.day.title} · {formatDate(activeSession.date)}</small></span><span>Riprendi</span><Icon name="arrow" size={20} /></a>}
+      {activeSession && <button type="button" className="button secondary danger workout-cancel" aria-haspopup="dialog" onClick={() => setDiscardingSessionId(activeSession.id)}>Annulla allenamento</button>}
       <section className="rest-day" aria-labelledby="rest-day-title">
         <span className="rest-day-icon" aria-hidden="true"><Icon name="moon" size={24} /></span>
         <span className="eyebrow">{weekdays[weekdayOfDate(date)]!.name}</span>
@@ -252,7 +259,7 @@ export function App() {
     if (!day) return <section className="panel empty-state plan-empty">
       {followable.length ? <><h2>Scegli il programma da seguire</h2><p>La Scheda mostra la versione corrente del programma scelto. Puoi cambiarlo in qualsiasi momento.</p><div className="plan-choices">{followable.map(item => <button key={item.plan.id} className="button secondary plan-choice" disabled={plans.state.selecting} onClick={() => void plans.store?.choose({ workoutPlanId: item.plan.id })}>{item.plan.name}</button>)}</div></>
         : <><span className="empty-icon"><Icon name="calendar" size={32} /></span><h2>Nessun programma da seguire</h2><p>Imposta la tua settimana: per ogni giorno scegli gli esercizi oppure il riposo.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma<Icon name="arrow" size={20} /></a><a className="text-link" href="#/scheda/importa">Oppure importalo dal modello Word</a></>}
-      {activeSession && <a className="button secondary" href="#/scheda/seduta">Riprendi l’allenamento in corso</a>}
+      {activeSession && <><a className="button secondary" href="#/scheda/seduta">Riprendi l’allenamento in corso</a><button type="button" className="button secondary danger workout-cancel" aria-haspopup="dialog" onClick={() => setDiscardingSessionId(activeSession.id)}>Annulla allenamento</button></>}
     </section>
     return <>
       {finishedCycle}
@@ -260,7 +267,7 @@ export function App() {
       {configured && diary.state.phase === 'loading' && <p className="small muted" role="status">Caricamento del diario…</p>}
       {configured && diary.state.phase === 'error' && <section className="panel"><p role="alert">{diary.state.message}</p><button className="button secondary" onClick={() => void diary.store.refresh()}>Riprova</button></section>}
       <Workout day={day} days={workoutDays} planTitle={workout ? `${workout.plan.name}` : 'Full body'} planGuidance={workout?.version.guidance || undefined} date={date} today={today} sessions={view.sessions} onDay={selectDay} cycle={cycleSummary} progressHref={workout ? '#/scheda/progressi' : undefined}
-        activeSession={activeSession} suggestedDayId={weekly ? planned?.id : workoutDays.length > 1 ? suggestion?.id : undefined} weekly={weekly} workoutWeekdays={weekly ? [] : settings.state.saved?.workoutWeekdays} onStart={start} />
+        activeSession={activeSession} suggestedDayId={weekly ? planned?.id : workoutDays.length > 1 ? suggestion?.id : undefined} weekly={weekly} workoutWeekdays={weekly ? [] : settings.state.saved?.workoutWeekdays} onStart={start} onDiscard={activeSession ? () => setDiscardingSessionId(activeSession.id) : undefined} />
     </>
   }
 
@@ -274,8 +281,8 @@ export function App() {
     return <>
       {configured && followableMeals.length > 1 && <section className="plan-selectors"><label className="plan-selector">Piano seguito<select value={mealPlan?.id ?? ''} disabled={plans.state.selecting} onChange={event => void plans.store?.choose({ mealPlanId: event.target.value })}>{followableMeals.map(plan => <option key={plan.id} value={plan.id}>{plan.name}</option>)}</select></label></section>}
       <Diet date={date} isToday={date === today} state={view} meals={meals} dayType={dayType} dayTypeHint={!view.dayTypes[date] && programDayType ? `Dalla tua scheda: ${programDayType === 'rest' ? 'giorno di riposo' : 'giorno di allenamento'}. Puoi cambiarlo.` : undefined} planTitle={mealPlan?.name} planGuidance={mealPlan?.document.guidance || undefined}
-        dayOptions={candidateDays.length > 1 ? candidateDays.map(item => item.name) : []} selectedPlanDay={Math.max(0, candidateDays.findIndex(item => item.id === planDay?.id))}
-        onPlanDay={index => setPlanDayChoice(current => ({ ...current, [`${date}:${dayType}`]: candidateDays[index]!.id }))} dayNote={planDay?.note || undefined}
+        planDocument={mealPlan?.document} dayOptions={candidateDays.length > 1 ? candidateDays.map(item => item.name) : []} selectedPlanDay={Math.max(0, candidateDays.findIndex(item => item.id === planDay?.id))}
+        onPlanDay={index => setPlanDayChoice(current => ({ ...current, [planDayChoiceKey]: candidateDays[index]!.id }))} dayNote={planDay?.note || undefined}
         onDayType={type => diary.store.setDayType(date, type)} onQuickFollow={quickFollow} />
     </>
   }
@@ -319,6 +326,12 @@ export function App() {
     {!validRoute && <section className="panel empty-state"><h1>Questa pagina non è disponibile</h1><a className="button primary" href={`#/${section}`}>Torna al tuo spazio</a></section>}
     {meal && <Modal label={`${meal.name}, ${formatDate(date)}`} onClose={() => navigate('/dieta')}><MealDetail key={`${date}:${meal.id}`} meal={view.mealLogs[mealLogKey(date, meal.id)]?.snapshot ?? meal} log={view.mealLogs[mealLogKey(date, meal.id)]} onClose={() => navigate('/dieta')} onSave={(status, note) => { diary.store.recordMeal(date, mealPlan?.id ?? 'local', meal, status, note, dayType); setAnnouncement(`${meal.name}: registrazione aggiornata.`) }} /></Modal>}
     {exercise && <Modal label={exercise.name} onClose={() => navigate('/scheda')}><ExerciseDetail exercise={exercise} previous={findPreviousExercise(view.sessions, exercise, { id: '', date, startedAt: new Date().toISOString() })} /></Modal>}
+    {activeSession && discardingSessionId === activeSession.id && <Modal label="Annullare l’allenamento?" onClose={() => setDiscardingSessionId(null)}>
+      <h2>Annullare l’allenamento?</h2>
+      <p><strong>{activeSession.day.title}</strong> · {formatDate(activeSession.date)}</p>
+      <p>Verranno eliminate questa seduta in corso e le serie annotate. Le sedute completate restano nello storico.</p>
+      <div className="program-actions"><button type="button" className="button secondary workout-cancel-keep" onClick={() => setDiscardingSessionId(null)}>Continua l’allenamento</button><button type="button" className="button danger workout-cancel-confirm" onClick={() => { diary.store.discardSession(activeSession.id); setDiscardingSessionId(null); setAnnouncement('Allenamento annullato.') }}>Annulla allenamento</button></div>
+    </Modal>}
     {diary.state.restTimer && <RestTimer timer={diary.state.restTimer} onChange={diary.store.setRestTimer} />}
     <div className="toast-stack">
       {toast && <Toast key={toast.id} toast={toast} onClose={() => setToast(current => current?.id === toast.id ? null : current)} />}

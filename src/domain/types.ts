@@ -1,3 +1,6 @@
+import type { MuscleGroup } from './muscle-groups.ts'
+import type { MealEnergy } from './food-energy.ts'
+
 /** Il dominio non dipende dalle risposte Supabase o dalla UI. */
 export type LocalDate = string
 export type MealStatus = 'unrecorded' | 'followed' | 'modified' | 'skipped'
@@ -13,6 +16,10 @@ export interface Meal {
   note: string
   alternatives?: string[]
   additions?: string[]
+  /** Stima energetica fotografata insieme al pasto; opzionale per lo storico esistente. */
+  energy?: MealEnergy
+  /** Correzioni energetiche per alimento conservate senza duplicare i testi dello snapshot. */
+  energyOverrides?: (number | null)[]
 }
 
 export interface MealLog {
@@ -26,6 +33,7 @@ export interface MealLog {
 }
 
 export interface ExercisePrescription {
+  muscleGroup?: MuscleGroup | null
   id: string
   exerciseId: string
   name: string

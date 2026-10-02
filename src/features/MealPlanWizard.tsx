@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { MealPlanSettings } from '../components/MealPlanSettings'
+import { FoodEnergyPreview } from '../components/FoodEnergyPreview'
+import { MealPlanMetadata } from '../components/MealPlanMetadata'
 import type { ReactNode } from 'react'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
@@ -35,6 +38,7 @@ function MealCard({ meal, index, count, onChange, onMove, onRemove }: {
       <button type="button" className="icon-button" aria-label={`Rimuovi alimento ${position + 1}`} onClick={() => onChange({ ...meal, foods: meal.foods.filter((_, i) => i !== position) })}><Icon name="close" size={16} /></button>
     </li>)}</ul>
     <button type="button" className="text-button wz-add-food" disabled={meal.foods.length >= mealPlanLimits.foods} onClick={() => { onChange({ ...meal, foods: [...meal.foods, { name: '', quantity: '' }] }); setTimeout(() => food.current?.focus(), 0) }}><Icon name="plus" size={16} />Aggiungi alimento</button>
+    <FoodEnergyPreview foods={meal.foods} onChange={foods => onChange({ ...meal, foods })} />
     <details className="wz-more">
       <summary>Alternative, aggiunte e note</summary>
       <label htmlFor={`${meal.id}-alternatives`}>Alternative · una per riga<textarea id={`${meal.id}-alternatives`} rows={2} placeholder="Es. pane e ricotta al posto dello yogurt" value={meal.alternatives.join('\n')} onChange={event => onChange({ ...meal, alternatives: lines(event.target.value) })} /></label>
@@ -110,6 +114,7 @@ export function MealPlanWizard({ store, state, step, setStep, onAdvanced, onExit
     <div className="wizard-intro"><span className="wizard-count">Passo 1 di 3</span><h1 id="wizard-heading" ref={heading} tabIndex={-1}>Come si chiama il piano?</h1><p>Poi inserirai i pasti dei giorni di allenamento e di riposo.</p></div>
     <form id="meal-wizard-name" className="wizard-form" onSubmit={event => { event.preventDefault(); if (draft.name.trim()) { if (!training) setDays([trainingDay, ...days]); setStep('training') } }}>
       <label htmlFor="meal-wizard-name-input">Nome del piano<input id="meal-wizard-name-input" autoFocus maxLength={160} placeholder="Es. Piano estate" value={draft.name} onChange={event => store.editMealPlan({ ...draft, name: event.target.value })} /></label>
+      <MealPlanSettings document={draft.document} onChange={document => store.editMealPlan({ ...draft, document })} />
       <details className="wz-more"><summary>Indicazioni generali (facoltative)</summary><label htmlFor="meal-wizard-guidance" className="sr-only">Indicazioni generali</label><textarea id="meal-wizard-guidance" rows={4} maxLength={16000} placeholder="Acqua, integrazioni, regole valide ogni giorno…" value={draft.document.guidance} onChange={event => store.editMealPlan({ ...draft, document: { ...draft.document, guidance: event.target.value } })} /></details>
     </form>
     <button type="button" className="text-button wizard-advanced" onClick={onAdvanced}>Preferisci l’editor avanzato?</button>
@@ -118,6 +123,7 @@ export function MealPlanWizard({ store, state, step, setStep, onAdvanced, onExit
   if (step === 'done') return shell(<div className="wizard-done">
     <span className="wizard-done-icon" aria-hidden="true"><Icon name="check" size={32} /></span>
     <h1 id="wizard-heading" ref={heading} tabIndex={-1}>Piano salvato</h1>
+    <MealPlanMetadata document={draft.document} />
     <p>{followed ? 'È il piano che segui: la Dieta ti mostra i pasti in base al tipo di giornata.' : 'Puoi seguirlo dalla Dieta quando vuoi.'}</p>
     <ul className="wz-summary">{days.map(day => <li key={day.id}><strong>{day.dayType === 'rest' ? 'Riposo' : day.dayType === 'any' ? 'Ogni giorno' : 'Allenamento'}</strong><span>{day.meals.map(meal => meal.name).join(' · ') || 'Nessun pasto'}</span></li>)}</ul>
   </div>, <>

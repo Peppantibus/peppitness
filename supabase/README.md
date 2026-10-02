@@ -1,5 +1,22 @@
 # Database peppitness
 
+Audit residui import/LLM (02/10): `checks/audit_import_cleanup.sql` legge soli
+conteggi/metadati, retention, dipendenze RPC/FK e Storage. Report
+`../docs/SUPABASE_CLEANUP_AUDIT.md`: infrastruttura legacy ancora attiva,
+nessun orfano/contenuto scaduto nei controlli, proposta di dismissione non eseguita.
+Conservare le ricevute usate anche dall’import Word strutturato. Le query CLI DB
+collegate allo stesso progetto vanno eseguite in sequenza (inizializzazione ruolo).
+
+Incremento periodo/energia: `20261002143000_meal_plan_period_and_energy.sql` estende
+il documento dei piani con periodo/obiettivo facoltativi e valore kcal per100g
+degli alimenti; valida le stime negli snapshot senza riscrivere lo storico.
+Vecchi documenti e import Wordv1 compatibili. Verifica metadati:
+`checks/verify_meal_energy_schema.sql`; audit soli conteggi/impronte:
+`checks/audit_meal_energy_data.sql`. Test API locali: `npm run test:meal-energy:local`;
+SQL: `supabase test db --local`, include `015_meal_period_energy.test.sql`.
+
+Incremento categorie: `20261002120000_exercise_muscle_groups.sql` aggiunge il gruppo principale senza cambiare identità degli esercizi o storico. Verifica metadati: `checks/verify_exercise_muscle_groups.sql`. Test locali: `npm run test:exercises:groups:local`, `npm run test:exercises:groups:browser` e `supabase test db --local` (include `014_exercise_muscle_groups.test.sql`).
+
 La configurazione locale usa PostgreSQL 17 e Supabase CLI 2.118.0, fissata nelle dipendenze npm. I metadati del collegamento al progetto cloud in `.temp/` sono ignorati da Git. `config.toml` configura lo stack locale e non aggiorna automaticamente le impostazioni cloud.
 
 ## Primo incremento

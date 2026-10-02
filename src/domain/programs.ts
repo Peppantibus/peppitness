@@ -1,4 +1,5 @@
 import { isExerciseId } from './exercises.ts'
+import { exerciseMuscleGroup } from './muscle-groups.ts'
 import type { CatalogExercise, ExerciseValues } from './exercises.ts'
 import { parseNonNegativeNumber } from './validation.ts'
 
@@ -110,4 +111,13 @@ export function sameProgram(a: ProgramDocument, b: ProgramDocument): boolean {
   // Non fanno parte della scrittura richiesta. Ordine e ID dei figli invece sì.
   try { return JSON.stringify(programPayload(a)) === JSON.stringify(programPayload(b)) }
   catch { return false }
+}
+
+/** Categoria corrente del catalogo per gli editor e la scheda; prescrizioni e storico invariati. */
+export function withCatalogMuscleGroups(document: ProgramDocument, catalog: readonly CatalogExercise[]): ProgramDocument {
+  const rows = new Map(catalog.map(row => [row.id, row]))
+  return { ...document, days: document.days.map(day => ({ ...day, exercises: day.exercises.map(item => {
+    const current = rows.get(item.exercise.id)
+    return current ? { ...item, exercise: { ...item.exercise, muscleGroup: exerciseMuscleGroup(current) } } : item
+  }) })) }
 }

@@ -1,4 +1,11 @@
+import { withCatalogMuscleGroups } from '../domain/programs'
 import { useEffect, useRef, useState } from 'react'
+import { MuscleGroupSelect } from '../components/MuscleGroupSelect'
+import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
+import { MuscleGroupImage } from '../components/MuscleGroupImage'
+import { exerciseMuscleGroup, groupExercises, inferMuscleGroup } from '../domain/muscle-groups'
+import type { MuscleGroupFilter } from '../domain/muscle-groups'
+
 import type { ReactNode } from 'react'
 import { Icon } from '../components/Icon'
 import { Segmented } from '../components/Segmented'
@@ -49,8 +56,8 @@ function ExerciseCard({ item, index, count, issues, onChange, onMove, onRemove }
   const meta = [item.exercise.variant, item.exercise.equipment, loadLabels[item.exercise.loadConvention], item.exercise.perSide ? 'per lato' : ''].filter(Boolean).join(' · ')
   return <article className="wz-exercise" aria-label={`${index + 1}. ${item.exercise.name}`}>
     <div className="wz-exercise-head">
-      <span className="exercise-number">{String(index + 1).padStart(2, '0')}</span>
-      <div><h3>{item.exercise.name}</h3><small>{meta}</small></div>
+      <MuscleGroupImage exercise={item.exercise} />
+      <div><h3>{item.exercise.name}</h3><MuscleGroupBadge exercise={item.exercise} illustrated={false} /><small>{meta}</small></div>
       <div className="wz-exercise-tools">
         <button type="button" className="icon-button" disabled={index === 0} aria-label={`Sposta su ${item.exercise.name}`} onClick={() => onMove(-1)}><Icon name="back" size={16} style={{ transform: 'rotate(90deg)' }} /></button>
         <button type="button" className="icon-button" disabled={index === count - 1} aria-label={`Sposta giù ${item.exercise.name}`} onClick={() => onMove(1)}><Icon name="back" size={16} style={{ transform: 'rotate(-90deg)' }} /></button>
@@ -77,15 +84,16 @@ function ExerciseCard({ item, index, count, issues, onChange, onMove, onRemove }
 /** Ricerca nel catalogo e creazione rapida di un esercizio nuovo, in un pannello dal basso. */
 function ExerciseSheet({ catalog, onAdd, onClose }: { catalog: { store: ExercisesStore | null; state: ExercisesState }; onAdd: (exercise: CatalogExercise) => void; onClose: () => void }) {
   const [search, setSearch] = useState('')
+  const [group, setGroup] = useState<MuscleGroupFilter>('all')
   const [added, setAdded] = useState(0)
   const [draft, setDraft] = useState<ExerciseValues | null>(null)
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
   const input = useRef<HTMLInputElement>(null)
   useEffect(() => { input.current?.focus() }, [])
-  const rows = searchExercises(catalog.state.rows, search, 'active')
-  const shared = searchExercises(catalog.state.sharedRows, search, 'active').filter(row => !catalog.state.rows.some(personal => personal.sourceTemplateId === row.id))
-  const exact = [...rows, ...shared].some(row => row.name.toLocaleLowerCase('it') === search.trim().toLocaleLowerCase('it'))
+  const rows = searchExercises(catalog.state.rows, search, 'active', group)
+  const shared = searchExercises(catalog.state.sharedRows, search, 'active', group).filter(row => !catalog.state.rows.some(personal => personal.sourceTemplateId === row.id))
+  const exact = [...catalog.state.rows, ...catalog.state.sharedRows].some(row => row.name.toLocaleLowerCase('it') === search.trim().toLocaleLowerCase('it'))
   const add = (exercise: CatalogExercise) => { onAdd(exercise); setAdded(value => value + 1) }
   const addShared = async (exercise: CatalogExercise) => {
     if (!catalog.store || creating) return
@@ -107,21 +115,24 @@ function ExerciseSheet({ catalog, onAdd, onClose }: { catalog: { store: Exercise
     <div className="wz-sheet">
       <h2>Aggiungi esercizi</h2>
       <label className="wz-search" htmlFor="wizard-search"><Icon name="dumbbell" size={20} /><input ref={input} id="wizard-search" type="search" autoComplete="off" placeholder="Cerca o scrivi un nuovo esercizio" value={search} onChange={event => { setSearch(event.target.value); setDraft(null) }} /></label>
+      <MuscleGroupSelect id="wizard-group-filter" filter value={group} onChange={setGroup} disabled={creating} />
       {catalog.state.phase === 'loading' || catalog.state.phase === 'idle' ? <p role="status" className="small muted">Caricamento del catalogo…</p>
         : catalog.state.phase === 'error' ? <p role="alert">Catalogo non disponibile. <button type="button" className="text-button" onClick={() => void catalog.store?.load()}>Riprova</button></p> : null}
       {search.trim() && !exact && catalog.state.phase !== 'error' && (draft ? <section className="wz-create" aria-label="Nuovo esercizio">
         <strong>Nuovo: {draft.name}</strong>
+        <MuscleGroupSelect id="wizard-muscle-group" value={exerciseMuscleGroup(draft) ?? ''} onChange={muscleGroup => setDraft({ ...draft, muscleGroup })} disabled={creating} />
         <Segmented label="Si misura in" value={draft.measurementMode} onChange={measurementMode => setDraft({ ...draft, measurementMode })} options={[{ value: 'reps', label: 'Ripetizioni' }, { value: 'seconds', label: 'Secondi' }]} />
         <Segmented label="Carico" value={draft.loadConvention} onChange={loadConvention => setDraft({ ...draft, loadConvention })} options={(Object.keys(loadLabels) as ExerciseValues['loadConvention'][]).map(key => ({ value: key, label: key === 'single-dumbbell' ? 'Un manubrio' : loadLabels[key] }))} />
         <label htmlFor="wizard-equipment">Attrezzo o macchina (facoltativo)<input id="wizard-equipment" maxLength={120} placeholder="Es. Pulley, Smith, manubri" value={draft.equipment} onChange={event => setDraft({ ...draft, equipment: event.target.value })} /></label>
         <label className="wz-check"><input type="checkbox" checked={draft.perSide} onChange={event => setDraft({ ...draft, perSide: event.target.checked })} />Ripetizioni per lato</label>
         {error && <p className="wz-error" role="alert">{error}</p>}
         <div className="program-actions"><button type="button" className="button secondary" onClick={() => setDraft(null)}>Annulla</button><button type="button" className="button primary wz-create-confirm" disabled={creating} onClick={() => void create()}>{creating ? 'Salvataggio…' : 'Crea e aggiungi'}</button></div>
-      </section> : <button type="button" className="wz-create-start" onClick={() => setDraft({ ...emptyExercise(), name: search.trim().slice(0, 120) })}><Icon name="plus" size={20} /><span>Crea «{search.trim()}»</span><small>Nuovo esercizio nel tuo catalogo</small></button>)}
+      </section> : <button type="button" className="wz-create-start" onClick={() => setDraft({ ...emptyExercise(), name: search.trim().slice(0, 120), muscleGroup: group === 'unclassified' ? null : group !== 'all' ? group : inferMuscleGroup(search.trim()) })}><Icon name="plus" size={20} /><span>Crea «{search.trim()}»</span><small>Nuovo esercizio nel tuo catalogo</small></button>)}
       {error && <p className="wz-error" role="alert">{error}</p>}
-      {rows.length > 0 && <><h3 className="wz-results-title">I tuoi esercizi</h3><ul className="wz-results">{rows.slice(0, 60).map(row => <li key={row.id}><button type="button" disabled={creating} onClick={() => add(row)}><span><strong>{row.name}</strong><small>{[row.variant, row.equipment, row.measurementMode === 'seconds' ? 'a tempo' : 'ripetizioni', row.perSide ? 'per lato' : ''].filter(Boolean).join(' · ')}</small></span><Icon name="plus" size={20} /></button></li>)}</ul></>}
-      {shared.length > 0 && <><h3 className="wz-results-title">Esercizi comuni</h3><ul className="wz-results">{shared.slice(0, 60).map(row => <li key={row.id}><button type="button" disabled={creating} onClick={() => void addShared(row)}><span><strong>{row.name}</strong><small>{[row.variant, row.equipment, row.measurementMode === 'seconds' ? 'a tempo' : 'ripetizioni', row.perSide ? 'per lato' : ''].filter(Boolean).join(' · ')}</small></span><Icon name="plus" size={20} /></button></li>)}</ul></>}
-      {catalog.state.phase === 'ready' && !rows.length && !shared.length && !search.trim() && <p className="small muted">Il catalogo è vuoto: scrivi il nome del primo esercizio per crearlo.</p>}
+      {rows.length > 0 && <section aria-label="I tuoi esercizi"><h3 className="wz-results-title">I tuoi esercizi</h3>{groupExercises(rows).map(section => <section key={section.label}><h4 className="wz-group-title">{section.label} <span>{section.rows.length}</span></h4><ul className="wz-results">{section.rows.map(row => <li key={row.id}><button type="button" disabled={creating} onClick={() => add(row)}><span><strong>{row.name}</strong><MuscleGroupBadge exercise={row} /><small>{[row.variant, row.equipment, row.measurementMode === 'seconds' ? 'a tempo' : 'ripetizioni', row.perSide ? 'per lato' : ''].filter(Boolean).join(' · ')}</small></span><Icon name="plus" size={20} /></button></li>)}</ul></section>)}</section>}
+      {shared.length > 0 && <section aria-label="Esercizi comuni"><h3 className="wz-results-title">Esercizi comuni</h3>{groupExercises(shared).map(section => <section key={section.label}><h4 className="wz-group-title">{section.label} <span>{section.rows.length}</span></h4><ul className="wz-results">{section.rows.map(row => <li key={row.id}><button type="button" disabled={creating} onClick={() => void addShared(row)}><span><strong>{row.name}</strong><MuscleGroupBadge exercise={row} /><small>{[row.variant, row.equipment, row.measurementMode === 'seconds' ? 'a tempo' : 'ripetizioni', row.perSide ? 'per lato' : ''].filter(Boolean).join(' · ')}</small></span><Icon name="plus" size={20} /></button></li>)}</ul></section>)}</section>}
+      {catalog.state.phase === 'ready' && !rows.length && !shared.length && !search.trim() && group === 'all' && <p className="small muted">Il catalogo è vuoto: scrivi il nome del primo esercizio per crearlo.</p>}
+      {catalog.state.phase === 'ready' && !rows.length && !shared.length && (search.trim() || group !== 'all') && <p className="small muted" role="status">Nessun esercizio in questo gruppo corrisponde alla ricerca.</p>}
       <div className="wz-sheet-footer"><button type="button" className="button primary full-width" onClick={onClose}>{added ? `Fatto · ${added} aggiunt${added === 1 ? 'o' : 'i'}` : 'Chiudi'}</button></div>
     </div>
   </Modal>
@@ -140,7 +151,7 @@ export function ProgramWizard({ store, state, catalog, step, setStep, onAdvanced
   step: WizardStep; setStep: (step: WizardStep) => void; onAdvanced: () => void; onExit: () => void
   followedPlanId: string | null; onFollow: (planId: string) => Promise<boolean>; today: string
 }) {
-  const document = state.document
+  const document = state.document ? withCatalogMuscleGroups(state.document, catalog.state.rows) : null
   const [sheet, setSheet] = useState(false)
   const [confirm, setConfirm] = useState<{ title: string; text: string; action: () => void } | null>(null)
   // Dopo il primo tentativo di proseguire gli errori si aggiornano mentre l'utente corregge.

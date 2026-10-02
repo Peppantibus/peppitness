@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { MealPlanSettings } from '../components/MealPlanSettings'
+import { FoodEnergyPreview } from '../components/FoodEnergyPreview'
+import { MealPlanMetadata } from '../components/MealPlanMetadata'
 import { Icon } from '../components/Icon'
 import { SubpageHeader } from '../components/SubpageHeader'
 import { Modal } from '../components/Modal'
@@ -23,6 +26,7 @@ function MealFields({ meal, onChange }: { meal: PlanMeal; onChange: (meal: PlanM
       </div>)}
       <button type="button" className="button secondary meal-add-food" disabled={meal.foods.length >= mealPlanLimits.foods} onClick={() => onChange({ ...meal, foods: [...meal.foods, { name: '', quantity: '' }] })}><Icon name="plus" size={16} />Aggiungi alimento</button>
     </fieldset>
+    <FoodEnergyPreview foods={meal.foods} onChange={foods => onChange({ ...meal, foods })} />
     <label htmlFor={`${meal.id}-alternatives`}>Alternative · una per riga<textarea id={`${meal.id}-alternatives`} rows={2} value={meal.alternatives.join('\n')} onChange={event => onChange({ ...meal, alternatives: toLines(event.target.value) })} /></label>
     <label htmlFor={`${meal.id}-additions`}>Aggiunte previste e loro condizioni · una per riga<textarea id={`${meal.id}-additions`} rows={2} value={meal.additions.join('\n')} onChange={event => onChange({ ...meal, additions: toLines(event.target.value) })} /></label>
     <label htmlFor={`${meal.id}-note`}>Note del pasto<textarea id={`${meal.id}-note`} rows={2} maxLength={4000} value={meal.note} onChange={event => onChange({ ...meal, note: event.target.value })} /></label>
@@ -30,12 +34,15 @@ function MealFields({ meal, onChange }: { meal: PlanMeal; onChange: (meal: PlanM
 }
 
 function PlanPreview({ draft }: { draft: MealPlanDraft }) {
-  return <div className="program-preview"><h3>{draft.name}</h3>{draft.document.guidance && <p className="catalog-note">{draft.document.guidance}</p>}{draft.document.days.map(day => <section key={day.id}><h4>{day.name} · {planDayTypes[day.dayType]}</h4><ol>{day.meals.map(meal => <li key={meal.id}><strong>{meal.name}</strong>{meal.time && <span className="small muted"> · {meal.time}</span>}<p>{meal.foods.map(food => food.quantity ? `${food.name} ${food.quantity}` : food.name).join(', ') || 'Nessun alimento'}</p></li>)}</ol></section>)}</div>
+  return <div className="program-preview"><h3>{draft.name}</h3><MealPlanMetadata document={draft.document} />{draft.document.guidance && <p className="catalog-note">{draft.document.guidance}</p>}{draft.document.days.map(day => <section key={day.id}><h4>{day.name} · {planDayTypes[day.dayType]}</h4><ol>{day.meals.map(meal => <li key={meal.id}><strong>{meal.name}</strong>{meal.time && <span className="small muted"> · {meal.time}</span>}<p>{meal.foods.map(food => food.quantity ? `${food.name} ${food.quantity}` : food.name).join(', ') || 'Nessun alimento'}</p></li>)}</ol></section>)}</div>
 }
 
 function MealPlanEditor({ store, state }: { store: PlansStore; state: PlansState }) {
   const [confirm, setConfirm] = useState<{ title: string; action: () => void } | null>(null)
+  const [selectedDayId, setSelectedDayId] = useState<string | null>(null)
   const editor = state.editor, draft = editor.draft!
+  const days = draft.document.days
+  const selectedDay = days.find(day => day.id === selectedDayId) ?? days[0]
   const busy = ['saving', 'checking'].includes(editor.phase)
   const blocked = busy || editor.phase === 'uncertain'
   const edit = (value: Partial<MealPlanDraft['document']>) => store.editMealPlan({ ...draft, document: { ...draft.document, ...value } })
@@ -43,16 +50,32 @@ function MealPlanEditor({ store, state }: { store: PlansStore; state: PlansState
   return <>
     <section className="panel program-editor meal-plan-editor" aria-labelledby="meal-plan-title">
       <div className="section-heading"><h2 id="meal-plan-title">{editor.base ? 'Modifica piano' : 'Nuovo piano alimentare'}</h2></div>
-      <form className="program-form" onSubmit={event => { event.preventDefault(); void store.saveMealPlan() }}>
+      <form id="meal-plan-form" className="program-form" onInvalid={event => {
+        const details = (event.target as HTMLElement).closest('details')
+        if (details) details.open = true
+      }} onSubmit={event => { event.preventDefault(); void store.saveMealPlan() }}>
         <fieldset disabled={blocked}>
-          <label htmlFor="meal-plan-name">Nome del piano<input id="meal-plan-name" maxLength={160} required value={draft.name} onChange={event => store.editMealPlan({ ...draft, name: event.target.value })} /></label>
-          <label htmlFor="meal-plan-guidance">Indicazioni generali<textarea id="meal-plan-guidance" rows={3} maxLength={16000} value={draft.document.guidance} onChange={event => edit({ guidance: event.target.value })} /></label>
-          <p className="small muted">Trascrivi il tuo piano: nessuna quantità, calorie o alternativa viene calcolata o aggiunta dall’app. Le giornate di palestra e riposo vengono proposte secondo il tipo scelto nel diario.</p>
-          {draft.document.days.map((day, dayIndex) => <section className="program-day" key={day.id} aria-label={`Giornata ${dayIndex + 1}`}>
-            <div className="section-heading"><h3>Giornata {dayIndex + 1}</h3></div>
+          <div className="meal-day-selector">
+            <label htmlFor="meal-plan-day">Giornata da modificare<select id="meal-plan-day" value={selectedDay?.id ?? ''} disabled={!days.length} onChange={event => setSelectedDayId(event.target.value)}>
+              {!days.length && <option value="">Nessuna giornata</option>}
+              {days.map((day, index) => <option key={day.id} value={day.id}>{day.name || `Giornata ${index + 1}`} · {planDayTypes[day.dayType]}</option>)}
+            </select></label>
+            <p className="small muted">Le modifiche alle altre giornate restano nella bozza. Salva piano le salva tutte.</p>
+          </div>
+          <details className="meal-plan-general" open={!editor.base}>
+            <summary>Nome, periodo e calorie</summary>
+            <div className="meal-plan-general-fields">
+              <label htmlFor="meal-plan-name">Nome del piano<input id="meal-plan-name" maxLength={160} required value={draft.name} onChange={event => store.editMealPlan({ ...draft, name: event.target.value })} /></label>
+              <label htmlFor="meal-plan-guidance">Indicazioni generali<textarea id="meal-plan-guidance" rows={3} maxLength={16000} value={draft.document.guidance} onChange={event => edit({ guidance: event.target.value })} /></label>
+              <MealPlanSettings document={draft.document} onChange={document => store.editMealPlan({ ...draft, document })} />
+              <p className="small muted">Le calorie sono stimate dagli alimenti e dalle quantità del piano. Le giornate di palestra e riposo vengono proposte secondo il tipo scelto nel diario.</p>
+            </div>
+          </details>
+          {days.map((day, dayIndex) => day.id === selectedDay?.id && <section className="program-day" key={day.id} aria-label={`Giornata ${dayIndex + 1}`}>
+            <div className="section-heading"><h3>{day.name || `Giornata ${dayIndex + 1}`}</h3></div>
             <div className="program-day-names"><label htmlFor={`${day.id}-name`}>Nome<input id={`${day.id}-name`} className="meal-day-name" maxLength={120} value={day.name} onChange={event => updateDay({ ...day, name: event.target.value })} /></label><label htmlFor={`${day.id}-type`}>Quando si usa<select id={`${day.id}-type`} value={day.dayType} onChange={event => updateDay({ ...day, dayType: event.target.value as PlanDayType })}>{(Object.keys(planDayTypes) as PlanDayType[]).map(type => <option key={type} value={type}>{planDayTypes[type]}</option>)}</select></label></div>
             <label htmlFor={`${day.id}-note`}>Note della giornata<textarea id={`${day.id}-note`} rows={2} maxLength={4000} value={day.note} onChange={event => updateDay({ ...day, note: event.target.value })} /></label>
-            <div className="program-actions"><button type="button" className="button secondary" disabled={dayIndex === 0} aria-label={`Sposta su giornata ${dayIndex + 1}`} onClick={() => edit({ days: moveItem(draft.document.days, dayIndex, -1) })}>Su</button><button type="button" className="button secondary" disabled={dayIndex === draft.document.days.length - 1} aria-label={`Sposta giù giornata ${dayIndex + 1}`} onClick={() => edit({ days: moveItem(draft.document.days, dayIndex, 1) })}>Giù</button><button type="button" className="button secondary" disabled={draft.document.days.length >= mealPlanLimits.days} onClick={() => edit({ days: [...draft.document.days, duplicatePlanDay(day)] })}>Duplica giornata</button><button type="button" className="button secondary" onClick={() => setConfirm({ title: 'Rimuovere questa giornata?', action: () => edit({ days: draft.document.days.filter(item => item.id !== day.id) }) })}>Rimuovi giornata</button></div>
+            <div className="program-actions"><button type="button" className="button secondary" disabled={dayIndex === 0} aria-label={`Sposta su giornata ${dayIndex + 1}`} onClick={() => { setSelectedDayId(day.id); edit({ days: moveItem(days, dayIndex, -1) }) }}>Su</button><button type="button" className="button secondary" disabled={dayIndex === days.length - 1} aria-label={`Sposta giù giornata ${dayIndex + 1}`} onClick={() => { setSelectedDayId(day.id); edit({ days: moveItem(days, dayIndex, 1) }) }}>Giù</button><button type="button" className="button secondary" disabled={days.length >= mealPlanLimits.days} onClick={() => { const copy = duplicatePlanDay(day); edit({ days: [...days, copy] }); setSelectedDayId(copy.id) }}>Duplica giornata</button><button type="button" className="button secondary" onClick={() => setConfirm({ title: 'Rimuovere questa giornata?', action: () => { edit({ days: days.filter(item => item.id !== day.id) }); setSelectedDayId(days[dayIndex + 1]?.id ?? days[dayIndex - 1]?.id ?? null) } })}>Rimuovi giornata</button></div>
             {day.meals.map((meal, mealIndex) => <section className="program-prescription" key={meal.id} aria-label={`Pasto ${mealIndex + 1}${meal.name ? `: ${meal.name}` : ''}`}>
               <h4>{mealIndex + 1}. {meal.name || 'Nuovo pasto'}</h4>
               <MealFields meal={meal} onChange={value => updateDay({ ...day, meals: day.meals.map(item => item.id === meal.id ? value : item) })} />
@@ -60,14 +83,17 @@ function MealPlanEditor({ store, state }: { store: PlansStore; state: PlansState
             </section>)}
             <button type="button" className="button secondary meal-add" disabled={day.meals.length >= mealPlanLimits.meals} onClick={() => updateDay({ ...day, meals: [...day.meals, newPlanMeal()] })}><Icon name="plus" size={16} />Aggiungi pasto</button>
           </section>)}
-          <button className="button secondary meal-add-day" type="button" disabled={draft.document.days.length >= mealPlanLimits.days} onClick={() => edit({ days: [...draft.document.days, newPlanDay(draft.document.days)] })}><Icon name="plus" size={16} />Aggiungi giornata</button>
+          <button className="button secondary meal-add-day" type="button" disabled={days.length >= mealPlanLimits.days} onClick={() => { const day = newPlanDay(days); edit({ days: [...days, day] }); setSelectedDayId(day.id) }}><Icon name="plus" size={16} />Aggiungi giornata</button>
         </fieldset>
-        {editor.phase === 'editing' && <div className="program-actions"><button className="button primary meal-plan-save" type="submit" disabled={!store.mealDirty && Boolean(editor.base)}>Salva piano</button><button type="button" className="button secondary" onClick={() => store.mealDirty ? setConfirm({ title: 'Scartare le modifiche?', action: store.closeMealPlan }) : store.closeMealPlan()}>Torna ai piani</button></div>}
+        {['editing', 'saving', 'checking'].includes(editor.phase) && <div className="meal-editor-bar" aria-label="Salvataggio del piano">
+          {editor.message && <p className="program-message meal-editor-message" role={editor.phase === 'editing' ? 'status' : 'alert'}>{editor.message}</p>}
+          <div className="program-actions meal-editor-bar-inner"><button type="button" className="button secondary" disabled={busy} onClick={() => store.mealDirty ? setConfirm({ title: 'Scartare le modifiche?', action: store.closeMealPlan }) : store.closeMealPlan()}>Torna ai piani</button><button className="button primary meal-plan-save" type="submit" disabled={busy || (!store.mealDirty && Boolean(editor.base))}>{busy ? (editor.phase === 'saving' ? 'Salvataggio…' : 'Verifica…') : 'Salva piano'}{!busy && <Icon name="check" size={16} />}</button></div>
+        </div>}
       </form>
       {editor.phase === 'conflict' && <section className="preferences-conflict program-conflict" aria-label="Confronto piano"><h3>Versione attualmente online</h3>{editor.remote ? <PlanPreview draft={editor.remote} /> : <p>Questo piano non risulta online.</p>}
         <div className="program-actions"><button className="button secondary" onClick={store.useRemoteMealPlan}>{editor.remote ? 'Usa la versione online' : 'Scarta la bozza locale'}</button>{editor.remote && <button className="button primary" onClick={() => void store.saveMealPlan(true)}>Salva le mie modifiche</button>}</div>
       </section>}
-      {editor.message && <p className="program-message" role={editor.phase === 'editing' ? 'status' : 'alert'}>{editor.message}</p>}
+      {editor.message && !['editing', 'saving', 'checking'].includes(editor.phase) && <p className="program-message" role="alert">{editor.message}</p>}
       {busy && <p role="status">{editor.phase === 'saving' ? 'Salvataggio del piano…' : 'Verifica online…'}</p>}
       {editor.phase === 'uncertain' && <button className="button secondary" onClick={() => void store.checkMealPlan()}>Verifica online</button>}
       {store.mealDirty && <p className="small muted">Modifiche da salvare. Restano in questa pagina finché non le salvi online.</p>}
@@ -100,7 +126,7 @@ export function MealPlans({ store, state, mode, setMode, step, setStep, deletion
     {!store ? <section className="panel empty-state"><h2>Accedi per gestire i piani alimentari</h2></section>
       : state.phase === 'loading' ? <section className="panel empty-state" role="status">Caricamento dei piani…</section>
         : state.phase === 'error' ? <section className="panel empty-state"><p role="alert">{state.message}</p><button className="button primary" onClick={() => void store.load()}>Riprova</button></section>
-          : state.editor.phase !== 'closed' ? <MealPlanEditor store={store} state={state} />
+          : state.editor.phase !== 'closed' ? <MealPlanEditor key={state.editor.draft?.id} store={store} state={state} />
             : <>
               <button className="button primary lg meal-plan-wizard-new full-width-mobile" onClick={startWizard}><Icon name="plus" size={20} />Nuovo piano alimentare</button>
               <div className="program-list-tools"><a className="text-button meal-plan-import" href="#/dieta/importa">Importa dal modello Word</a><button className="text-button meal-plan-new" onClick={() => { setMode('advanced'); store.createMealPlan() }}>Editor avanzato</button><button className="text-button" onClick={() => void store.load()}>Aggiorna elenco</button>{state.mealPlans.length > 0 && <button className="text-button delete-link" disabled={deletionBlocked || state.deleting} onClick={() => setConfirmDelete({ id: null, name: 'tutti i piani alimentari' })}>Elimina tutto</button>}</div>
@@ -109,6 +135,7 @@ export function MealPlans({ store, state, mode, setMode, step, setStep, deletion
               {!state.mealPlans.length ? <section className="panel empty-state"><span className="empty-icon"><Icon name="fork" size={32} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo.</p><button className="button primary" onClick={startWizard}>Crea il tuo piano<Icon name="arrow" size={20} /></button><p className="small"><a className="text-link" href="#/dieta/importa">Oppure importalo dal modello Word</a></p></section>
                 : <div className="program-list">{state.mealPlans.map(plan => <section className={`panel program-card meal-plan-card ${selected === plan.id ? 'is-followed' : ''}`} key={plan.id}>
                   <div className="program-card-head"><h2>{plan.name}</h2>{selected === plan.id && !plan.archivedAt && <span className="badge-followed"><Icon name="check" size={16} />Seguito</span>}</div>
+                  <MealPlanMetadata document={plan.document} />
                   <p className="small muted">{plan.document.days.map(day => `${planDayTypes[day.dayType]}: ${day.meals.length} pasti`).join(' · ') || 'Nessuna giornata'}{plan.archivedAt ? ' · Archiviato' : ''}{selected === plan.id ? ' · Piano seguito' : ''}</p>
                   <div className="program-actions">{!plan.archivedAt && selected !== plan.id && <button className="button primary" disabled={state.selecting} onClick={() => void store.choose({ mealPlanId: plan.id })}>Segui questo piano</button>}<button className="button secondary meal-plan-edit" onClick={() => edit(plan.id)}>Modifica</button><button className="button secondary" disabled={selected === plan.id && !plan.archivedAt} onClick={() => void store.archiveMealPlan(plan.id, !plan.archivedAt)}>{plan.archivedAt ? 'Ripristina' : 'Archivia'}</button><button className="button secondary danger" disabled={deletionBlocked || state.deleting} onClick={() => setConfirmDelete({ id: plan.id, name: plan.name })}>Elimina</button></div></section>)}</div>}
             </>}

@@ -1,12 +1,16 @@
 import { isExerciseId } from './exercises.ts'
 import type { DayType, Meal } from './types.ts'
+import type { ProgramCycle } from './programs.ts'
+import { isLocalDate, shiftDate } from './dates.ts'
+import { estimateFoods } from './food-energy.ts'
+import { weekdayOfDate, weekdays } from './weekly.ts'
 
 /** Documento V1 del piano alimentare, identico al contratto validato dal database. */
-export interface MealFood { name: string; quantity: string }
+export interface MealFood { name: string; quantity: string; kcalPer100g?: number | null }
 export interface PlanMeal { id: string; name: string; time: string; foods: MealFood[]; alternatives: string[]; additions: string[]; note: string }
 export type PlanDayType = DayType | 'any'
 export interface MealPlanDay { id: string; name: string; dayType: PlanDayType; note: string; meals: PlanMeal[] }
-export interface MealPlanDocument { guidance: string; days: MealPlanDay[] }
+export interface MealPlanDocument { guidance: string; days: MealPlanDay[]; cycle?: ProgramCycle | null; dailyCalories?: number | null }
 export interface MealPlan { id: string; name: string; document: MealPlanDocument; archivedAt: string | null; revision: number }
 export interface MealPlanDraft { id: string; name: string; document: MealPlanDocument }
 
@@ -45,7 +49,12 @@ function object(value: unknown): value is Record<string, unknown> { return Boole
 
 /** Stessi vincoli del trigger SQL: proprietà sconosciute e testi vuoti sono errori. */
 export function validateMealPlanDocument(value: unknown): string | null {
-  if (!object(value) || !onlyKeys(value, ['guidance', 'days']) || !text(value.guidance, 16000, false) || !Array.isArray(value.days)) return 'Documento del piano non valido.'
+  if (!object(value) || !onlyKeys(value, ['guidance', 'days', 'cycle', 'dailyCalories']) || !text(value.guidance, 16000, false) || !Array.isArray(value.days)) return 'Documento del piano non valido.'
+  if (value.cycle != null) {
+    if (!object(value.cycle) || !onlyKeys(value.cycle, ['start', 'weeks']) || typeof value.cycle.start !== 'string' || !isLocalDate(value.cycle.start) || value.cycle.start < '1900-01-01' || value.cycle.start > '2100-12-31' || typeof value.cycle.weeks !== 'number' || !Number.isInteger(value.cycle.weeks) || value.cycle.weeks < 1 || value.cycle.weeks > 52) return 'Periodo del piano: indica una data valida e da 1 a 52 settimane.'
+    if (shiftDate(value.cycle.start, value.cycle.weeks * 7 - 1) > '2100-12-31') return 'La fine del periodo supera la data consentita.'
+  }
+  if (value.dailyCalories != null && (typeof value.dailyCalories !== 'number' || !Number.isInteger(value.dailyCalories) || value.dailyCalories < 1 || value.dailyCalories > 20000)) return 'Obiettivo calorico: indica un numero intero da 1 a 20000 kcal, oppure lascia vuoto.'
   if (value.days.length > mealPlanLimits.days) return `Sono consentite al massimo ${mealPlanLimits.days} giornate.`
   const ids = new Set<string>()
   for (const [dayIndex, day] of value.days.entries()) {
@@ -66,7 +75,8 @@ export function validateMealPlanDocument(value: unknown): string | null {
       if (!lines(meal.alternatives, 500) || !lines(meal.additions, 500)) return `${mealLabel}: alternative e aggiunte richiedono un testo fino a 500 caratteri (massimo ${mealPlanLimits.lines}).`
       if (!Array.isArray(meal.foods) || meal.foods.length > mealPlanLimits.foods) return `${mealLabel}: al massimo ${mealPlanLimits.foods} alimenti.`
       for (const food of meal.foods) {
-        if (!object(food) || !onlyKeys(food, ['name', 'quantity']) || !text(food.name, 200, true) || !text(food.quantity, 60, false)) return `${mealLabel}: ogni alimento richiede un nome (quantità facoltativa, fino a 60 caratteri).`
+        if (!object(food) || !onlyKeys(food, ['name', 'quantity', 'kcalPer100g']) || !text(food.name, 200, true) || !text(food.quantity, 60, false)) return `${mealLabel}: ogni alimento richiede un nome (quantità facoltativa, fino a 60 caratteri).`
+        if (food.kcalPer100g != null && (typeof food.kcalPer100g !== 'number' || !Number.isFinite(food.kcalPer100g) || food.kcalPer100g < 0 || food.kcalPer100g > 1000)) return `${mealLabel}: energia dell’alimento da 0 a 1000 kcal per 100 g.`
       }
     }
   }
@@ -82,9 +92,9 @@ export function validateMealPlanDraft(draft: MealPlanDraft): string | null {
 /** Righe vuote dell'editor rimosse prima del salvataggio: nessun testo inventato. */
 export function cleanMealPlanDraft(draft: MealPlanDraft): MealPlanDraft {
   const clean = (values: string[]) => values.map(value => value.trim()).filter(Boolean)
-  return { ...draft, name: draft.name.trim(), document: { guidance: draft.document.guidance, days: draft.document.days.map(day => ({ ...day, name: day.name.trim(), meals: day.meals.map(meal => ({
+  return { ...draft, name: draft.name.trim(), document: { ...draft.document, guidance: draft.document.guidance, days: draft.document.days.map(day => ({ ...day, name: day.name.trim(), meals: day.meals.map(meal => ({
     ...meal, name: meal.name.trim(), time: meal.time.trim(), alternatives: clean(meal.alternatives), additions: clean(meal.additions),
-    foods: meal.foods.map(food => ({ name: food.name.trim(), quantity: food.quantity.trim() })).filter(food => food.name || food.quantity),
+    foods: meal.foods.map(food => ({ ...food, name: food.name.trim(), quantity: food.quantity.trim() })).filter(food => food.name || food.quantity),
   })) })) } }
 }
 
@@ -98,12 +108,22 @@ export function daysForType(document: MealPlanDocument, type: DayType): MealPlan
   return matching.length ? matching : document.days
 }
 
+/** Menu del giorno della settimana indicato nel nome; per menu generici resta il primo compatibile. */
+export function defaultMealPlanDay(days: MealPlanDay[], date: string): MealPlanDay | undefined {
+  const weekday = weekdays[weekdayOfDate(date)]
+  if (!weekday) return days[0]
+  const normalize = (name: string) => name.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('it').replace(/\.$/, '')
+  const names = [normalize(weekday.name), normalize(weekday.code)]
+  return days.find(day => names.includes(normalize(day.name))) ?? days[0]
+}
+
 /** Vista del pasto usata da schermate e snapshot del diario. */
 export function mealFromPlan(meal: PlanMeal): Meal {
   return {
     id: meal.id, name: meal.name, timeLabel: meal.time, description: meal.foods.map(food => food.name).join(', ') || 'Nessun alimento indicato',
     items: meal.foods.map(food => food.quantity ? `${food.name} · ${food.quantity}` : food.name),
-    alternative: '', alternatives: meal.alternatives, additions: meal.additions, note: meal.note,
+    alternative: '', alternatives: meal.alternatives, additions: meal.additions, note: meal.note, energy: estimateFoods(meal.foods).energy,
+    ...(meal.foods.some(food => food.kcalPer100g != null) ? { energyOverrides: meal.foods.map(food => food.kcalPer100g ?? null) } : {}),
   }
 }
 

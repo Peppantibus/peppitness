@@ -1,3 +1,5 @@
+import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
+import { MuscleGroupImage } from '../components/MuscleGroupImage'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../components/Icon'
@@ -15,12 +17,14 @@ import type { WorkoutSession, ExercisePrescription, SetResult, WorkoutDay } from
 /** Posizione nel ciclo del programma seguito, già formulata per la Scheda. */
 export interface CycleSummary { label: string; detail?: string; ratio: number | null }
 
-export function Workout({ day, days, planTitle, planGuidance, date, today, sessions, onDay, cycle, progressHref, activeSession, onStart, suggestedDayId, weekly = false, workoutWeekdays = [] }: {
+export function Workout({ day, days, planTitle, planGuidance, date, today, sessions, onDay, cycle, progressHref, activeSession, onStart, onDiscard, suggestedDayId, weekly = false, workoutWeekdays = [] }: {
   day: WorkoutDay; days: WorkoutDay[]; planTitle: string; planGuidance?: string; date: string; today: string; sessions: WorkoutSession[]; onDay: (id: string) => void
   cycle?: CycleSummary; progressHref?: string
   /** Settimanale: seduta prevista per la data; altrimenti seduta suggerita dalla rotazione. */
   suggestedDayId?: string
   activeSession?: WorkoutSession; onStart: () => void; weekly?: boolean; workoutWeekdays?: number[]
+  /** Richiede la conferma prima di annullare l'allenamento in corso. */
+  onDiscard?: () => void
 }) {
   const [choosing, setChoosing] = useState(false)
   const totalSets = day.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)
@@ -73,15 +77,16 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
         {activeElsewhere && activeSession
           ? <><button ref={startButton} className="button secondary lg workout-start" onClick={onStart}>{startLabel}<Icon name="play" size={20} /></button><p className="workout-blocked">Termina l’allenamento in corso per iniziare questa seduta.</p></>
           : <button ref={startButton} className="button primary lg workout-start" onClick={onStart}>{startLabel}<Icon name="play" size={20} /></button>}
+        {activeSession && onDiscard && <button type="button" className="button secondary danger workout-cancel" aria-haspopup="dialog" onClick={onDiscard}>Annulla allenamento<Icon name="close" size={16} /></button>}
       </section>
       {day.notes && <section className="panel plan-guidance"><div><strong>Indicazioni della seduta</strong><p>{day.notes}</p></div></section>}
       </div>
       <div className="workout-exercises">
       <div className="section-heading"><h2>Gli esercizi</h2><span>{previousDay ? `Ultima seduta · ${formatDate(previousDay.date, { day: 'numeric', month: 'short' })}` : 'Nessuna seduta precedente'}</span></div>
-      <div className="exercise-list">{day.exercises.map((exercise, index) => {
+      <div className="exercise-list">{day.exercises.map(exercise => {
         const previous = findPreviousExercise(sessions, exercise, { id: '', date, startedAt: new Date().toISOString() })
         const previousSet = previous?.results.find(set => set.completed)
-        return <a key={exercise.id} className="exercise-card" href={`#/scheda/esercizio/${exercise.id}`}><span className="exercise-number">{String(index + 1).padStart(2, '0')}</span><div className="exercise-copy"><h3>{exercise.name}</h3><p className="exercise-prescription"><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` (+${exercise.optionalSets} facoltative)` : ''} · {restLabel(exercise.restSeconds)} recupero</p>{exerciseArea(exercise) && <span className="mini-label">{exerciseArea(exercise)}</span>}{previousSet && <span className="overview-previous"><Icon name="history" size={16} />{formatResult(previousSet, exercise.mode, exercise.loadUnit)} <span>· {formatDate(previous!.session.date, { day: 'numeric', month: 'short' })}</span></span>}</div><Icon name="chevron" size={20} /></a>
+        return <a key={exercise.id} className="exercise-card" href={`#/scheda/esercizio/${exercise.id}`}><MuscleGroupImage exercise={exercise} /><div className="exercise-copy"><h3>{exercise.name}</h3><MuscleGroupBadge exercise={exercise} illustrated={false} /><p className="exercise-prescription"><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` (+${exercise.optionalSets} facoltative)` : ''} · {restLabel(exercise.restSeconds)} recupero</p>{exerciseArea(exercise) && <span className="mini-label">{exerciseArea(exercise)}</span>}{previousSet && <span className="overview-previous"><Icon name="history" size={16} />{formatResult(previousSet, exercise.mode, exercise.loadUnit)} <span>· {formatDate(previous!.session.date, { day: 'numeric', month: 'short' })}</span></span>}</div><Icon name="chevron" size={20} /></a>
       })}</div>
       </div>
     </div>
@@ -123,7 +128,7 @@ function PreviousResults({ previous, mode, unit }: { previous?: PreviousExercise
 
 export function ExerciseDetail({ exercise, previous }: { exercise: ExercisePrescription; previous?: PreviousExercise }) {
   const area = exerciseArea(exercise)
-  return <>{area && <span className="eyebrow">{area}</span>}<h2>{exercise.name}</h2><div className="prescription-stats"><div><strong>{exercise.sets}{exercise.optionalSets ? ` +${exercise.optionalSets}` : ''}</strong><span>{exercise.optionalSets ? 'serie (+ facoltative)' : 'serie'}</span></div><div><strong>{exercise.target}</strong><span>{exercise.mode === 'seconds' ? 'durata prevista' : 'ripetizioni previste'}</span></div><div><strong>{restLabel(exercise.restSeconds)}</strong><span>recupero</span></div></div>{(exercise.loadLabel || exercise.effortLabel) && <div className="detail-facts">{exercise.loadLabel && <p><strong>Carico:</strong> {exercise.loadLabel}</p>}{exercise.effortLabel && <p><strong>Intensità:</strong> {exercise.effortLabel}</p>}</div>}{exercise.note && <div className="detail-note"><strong>Da ricordare</strong><p>{exercise.note}</p></div>}<h3>Ultima volta</h3><PreviousResults previous={previous} mode={exercise.mode} unit={exercise.loadUnit} /></>
+  return <>{area && <span className="eyebrow">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><div className="prescription-stats"><div><strong>{exercise.sets}{exercise.optionalSets ? ` +${exercise.optionalSets}` : ''}</strong><span>{exercise.optionalSets ? 'serie (+ facoltative)' : 'serie'}</span></div><div><strong>{exercise.target}</strong><span>{exercise.mode === 'seconds' ? 'durata prevista' : 'ripetizioni previste'}</span></div><div><strong>{restLabel(exercise.restSeconds)}</strong><span>recupero</span></div></div>{(exercise.loadLabel || exercise.effortLabel) && <div className="detail-facts">{exercise.loadLabel && <p><strong>Carico:</strong> {exercise.loadLabel}</p>}{exercise.effortLabel && <p><strong>Intensità:</strong> {exercise.effortLabel}</p>}</div>}{exercise.note && <div className="detail-note"><strong>Da ricordare</strong><p>{exercise.note}</p></div>}<h3>Ultima volta</h3><PreviousResults previous={previous} mode={exercise.mode} unit={exercise.loadUnit} /></>
 }
 
 function ExerciseSetCard({ session, exercise, index, previous, onChange, locked, collapsible, onDone }: {
@@ -170,7 +175,7 @@ function ExerciseSetCard({ session, exercise, index, previous, onChange, locked,
     </article>
   }
   return <article className={`set-panel ${complete ? 'exercise-complete' : ''}`} id={`exercise-${session.id}-${index}`}>
-    <div className="set-card-heading"><span className="exercise-number">{String(index + 1).padStart(2, '0')}</span><div>{area && <span className="mini-label">{area}</span>}<h2>{exercise.name}</h2></div><span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span></div>
+    <div className="set-card-heading"><MuscleGroupImage exercise={exercise} /><div>{area && <span className="mini-label">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} illustrated={false} /></div><span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span></div>
     <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` · +${exercise.optionalSets} facoltative` : ''}</span><span><Icon name="clock" size={16} />{restLabel(exercise.restSeconds)} recupero</span></div>
     <div className="set-rows">
       <div className="set-grid set-header"><span>Serie</span><span>{exercise.loadUnit?.toUpperCase() ?? 'Carico'}</span><span>{exercise.mode === 'seconds' ? 'Secondi' : 'Ripetizioni'}</span><span>Fatto</span></div>
@@ -188,7 +193,7 @@ function ExerciseSetCard({ session, exercise, index, previous, onChange, locked,
       </span>
     </div>
     {showPrevious && <Modal label={`Ultima volta: ${exercise.name}`} variant="sheet" onClose={() => setShowPrevious(false)}>
-      <div className="previous-sheet"><span className="eyebrow">Ultima volta</span><h2>{exercise.name}</h2><PreviousResults previous={previous} mode={exercise.mode} unit={exercise.loadUnit} /></div>
+      <div className="previous-sheet"><span className="eyebrow">Ultima volta</span><h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><PreviousResults previous={previous} mode={exercise.mode} unit={exercise.loadUnit} /></div>
     </Modal>}
   </article>
 }

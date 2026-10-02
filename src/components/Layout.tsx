@@ -15,7 +15,7 @@ export function Layout({ section, children, hasTimer = false, focus = false, ses
   return <div className={`app-shell ${hasTimer ? 'has-timer' : ''} ${focus ? 'focus-mode' : ''} ${session ? 'session-mode' : ''} ${subpage ? 'subpage-mode' : ''}`}>
     <a className="skip-link" href="#main-content" onClick={event => { event.preventDefault(); document.getElementById('main-content')?.focus() }}>Vai al contenuto</a>
     <aside className="sidebar">
-      <a href="#/scheda" className="brand" aria-label="peppitness, vai alla scheda"><BrandLogo /></a>
+      <a href="#/scheda" className="brand" aria-label="peppitness, vai alla scheda"><BrandLogo /><span className="brand-name" aria-hidden="true">peppitness<span>.</span></span></a>
       <nav className="primary-nav" aria-label="Navigazione principale">
         <a href="#/dieta" aria-current={section === 'dieta' ? 'page' : undefined}><Icon name="fork" size={20} /><span>Dieta</span></a>
         <a href="#/scheda" aria-current={section === 'scheda' ? 'page' : undefined}><Icon name="dumbbell" size={20} /><span>Scheda</span></a>
@@ -26,7 +26,7 @@ export function Layout({ section, children, hasTimer = false, focus = false, ses
       </div>
     </aside>
     <div className="workspace">
-      <header className="topbar"><a href="#/scheda" className="mobile-brand" aria-label="peppitness, vai alla scheda"><BrandLogo /></a><div className="topbar-actions">{status}<a href="#/impostazioni" className="icon-button is-outlined account-button" aria-label="Account e impostazioni" aria-current={section === null ? 'page' : undefined}><Icon name="user" size={20} /></a></div></header>
+      <header className="topbar"><a href="#/scheda" className="mobile-brand" aria-label="peppitness, vai alla scheda"><BrandLogo /><span className="brand-name" aria-hidden="true">peppitness<span>.</span></span></a><div className="topbar-actions">{status}<a href="#/impostazioni" className="icon-button is-outlined account-button" aria-label="Account e impostazioni" aria-current={section === null ? 'page' : undefined}><Icon name="user" size={20} /></a></div></header>
       <main id="main-content" tabIndex={-1}>{children}</main>
     </div>
     <nav className="bottom-nav" aria-label="Navigazione mobile"><a href="#/dieta" aria-current={section === 'dieta' ? 'page' : undefined}><Icon name="fork" /><span>Dieta</span></a><a href="#/scheda" aria-current={section === 'scheda' ? 'page' : undefined}><Icon name="dumbbell" /><span>Scheda</span></a></nav>

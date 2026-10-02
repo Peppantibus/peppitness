@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isExerciseId, validateExercise } from '../domain/exercises.ts'
 import type { CatalogExercise, ExerciseValues } from '../domain/exercises.ts'
+import { isMuscleGroup } from '../domain/muscle-groups.ts'
 
 export interface ExercisesRepository {
   list(signal: AbortSignal): Promise<CatalogExercise[]>
@@ -13,8 +14,14 @@ export class ExercisesFailure extends Error {
   readonly kind: 'conflict' | 'unavailable' | 'session'
   constructor(kind: ExercisesFailure['kind']) { super(kind); this.kind = kind }
 }
-const columns = 'id,owner_id,name,variant,equipment,load_convention,load_unit,measurement_mode,per_side,note,archived_at,revision,source_template_id'
-const sharedColumns = 'id,name,variant,equipment,load_convention,load_unit,measurement_mode,per_side,note'
+const columns = 'id,owner_id,name,variant,equipment,load_convention,load_unit,measurement_mode,per_side,note,archived_at,revision,source_template_id,muscle_group'
+const sharedColumns = 'id,name,variant,equipment,load_convention,load_unit,measurement_mode,per_side,note,muscle_group'
+
+function category(row: Record<string, unknown>) {
+  if (row.muscle_group === undefined) return {} // Fixture anteriori al campo.
+  if (row.muscle_group === null || isMuscleGroup(row.muscle_group)) return { muscleGroup: row.muscle_group }
+  throw new ExercisesFailure('unavailable')
+}
 
 // Contratto minimo scritto dallo schema già applicato; non sono tipi generati.
 function decode(data: unknown, owner: string): CatalogExercise {
@@ -26,6 +33,7 @@ function decode(data: unknown, owner: string): CatalogExercise {
     || !(row.source_template_id === undefined || row.source_template_id === null || typeof row.source_template_id === 'string')
     || typeof row.revision !== 'number' || !Number.isSafeInteger(row.revision) || row.revision < 1) throw new ExercisesFailure('unavailable')
   const value: CatalogExercise = {
+    ...category(row),
     id: row.id, name: row.name as string, variant: row.variant as string, equipment: row.equipment as string,
     loadConvention: row.load_convention as ExerciseValues['loadConvention'], loadUnit: row.load_unit as ExerciseValues['loadUnit'],
     measurementMode: row.measurement_mode as ExerciseValues['measurementMode'], perSide: row.per_side,
@@ -42,6 +50,7 @@ function decodeShared(data: unknown): CatalogExercise {
   if (typeof row.id !== 'string' || !['name', 'variant', 'equipment', 'note', 'load_convention', 'load_unit', 'measurement_mode'].every(key => typeof row[key] === 'string')
     || typeof row.per_side !== 'boolean') throw new ExercisesFailure('unavailable')
   const value: CatalogExercise = {
+    ...category(row),
     id: row.id as string, name: row.name as string, variant: row.variant as string,
     equipment: row.equipment as string, loadConvention: row.load_convention as ExerciseValues['loadConvention'],
     loadUnit: row.load_unit as ExerciseValues['loadUnit'], measurementMode: row.measurement_mode as ExerciseValues['measurementMode'],
@@ -113,7 +122,7 @@ export function createExercisesRepository(client: SupabaseClient, owner: string)
     async save(id, value, revision, signal) {
       if (!isExerciseId(id) || validateExercise(value) || (revision !== null && (!Number.isSafeInteger(revision) || revision < 1))) throw new ExercisesFailure('unavailable')
       const accessToken = await token(signal)
-      const mutable = { name: value.name, note: value.note, archived_at: value.archivedAt }
+      const mutable = { name: value.name, note: value.note, archived_at: value.archivedAt, ...(value.muscleGroup === undefined ? {} : { muscle_group: value.muscleGroup }) }
       const table = client.from('exercises')
       const change = revision === null ? table.insert({ id, ...mutable, variant: value.variant, equipment: value.equipment,
         load_convention: value.loadConvention, load_unit: value.loadUnit, measurement_mode: value.measurementMode, per_side: value.perSide })

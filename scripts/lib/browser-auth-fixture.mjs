@@ -116,7 +116,7 @@ export async function installAuthFixture(rawSend, socket, appOrigin, state = {})
         else if (request.method === 'PATCH' && row && fields.revision !== row.revision + 1) { status = 409; data = { code: 'PT409' } }
         else if (request.method === 'PATCH' && !row) data = []
         else {
-          if (request.method === 'PATCH' && Object.keys(fields).some(key => !['name', 'note', 'archived_at', 'revision'].includes(key))) state.failures.push('Update identità esercizio inatteso')
+          if (request.method === 'PATCH' && Object.keys(fields).some(key => !['name', 'note', 'muscle_group', 'archived_at', 'revision'].includes(key))) state.failures.push('Update identità esercizio inatteso')
           data = { ...row, ...fields, owner_id: owner, revision: request.method === 'POST' ? 1 : fields.revision }
           state.exercises.set(key, data)
           if (state.loseExerciseResponse) {

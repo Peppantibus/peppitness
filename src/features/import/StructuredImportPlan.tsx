@@ -1,3 +1,4 @@
+import { MuscleGroupBadge } from '../../components/MuscleGroupBadge'
 import { useState, useSyncExternalStore } from 'react'
 import { SubpageHeader } from '../../components/SubpageHeader'
 import { buildStructured, columns, identityKey, structuredCandidates, type Cell, type StructuredDraft } from '../../import/structured/parser.ts'
@@ -71,7 +72,7 @@ export function StructuredImportPlan({ kind, store, loadFailed, onRetryLoad, con
           })}
           {built.preview.kind === 'workout' && <div className="si-catalog"><p>Dal tuo catalogo: {built.preview.resolved.catalog.filter(b => b.choice.source === 'existing').map(b => exerciseChoiceValues(b.choice).name).join(', ') || 'nessuno'}. Dal catalogo condiviso: {built.preview.resolved.catalog.filter(b => b.choice.source === 'shared').map(b => exerciseChoiceValues(b.choice).name).join(', ') || 'nessuno'}.</p><h3>Nuovi esercizi ({built.preview.resolved.catalog.filter(b => b.choice.source === 'new').length})</h3><ul>{built.preview.resolved.catalog.filter(b => b.choice.source === 'new').map(b => {
             const v = exerciseChoiceValues(b.choice), key = identityKey(v.name, v.measurementMode)
-            return <li key={b.ref}><strong>{v.name}</strong> · {v.measurementMode === 'reps' ? 'ripetizioni' : 'secondi'}<details><summary>Impostazioni: {v.loadUnit}, {v.loadConvention === 'total' ? 'carico totale' : v.loadConvention === 'bodyweight' ? 'corpo libero' : 'un manubrio'}, {v.perSide ? 'per lato' : 'non per lato'}</summary>
+            return <li key={b.ref}><strong>{v.name}</strong> <MuscleGroupBadge exercise={v} /> · {v.measurementMode === 'reps' ? 'ripetizioni' : 'secondi'}<details><summary>Impostazioni: {v.loadUnit}, {v.loadConvention === 'total' ? 'carico totale' : v.loadConvention === 'bodyweight' ? 'corpo libero' : 'un manubrio'}, {v.perSide ? 'per lato' : 'non per lato'}</summary>
               <label>Unità <select aria-label={`Unità ${v.name}`} disabled={locked || confirming} value={v.loadUnit} onChange={e => setting(key, v, { loadUnit: e.target.value as 'kg' | 'lb' })}><option value="kg">kg</option><option value="lb">lb</option></select></label>
               <label>Carico <select aria-label={`Carico ${v.name}`} disabled={locked || confirming} value={v.loadConvention} onChange={e => setting(key, v, { loadConvention: e.target.value as CatalogExerciseValues['loadConvention'] })}><option value="total">Totale</option><option value="single-dumbbell">Un manubrio</option><option value="bodyweight">Corpo libero</option></select></label>
               <label><input type="checkbox" aria-label={`Per lato ${v.name}`} disabled={locked || confirming} checked={v.perSide} onChange={e => setting(key, v, { perSide: e.target.checked })} />Per lato</label>

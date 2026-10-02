@@ -1,0 +1,63 @@
+-- Solo stack locale, account sintetici senza password; rollback completo.
+begin;
+create extension if not exists pgtap with schema extensions;
+set local search_path = public, extensions, pg_catalog;
+select no_plan();
+select is(peppitness_private.infer_muscle_group('Chest press'), 'Petto', 'Chest press in Petto');
+select is(peppitness_private.infer_muscle_group('Panca piana'), 'Petto', 'Panca piana in Petto');
+select is(peppitness_private.infer_muscle_group('Reverse pec deck'), 'Spalle', 'Reverse pec deck in Spalle');
+select is(peppitness_private.infer_muscle_group('Rematore con petto supportato'), 'Schiena', 'Rematore prima di petto');
+select is(peppitness_private.infer_muscle_group('Leg curl'), 'Gambe', 'Leg curl prima di bicipiti');
+select is(peppitness_private.infer_muscle_group('Curl al cavo'), 'Bicipiti', 'Curl in Bicipiti');
+select is(peppitness_private.infer_muscle_group('Dip alle parallele', 'Tricipiti'), 'Tricipiti', 'Variante dip esplicita');
+select is(peppitness_private.infer_muscle_group('Dip alle parallele'), null, 'Dip ambiguo non inferito');
+select is(peppitness_private.infer_muscle_group('Esercizio personale'), null, 'Nome sconosciuto non inferito');
+select is(peppitness_private.infer_muscle_group('Calf raise'), 'Polpacci', 'Polpacci riconosciuti');
+select is(peppitness_private.infer_muscle_group('Plank laterale'), 'Addome', 'Addome riconosciuto');
+select is(peppitness_private.infer_muscle_group('Hip thrust'), 'Glutei', 'Glutei riconosciuti');
+select is(peppitness_private.infer_muscle_group('Farmer’s carry'), 'Full body', 'Carry riconosciuto');
+select is(peppitness_private.infer_muscle_group('Cyclette'), 'Cardio', 'Cardio riconosciuto');
+select ok(not has_function_privilege('authenticated','peppitness_private.set_initial_muscle_group()','execute'), 'Trigger non esposto');
+select ok(not has_function_privilege('anon','peppitness_private.snapshot_session_muscle_groups()','execute'), 'Anonimo senza helper');
+insert into auth.users(id,aud,role,email) values
+ ('14111111-1111-4111-8111-111111111111','authenticated','authenticated','groups-a@example.invalid'),
+ ('14222222-2222-4222-8222-222222222222','authenticated','authenticated','groups-b@example.invalid');
+insert into public.shared_exercises(id,name,variant,equipment,load_convention,measurement_mode,muscle_group)
+ values ('14333333-3333-4333-8333-333333333333','Template sintetico','','','total','reps','Schiena');
+set local role authenticated;
+select set_config('request.jwt.claims','{"sub":"14111111-1111-4111-8111-111111111111","role":"authenticated"}',true);
+select lives_ok($q$ insert into public.exercises(id,name) values ('14aaaaaa-0000-4000-8000-000000000001','Chest press') $q$, 'Client/import senza campo usa riconoscimento');
+select is((select muscle_group from public.exercises where id='14aaaaaa-0000-4000-8000-000000000001'), 'Petto', 'Default auto trasformato prima del vincolo');
+select lives_ok($q$ insert into public.exercises(id,name,muscle_group) values ('14aaaaaa-0000-4000-8000-000000000002','Panca piana',null) $q$, 'Da classificare esplicito accettato');
+select is((select muscle_group from public.exercises where id='14aaaaaa-0000-4000-8000-000000000002'), null, 'Null non sovrascritto dal riconoscimento');
+select throws_ok($q$ insert into public.exercises(name,muscle_group) values ('Test','invalid') $q$,'23514',null,'Categoria invalida respinta');
+select throws_ok($q$ update public.exercises set muscle_group='Spalle',revision=1 where id='14aaaaaa-0000-4000-8000-000000000001' $q$,'PT409','Revision conflict','Revisione obsoleta respinta anche per categoria');
+select lives_ok($q$ update public.exercises set muscle_group='Spalle',revision=2 where id='14aaaaaa-0000-4000-8000-000000000001' $q$, 'Categoria modificabile sullo stesso ID');
+select is((select muscle_group from public.exercises where id='14aaaaaa-0000-4000-8000-000000000001'), 'Spalle', 'Categoria manuale prevale sul nome');
+select is((select count(*)::integer from public.exercises),2,'Nessuna duplicazione');
+select lives_ok($q$ select public.adopt_shared_exercise('14333333-3333-4333-8333-333333333333') $q$,'Adozione template');
+select is((select muscle_group from public.exercises where source_template_id='14333333-3333-4333-8333-333333333333'), 'Schiena', 'Adozione copia categoria curata anche con nome sconosciuto');
+select lives_ok($q$ select public.adopt_shared_exercise('14333333-3333-4333-8333-333333333333') $q$,'Adozione ripetuta idempotente');
+select is((select count(*)::integer from public.exercises),3,'Una sola copia del template');
+select throws_ok($q$ update public.shared_exercises set muscle_group='Petto' $q$,'42501',null,'Template comune di sola lettura');
+select lives_ok($q$ select public.save_workout_draft('14bbbbbb-0000-4000-8000-000000000001','14cccccc-0000-4000-8000-000000000001',0,'Programma test','',
+ '[{"id":"14dddddd-0000-4000-8000-000000000001","label":"Lun","title":"Test","note":"","exercises":[{"id":"14eeeeee-0000-4000-8000-000000000001","exercise_id":"14aaaaaa-0000-4000-8000-000000000001","sets":2,"reps_min":8,"reps_max":10,"rest_seconds":90}]}]') $q$,'Bozza atomica con categoria');
+select is((select exercise_snapshot->>'muscle_group' from public.workout_prescriptions),'Spalle','Snapshot prescrizione dal catalogo');
+select lives_ok($q$ select public.publish_workout_version('14cccccc-0000-4000-8000-000000000001',1,1) $q$,'Pubblicazione invariata');
+select lives_ok($q$ select public.start_workout_session('14ffffff-0000-4000-8000-000000000001','14cccccc-0000-4000-8000-000000000001','14dddddd-0000-4000-8000-000000000001','2026-10-02','Europe/Rome') $q$,'Avvio seduta');
+select is((select day_snapshot#>>'{exercises,0,muscle_group}' from public.workout_sessions),'Spalle','Seduta conserva categoria allo start');
+select lives_ok($q$ update public.exercises set muscle_group='Petto',revision=3 where id='14aaaaaa-0000-4000-8000-000000000001' $q$,'Riclassificazione dopo start');
+select is((select day_snapshot#>>'{exercises,0,muscle_group}' from public.workout_sessions),'Spalle','Snapshot storico invariato dopo riclassificazione');
+select is((select exercise_snapshot->>'muscle_group' from public.workout_prescriptions),'Spalle','Versione pubblicata non riscritta');
+select set_config('request.jwt.claims','{"sub":"14222222-2222-4222-8222-222222222222","role":"authenticated"}',true);
+select is((select count(*)::integer from public.exercises),0,'B non legge dati o gruppi di A');
+select lives_ok($q$ update public.exercises set muscle_group='Gambe',revision=4 where id='14aaaaaa-0000-4000-8000-000000000001' $q$,'Update altrui filtrato da RLS');
+select set_config('request.jwt.claims','{"sub":"14111111-1111-4111-8111-111111111111","role":"authenticated"}',true);
+select is((select muscle_group from public.exercises where id='14aaaaaa-0000-4000-8000-000000000001'),'Petto','B non modifica categoria di A');
+reset role;
+set local role anon;
+select throws_ok($q$ select muscle_group from public.exercises $q$,'42501',null,'Anonimo non legge categorie personali');
+select throws_ok($q$ update public.exercises set muscle_group='Petto' $q$,'42501',null,'Anonimo non scrive categorie');
+reset role;
+select * from finish();
+rollback;

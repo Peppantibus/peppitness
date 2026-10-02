@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isExerciseId, validateExercise } from '../domain/exercises.ts'
+import { isMuscleGroup } from '../domain/muscle-groups.ts'
 import { programPayload, validateProgram } from '../domain/programs.ts'
 import type { ProgramCycle, ProgramDocument, ProgramRoot, ProgramVersion, ProgramIndex, SavedProgram, ProgramDay, PrescriptionDraft, ProgramExercise } from '../domain/programs.ts'
 
@@ -51,7 +52,8 @@ function version(row: Row): ProgramVersion {
 }
 function snapshot(value: unknown): ProgramExercise {
   const row = record(value)
-  const result: ProgramExercise = { id: id(row.id), name: string(row.name), variant: string(row.variant), equipment: string(row.equipment),
+  if (row.muscle_group !== undefined && row.muscle_group !== null && !isMuscleGroup(row.muscle_group)) fail()
+  const result: ProgramExercise = { ...(row.muscle_group === undefined ? {} : { muscleGroup: row.muscle_group as ProgramExercise['muscleGroup'] }), id: id(row.id), name: string(row.name), variant: string(row.variant), equipment: string(row.equipment),
     loadConvention: string(row.load_convention) as ProgramExercise['loadConvention'], loadUnit: string(row.load_unit) as ProgramExercise['loadUnit'],
     measurementMode: string(row.mode) as ProgramExercise['measurementMode'], perSide: row.per_side as boolean, note: string(row.note) }
   if (validateExercise({ ...result, archivedAt: null })) fail()

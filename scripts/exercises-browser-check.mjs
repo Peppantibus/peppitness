@@ -172,7 +172,7 @@ try {
   const sharedId = '33333333-3333-4333-8333-333333333333'
   mock.sharedExercises.set(sharedId, { id: sharedId, name: 'Squat condiviso', variant: '', equipment: 'Bilanciere', load_convention: 'total', load_unit: 'kg', measurement_mode: 'reps', per_side: false, note: '' })
   await a.click('.catalog-scope button:first-child'); await a.click('.catalog-actions .secondary')
-  await a.until('document.querySelector(".catalog-card h2")?.textContent === "Squat condiviso"')
+  await a.until('document.querySelector(".catalog-card h3")?.textContent === "Squat condiviso"')
   for (const width of [320, 390, 768, 1440]) {
     await a.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 720 })
     assert.ok(await a.evaluate('document.documentElement.scrollWidth <= innerWidth'), `Overflow catalogo comune ${width}`)

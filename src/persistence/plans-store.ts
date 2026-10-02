@@ -1,6 +1,8 @@
 import { cleanMealPlanDraft, mealPlanTooLarge, newMealPlan, sameMealPlan, validateMealPlanDraft } from '../domain/meal-plans.ts'
 import type { MealPlan, MealPlanDraft } from '../domain/meal-plans.ts'
 import type { ProgramIndex, SavedProgram } from '../domain/programs.ts'
+import { withCatalogMuscleGroups } from '../domain/programs.ts'
+import type { CatalogExercise } from '../domain/exercises.ts'
 import type { KeyValueStorage } from './diary-store.ts'
 import { PlansFailure } from './plans-repository.ts'
 import type { ActiveSelection, PlansRepository } from './plans-repository.ts'
@@ -59,6 +61,13 @@ export class PlansStore {
     this.listeners.forEach(listener => listener())
   }
   private editor(value: Partial<MealEditorState>) { this.emit({ editor: { ...this.state.editor, ...value } }) }
+  /** Conserva nella copia offline della scheda i gruppi letti online per questo account. */
+  applyCatalogMuscleGroups = (rows: readonly CatalogExercise[]) => {
+    const workout = this.state.workout
+    if (!workout || this.state.phase !== 'ready' || this.state.cached) return
+    const document = withCatalogMuscleGroups(workout.document, rows)
+    if (JSON.stringify(document) !== JSON.stringify(workout.document)) this.emit({ workout: { ...workout, document } })
+  }
   getSnapshot = () => this.state
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   stop = () => { this.loading?.abort(); this.writing?.abort(); this.editing?.abort() }

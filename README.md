@@ -1,5 +1,7 @@
 # peppitness
 
+Gli esercizi sono organizzati per gruppo muscolare, con categorie modificabili, filtri nel catalogo e selezione per gruppo durante la creazione e modifica dei programmi.
+
 **Allenamento, alimentazione e progressi in un posto solo.**
 
 peppitness nasce per rendere più semplice seguire una scheda e un piano alimentare nella vita di tutti i giorni. L'interfaccia dà spazio a ciò che serve adesso: la seduta di oggi, le serie da completare, il recupero e i pasti della giornata.
@@ -8,7 +10,7 @@ peppitness nasce per rendere più semplice seguire una scheda e un piano aliment
 
 - Creare un programma di allenamento, scegliere gli esercizi e seguire il ciclo settimana dopo settimana.
 - Registrare serie, carichi e recuperi durante la seduta, con i risultati precedenti a portata di mano.
-- Organizzare un piano alimentare e annotare i pasti senza perdere lo storico.
+- Organizzare un piano alimentare con un periodo di validità, vedere le calorie stimate dagli alimenti e annotare i pasti senza perdere lo storico.
 - Vedere nei Progressi la costanza settimanale e l'andamento degli esercizi.
 - Partire da un catalogo di esercizi comuni o aggiungere i propri.
 - Importare scheda e piano alimentare dai due modelli Word strutturati scaricabili nell’app: anteprima modificabile, una conferma finale e lettura locale senza IA.

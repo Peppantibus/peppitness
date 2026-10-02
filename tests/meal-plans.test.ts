@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cleanMealPlanDraft, daysForType, mealFromPlan, mealPlanTooLarge, newMealPlan, newPlanDay, newPlanMeal, validateMealPlanDocument, validateMealPlanDraft } from '../src/domain/meal-plans.ts'
+import { cleanMealPlanDraft, daysForType, defaultMealPlanDay, mealFromPlan, mealPlanTooLarge, newMealPlan, newPlanDay, newPlanMeal, validateMealPlanDocument, validateMealPlanDraft } from '../src/domain/meal-plans.ts'
+import { localDate } from '../src/domain/dates.ts'
 import type { MealPlan, MealPlanDraft } from '../src/domain/meal-plans.ts'
 import type { ProgramIndex, SavedProgram } from '../src/domain/programs.ts'
 import { memoryStorage } from '../src/persistence/diary-store.ts'
@@ -10,6 +11,30 @@ import { PlansStore } from '../src/persistence/plans-store.ts'
 import type { ProgramsRepository } from '../src/persistence/programs-repository.ts'
 
 const OWNER = '11111111-1111-4111-8111-111111111111'
+
+test('menu alimentare predefinito: giorno della data, nomi italiani e ordine libero', () => {
+  const names = ['Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato', 'Domenica']
+  const days = names.map(name => ({ ...newPlanDay([]), name, dayType: 'any' as const }))
+  for (let index = 0; index < 7; index++) {
+    assert.equal(defaultMealPlanDay([...days].reverse(), `2026-10-${String(index + 5).padStart(2, '0')}`)?.name, names[index])
+  }
+  for (const name of ['  VENERDI  ', 'Venerdì', 'ven', 'Ven.']) {
+    assert.equal(defaultMealPlanDay([days[0]!, { ...days[4]!, name }], '2026-10-02')?.id, days[4]!.id)
+  }
+  const now = new Date('2026-10-02T22:30:00Z')
+  assert.equal(defaultMealPlanDay(days, localDate(now, 'Europe/Rome'))?.name, 'Sabato')
+  assert.equal(defaultMealPlanDay(days, localDate(now, 'America/New_York'))?.name, 'Venerdì')
+})
+
+test('menu alimentare predefinito: rispetta il tipo, non assegna giorni a menu generici', () => {
+  const days = [{ ...newPlanDay([]), name: 'Menu A', dayType: 'any' as const }, { ...newPlanDay([]), name: 'Venerdì', dayType: 'rest' as const }]
+  const document = { guidance: '', days }
+  assert.equal(defaultMealPlanDay(daysForType(document, 'training'), '2026-10-02')?.name, 'Menu A')
+  assert.equal(defaultMealPlanDay(daysForType(document, 'rest'), '2026-10-02')?.name, 'Venerdì')
+  assert.equal(defaultMealPlanDay(days, '2026-10-03')?.name, 'Menu A')
+  assert.equal(defaultMealPlanDay([{ ...days[0]!, name: 'Menu Venerdì' }, { ...days[0]!, id: crypto.randomUUID(), name: 'Giornata 5' }], '2026-10-02')?.name, 'Menu Venerdì')
+  assert.equal(defaultMealPlanDay([], '2026-10-02'), undefined)
+})
 function draft(): MealPlanDraft {
   const plan = newMealPlan()
   const training = newPlanDay([]), rest = newPlanDay([training])

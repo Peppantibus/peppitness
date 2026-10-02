@@ -1,7 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { isMealEnergy } from '../domain/food-energy.ts'
 import { dayFromSnapshot, emptyDiary, formatDecimal, mealLogKey, totalSets } from '../domain/diary.ts'
 import type { DiaryData, SessionSnapshot, SnapshotExercise } from '../domain/diary.ts'
 import { isExerciseId } from '../domain/exercises.ts'
+import { isMuscleGroup } from '../domain/muscle-groups.ts'
 import { isLocalDate } from '../domain/dates.ts'
 import type { DayType, Meal, MealStatus, SetResult, WorkoutSession } from '../domain/types.ts'
 
@@ -41,7 +43,9 @@ const dayTypes = ['training', 'rest'], statuses = ['unrecorded', 'followed', 'mo
 
 function snapshotExercise(value: unknown): SnapshotExercise {
   const row = record(value)
+  if (row.muscle_group !== undefined && row.muscle_group !== null && !isMuscleGroup(row.muscle_group)) bad()
   const result = {
+    ...(row.muscle_group === undefined ? {} : { muscle_group: row.muscle_group }),
     id: id(row.id), exercise_id: id(row.exercise_id), name: string(row.name), variant: string(row.variant), equipment: string(row.equipment),
     load_convention: string(row.load_convention), load_unit: string(row.load_unit), per_side: row.per_side, exercise_note: string(row.exercise_note ?? ''),
     mode: string(row.mode), sets: nullableNumber(row.sets), optional_sets: nullableNumber(row.optional_sets), reps_min: nullableNumber(row.reps_min),
@@ -81,6 +85,15 @@ export function mealLogFromRow(value: unknown) {
   const meal: Meal = { id: id(snapshot.id), name: string(snapshot.name), timeLabel: string(snapshot.timeLabel ?? ''), description: string(snapshot.description ?? ''),
     items: texts(snapshot.items ?? []), alternative: string(snapshot.alternative ?? ''), alternatives: texts(snapshot.alternatives ?? []), additions: texts(snapshot.additions ?? []), note: string(snapshot.note ?? '') }
   if (meal.id !== row.meal_id) bad()
+  if (snapshot.energy !== undefined) {
+    if (!isMealEnergy(snapshot.energy)) bad()
+    meal.energy = snapshot.energy as NonNullable<Meal['energy']>
+  }
+  if (snapshot.energyOverrides !== undefined) {
+    const overrides = snapshot.energyOverrides
+    if (!Array.isArray(overrides) || overrides.length !== meal.items.length || overrides.some(v => v !== null && (typeof v !== 'number' || !Number.isFinite(v) || v < 0 || v > 1000))) bad()
+    meal.energyOverrides = overrides as (number | null)[]
+  }
   return { date: date(row.diary_date), revision: revision(row.revision), planId: id(row.meal_plan_id),
     log: { date: date(row.diary_date), mealId: meal.id, status: row.status as MealStatus, note: string(row.note), dayType: row.day_type as DayType, snapshot: meal } }
 }

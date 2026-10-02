@@ -1,4 +1,5 @@
 import { loadLabels } from './exercises.ts'
+import type { MuscleGroup } from './muscle-groups.ts'
 import type { ProgramDocument } from './programs.ts'
 import { parseNonNegativeNumber, validateSet } from './validation.ts'
 import type { DayType, ExercisePrescription, LocalDate, Meal, MealLog, MealStatus, RestTimerState, SetResult, WorkoutDay, WorkoutSession } from './types.ts'
@@ -14,6 +15,7 @@ export function mealLogKey(date: LocalDate, mealId: string): string { return `${
 
 /** Prescrizione salvata nello snapshot server della seduta. */
 export interface SnapshotExercise {
+  muscle_group?: MuscleGroup | null
   id: string; exercise_id: string; name: string; variant: string; equipment: string
   load_convention: 'total' | 'single-dumbbell' | 'bodyweight'; load_unit: 'kg' | 'lb'; per_side: boolean; exercise_note: string
   mode: 'reps' | 'seconds'; sets: number; optional_sets: number; reps_min: number | null; reps_max: number | null
@@ -32,6 +34,7 @@ function prescription(value: SnapshotExercise): ExercisePrescription {
   const effort = [value.rir !== null ? `RIR ${formatDecimal(value.rir)}` : '', value.rpe !== null ? `RPE ${formatDecimal(value.rpe)}` : ''].filter(Boolean).join(' · ')
   const perSide = value.per_side ? 'per lato' : ''
   return {
+    ...(value.muscle_group === undefined ? {} : { muscleGroup: value.muscle_group }),
     id: value.id, exerciseId: value.exercise_id, name: value.name,
     area: [value.variant, value.equipment, perSide].filter(Boolean).join(' · ') || loadLabels[value.load_convention],
     sets: value.sets, ...(value.optional_sets > 0 ? { optionalSets: value.optional_sets } : {}),
@@ -52,6 +55,7 @@ export function workoutDaysFromProgram(document: ProgramDocument): WorkoutDay[] 
   return document.days.map(day => dayFromSnapshot(day.id, {
     label: day.label, title: day.title, note: day.note, plan_title: document.title, version_number: 0,
     exercises: day.exercises.map(item => ({
+      ...(item.exercise.muscleGroup === undefined ? {} : { muscle_group: item.exercise.muscleGroup }),
       id: item.id, exercise_id: item.exercise.id, name: item.exercise.name, variant: item.exercise.variant, equipment: item.exercise.equipment,
       load_convention: item.exercise.loadConvention, load_unit: item.exercise.loadUnit, per_side: item.exercise.perSide, exercise_note: item.exercise.note,
       mode: item.exercise.measurementMode, sets: number(item.sets) ?? 1, optional_sets: number(item.optionalSets) ?? 0,

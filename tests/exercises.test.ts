@@ -198,7 +198,7 @@ test('catalogo comune: visibile senza creare copie, adozione una sola volta e ar
   assert.equal(calls, 1)
 })
 
-const row = { owner_id: owner, id, name: original.name, variant: original.variant, equipment: original.equipment, load_convention: 'total', load_unit: 'kg', measurement_mode: 'reps', per_side: false, note: '', archived_at: null, revision: 1 }
+const row = { muscle_group: null, owner_id: owner, id, name: original.name, variant: original.variant, equipment: original.equipment, load_convention: 'total', load_unit: 'kg', measurement_mode: 'reps', per_side: false, note: '', archived_at: null, revision: 1 }
 const json = (value: unknown, status = 200) => new Response(JSON.stringify(value), { status, headers: { 'Content-Type': 'application/json' } })
 function sdkFixture(respond: (request: Request) => Promise<Response>) {
   const client = createClient('http://127.0.0.1:54321', 'public-fixture', { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }, global: { fetch: async (url, init) => respond(new Request(url, init)) } })
@@ -218,7 +218,7 @@ test('SDK reale: paginazione continua anche se il limite del server è inferiore
   assert.equal(new URL(requests[1]!.url).searchParams.get('id'), `gt.${id}`)
 })
 
-test('SDK reale: insert con UUID senza upsert/owner; update solo nome/note/archivio e revisione +1', async () => {
+test('SDK reale: insert con UUID senza upsert/owner; update solo nome/note/gruppo/archivio e revisione +1', async () => {
   const requests: Request[] = []
   const client = sdkFixture(async request => { requests.push(request); return json({ ...row, revision: request.method === 'PATCH' ? 2 : 1 }) })
   const repository = createExercisesRepository(client, owner)
@@ -229,7 +229,7 @@ test('SDK reale: insert con UUID senza upsert/owner; update solo nome/note/archi
   const update = requests[1]!
   assert.equal(new URL(update.url).searchParams.get('owner_id'), `eq.${owner}`)
   assert.equal(new URL(update.url).searchParams.get('id'), `eq.${id}`)
-  assert.deepEqual(await update.json(), { name: original.name, note: '', archived_at: null, revision: 2 })
+  assert.deepEqual(await update.json(), { name: original.name, note: '', muscle_group: null, archived_at: null, revision: 2 })
 })
 
 test('SDK reale: 409 e risposta vuota sono conflitti, nessun testo privato mostrato', async () => {

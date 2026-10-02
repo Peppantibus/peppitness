@@ -1,4 +1,8 @@
+import { exerciseMuscleGroup, isMuscleGroup, muscleGroupLabel } from './muscle-groups.ts'
+import type { MuscleGroup, MuscleGroupFilter } from './muscle-groups.ts'
+
 export interface ExerciseValues {
+  muscleGroup?: MuscleGroup | null
   name: string
   variant: string
   equipment: string
@@ -16,10 +20,11 @@ export const modeLabels = { reps: 'Ripetizioni', seconds: 'Secondi' }
 export const isExerciseId = (id: string) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
 
 export function emptyExercise(): ExerciseValues {
-  return { name: '', variant: '', equipment: '', loadConvention: 'total', loadUnit: 'kg', measurementMode: 'reps', perSide: false, note: '', archivedAt: null }
+  return { name: '', muscleGroup: null, variant: '', equipment: '', loadConvention: 'total', loadUnit: 'kg', measurementMode: 'reps', perSide: false, note: '', archivedAt: null }
 }
 
 export function validateExercise(value: ExerciseValues): string | null {
+  if (value.muscleGroup !== undefined && value.muscleGroup !== null && !isMuscleGroup(value.muscleGroup)) return 'Scegli un gruppo muscolare valido.'
   // PostgreSQL conta i caratteri Unicode, non le unità UTF-16.
   if (!value.name.trim() || value.name !== value.name.trim() || [...value.name].length > 120) return 'Inserisci un nome da 1 a 120 caratteri.'
   if ([...value.variant].length > 120 || [...value.equipment].length > 120) return 'Variante e attrezzo possono contenere al massimo 120 caratteri.'
@@ -38,13 +43,14 @@ export function sameExerciseIdentity(a: ExerciseValues, b: ExerciseValues) {
 
 export function sameExercise(a: ExerciseValues, b: ExerciseValues) {
   const sameArchive = a.archivedAt === b.archivedAt || (a.archivedAt !== null && b.archivedAt !== null && Date.parse(a.archivedAt) === Date.parse(b.archivedAt))
-  return sameExerciseIdentity(a, b) && a.name === b.name && a.note === b.note && sameArchive
+  return sameExerciseIdentity(a, b) && a.name === b.name && a.note === b.note && sameArchive && exerciseMuscleGroup(a) === exerciseMuscleGroup(b)
 }
 
-export function searchExercises(rows: CatalogExercise[], search: string, filter: 'active' | 'archived' | 'all') {
+export function searchExercises(rows: CatalogExercise[], search: string, filter: 'active' | 'archived' | 'all', group: MuscleGroupFilter = 'all') {
   const normalize = (value: string) => value.normalize('NFD').replace(/\p{M}/gu, '').toLocaleLowerCase('it')
   const words = normalize(search).trim().split(/\s+/).filter(Boolean)
   return rows.filter(row => (filter === 'all' || Boolean(row.archivedAt) === (filter === 'archived'))
-    && words.every(word => normalize(`${row.name} ${row.variant} ${row.equipment}`).includes(word)))
+    && (group === 'all' || exerciseMuscleGroup(row) === (group === 'unclassified' ? null : group))
+    && words.every(word => normalize(`${row.name} ${row.variant} ${row.equipment} ${muscleGroupLabel(row)}`).includes(word)))
     .sort((a, b) => a.name.localeCompare(b.name, 'it') || a.id.localeCompare(b.id))
 }

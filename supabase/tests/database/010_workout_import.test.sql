@@ -79,7 +79,7 @@ create function pg_temp.program_days(version uuid) returns jsonb language sql as
 $$;
 create function pg_temp.session_day(snapshot jsonb) returns jsonb language sql as $$
   select jsonb_build_object('label', snapshot->'label', 'title', snapshot->'title', 'note', snapshot->'note',
-    'exercises', (select coalesce(jsonb_agg(e.value - 'id' - 'exercise_id' order by e.ordinality), '[]'::jsonb)
+    'exercises', (select coalesce(jsonb_agg(e.value - 'id' - 'exercise_id' - 'muscle_group' order by e.ordinality), '[]'::jsonb)
       from jsonb_array_elements(snapshot->'exercises') with ordinality e));
 $$;
 create function pg_temp.session(session_id uuid, version uuid, day uuid) returns jsonb language plpgsql as $$

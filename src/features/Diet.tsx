@@ -1,5 +1,10 @@
 import { useRef, useState } from 'react'
 import { Icon } from '../components/Icon'
+import { MealImage } from '../components/MealImage'
+import { DietSummary } from '../components/DietSummary'
+import { FoodEnergyPreview } from '../components/FoodEnergyPreview'
+import { energyOfMeal, foodsFromMeal } from '../domain/food-energy'
+import type { MealPlanDocument } from '../domain/meal-plans'
 import { Segmented } from '../components/Segmented'
 import type { IconName } from '../components/Icon'
 import { mealStatuses } from '../domain/types'
@@ -10,20 +15,16 @@ import type { DiaryData } from '../domain/diary'
 const statusIcons: Record<Exclude<MealStatus, 'unrecorded'>, IconName> = { followed: 'check', modified: 'edit', skipped: 'skip' }
 const recordStatuses = ['followed', 'modified', 'skipped'] as const
 
-/** Icona dal nome del pasto, altrimenti dall'orario: non dalla posizione nell'elenco. */
-export function mealIcon(meal: Pick<Meal, 'name' | 'timeLabel'>): IconName {
-  const name = meal.name.toLowerCase()
-  if (/colazion/.test(name)) return 'sun'
-  if (/pranzo/.test(name)) return 'fork'
-  if (/cena/.test(name)) return 'moon'
-  if (/spuntin|merend|snack/.test(name)) return 'cup'
-  if (/allenament|workout/.test(name)) return 'dumbbell'
-  const hour = Number(/^\s*(\d{1,2})[:.]\d{2}/.exec(meal.timeLabel)?.[1] ?? NaN)
-  if (!Number.isNaN(hour)) return hour < 11 ? 'sun' : hour < 15 ? 'fork' : hour < 18 ? 'cup' : 'moon'
-  return 'fork'
+/** Mostra i testi salvati, enfatizzando solo la quantità già separata da « · ». */
+function MealFoodPreview({ items }: { items: readonly string[] }) {
+  return <ul className="meal-food-preview">{items.map((item, index) => {
+    const parts = item.split(' · ')
+    return <li key={`${index}-${item}`}><span>{parts.length === 2 && parts.every(Boolean)
+      ? <>{parts[0]}{' · '}<strong>{parts[1]}</strong></> : item}</span></li>
+  })}</ul>
 }
 
-export function Diet({ date, isToday, state, meals, dayType, dayTypeHint, planTitle, planGuidance, dayOptions = [], selectedPlanDay = 0, onPlanDay, dayNote, onDayType, onQuickFollow }: {
+export function Diet({ date, isToday, state, meals, dayType, dayTypeHint, planTitle, planGuidance, planDocument, dayOptions = [], selectedPlanDay = 0, onPlanDay, dayNote, onDayType, onQuickFollow }: {
   date: string
   /** Solo oggi il primo pasto non registrato viene indicato come «prossimo». */
   isToday: boolean
@@ -34,6 +35,7 @@ export function Diet({ date, isToday, state, meals, dayType, dayTypeHint, planTi
   dayTypeHint?: string
   planTitle?: string
   planGuidance?: string
+  planDocument?: MealPlanDocument
   dayOptions?: string[]
   selectedPlanDay?: number
   onPlanDay?: (index: number) => void
@@ -49,6 +51,7 @@ export function Diet({ date, isToday, state, meals, dayType, dayTypeHint, planTi
   // Su desktop largo il contesto della giornata sta in una colonna a sinistra, i pasti a destra.
   return <div className="diet-layout">
     <div className="diet-context">
+    {planDocument && <DietSummary date={date} document={planDocument} meals={meals} state={state} />}
     {/* Il tipo di giornata decide quali pasti compaiono: viene prima dell'elenco. */}
     <section className="day-type" aria-labelledby="day-type-title">
       <div className="day-type-row">
@@ -71,8 +74,13 @@ export function Diet({ date, isToday, state, meals, dayType, dayTypeHint, planTi
       <div className="meal-list">{meals.map(meal => {
         const status = statusOf(meal)
         const isNext = meal.id === nextId
+        const energy = energyOfMeal(state.mealLogs[mealLogKey(date, meal.id)]?.snapshot ?? meal)
         return <div key={meal.id} className={`meal-card ${status !== 'unrecorded' ? 'is-recorded' : ''} ${isNext ? 'is-next' : ''}`}>
-          <a className="meal-card-link" href={`#/dieta/pasto/${meal.id}`}><span className="meal-icon"><Icon name={mealIcon(meal)} size={24} /></span><div className="meal-card-copy"><span className="mini-label">{isNext && <span className="next-label">Prossimo</span>}{meal.timeLabel}</span><h3>{meal.name}</h3><p>{meal.description}</p>{status !== 'unrecorded' && <span className={`status status-${status}`}>{status === 'followed' && <Icon name="check" size={16} />}{mealStatuses[status]}</span>}</div></a>
+          <a className="meal-card-link" href={`#/dieta/pasto/${meal.id}`}>
+            <div className="meal-card-heading"><MealImage meal={meal} /><div className="meal-card-copy"><span className="mini-label">{isNext && <span className="next-label">Prossimo</span>}{meal.timeLabel}</span><h3>{meal.name}</h3>{status !== 'unrecorded' && <span className={`status status-${status}`}>{status === 'followed' && <Icon name="check" size={16} />}{mealStatuses[status]}</span>}</div></div>
+            <p className="meal-kcal">{energy.kcal === null ? 'Calorie da stimare' : `≈ ${energy.kcal} kcal`}{energy.kcal !== null && energy.missing ? ' · parziale' : ''}{status === 'modified' && ' · pasto modificato da quantificare'}</p>
+            {meal.items.length ? <MealFoodPreview items={meal.items} /> : <p className="meal-food-empty">{meal.description}</p>}
+          </a>
           {status === 'unrecorded' || status === 'followed'
             ? <button type="button" className={`meal-quick ${status === 'followed' ? 'is-done' : ''}`} aria-pressed={status === 'followed'} aria-label={`${meal.name}: seguito`} title={status === 'followed' ? 'Togli «Seguito»' : 'Segna come seguito'} onClick={() => onQuickFollow(meal)}><Icon name="check" size={20} /></button>
             : <span className={`meal-quick is-static status-${status}`} aria-hidden="true"><Icon name={statusIcons[status]} size={20} /></span>}
@@ -92,6 +100,7 @@ export function MealDetail({ meal, log, onSave, onClose }: { meal: Meal; log?: M
   const choose = (value: MealStatus) => { setStatus(value); if (value === 'modified') window.requestAnimationFrame(() => noteRef.current?.focus()) }
   return <form onSubmit={event => { event.preventDefault(); if (!status) return; onSave(status, note); onClose() }}>
     {meal.timeLabel && <span className="eyebrow">{meal.timeLabel}</span>}<h2>{meal.name}</h2><p className="muted">{meal.description}</p><ul className="food-list">{meal.items.map(item => <li key={item}><Icon name="check" size={16} />{item}</li>)}</ul>
+    <FoodEnergyPreview foods={foodsFromMeal(meal)} />
     {(meal.alternatives?.length || meal.alternative) && <div className="detail-note"><strong>Alternative</strong>{meal.alternatives?.length ? <ul>{meal.alternatives.map(item => <li key={item}>{item}</li>)}</ul> : <p>{meal.alternative}</p>}</div>}
     {meal.additions && meal.additions.length > 0 && <div className="detail-note"><strong>Aggiunte previste</strong><ul>{meal.additions.map(item => <li key={item}>{item}</li>)}</ul></div>}
     <p className="muted small">{meal.note}</p>

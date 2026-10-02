@@ -1,9 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
+import { MuscleGroupSelect } from '../components/MuscleGroupSelect'
+import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
+import { groupExercises } from '../domain/muscle-groups'
+import type { MuscleGroupFilter } from '../domain/muscle-groups'
+
 import { Icon } from '../components/Icon'
 import { SubpageHeader } from '../components/SubpageHeader'
 import { Modal } from '../components/Modal'
 import { loadLabels, searchExercises } from '../domain/exercises'
-import { duplicateDay, moveItem, newDay, newPrescription } from '../domain/programs'
+import { withCatalogMuscleGroups, duplicateDay, moveItem, newDay, newPrescription } from '../domain/programs'
 import type { CatalogExercise } from '../domain/exercises'
 import type { ProgramDocument, PrescriptionDraft, ProgramDay, ProgramIndex } from '../domain/programs'
 import { fitsWizard, weeklySummary } from '../domain/weekly'
@@ -15,9 +20,10 @@ import type { ExercisesState, ExercisesStore } from '../persistence/exercises-st
 import type { ProgramsState, ProgramsStore } from '../persistence/programs-store'
 
 function ExercisePicker({ catalog, onAdd, dayId }: { catalog: { store: ExercisesStore | null; state: ExercisesState }; onAdd: (exercise: CatalogExercise) => void; dayId: string }) {
+  const [group, setGroup] = useState<MuscleGroupFilter>('all')
   const [search, setSearch] = useState(''), [selected, setSelected] = useState(''), [busy, setBusy] = useState(false), [error, setError] = useState('')
-  const personal = searchExercises(catalog.state.rows, search, 'active')
-  const shared = searchExercises(catalog.state.sharedRows, search, 'active').filter(row => !catalog.state.rows.some(own => own.sourceTemplateId === row.id))
+  const personal = searchExercises(catalog.state.rows, search, 'active', group)
+  const shared = searchExercises(catalog.state.sharedRows, search, 'active', group).filter(row => !catalog.state.rows.some(own => own.sourceTemplateId === row.id))
   const chosen = [...personal, ...shared].find(item => item.id === selected)
   const fromShared = chosen && shared.some(item => item.id === chosen.id)
   const add = async () => {
@@ -31,7 +37,8 @@ function ExercisePicker({ catalog, onAdd, dayId }: { catalog: { store: Exercises
   }
   return <div className="program-picker">
     <label htmlFor={`${dayId}-search`}>Cerca nel catalogo<input id={`${dayId}-search`} type="search" placeholder="Nome, variante o attrezzo" value={search} onChange={event => setSearch(event.target.value)} /></label>
-    <label htmlFor={`${dayId}-pick`}>Esercizio<select id={`${dayId}-pick`} className="program-exercise-select" value={chosen?.id ?? ''} onChange={event => setSelected(event.target.value)}><option value="">Scegli un esercizio</option>{personal.map(row => <option key={row.id} value={row.id}>Tuo · {[row.name, row.variant, row.equipment].filter(Boolean).join(' · ')}</option>)}{shared.map(row => <option key={row.id} value={row.id}>Comune · {[row.name, row.variant, row.equipment].filter(Boolean).join(' · ')}</option>)}</select></label>
+    <MuscleGroupSelect id={`${dayId}-group-filter`} filter value={group} onChange={setGroup} disabled={busy} />
+    <label htmlFor={`${dayId}-pick`}>Esercizio<select id={`${dayId}-pick`} className="program-exercise-select" value={chosen?.id ?? ''} onChange={event => setSelected(event.target.value)}><option value="">Scegli un esercizio</option>{groupExercises(personal).map(section => <optgroup key={section.label} label={`I tuoi · ${section.label}`}>{section.rows.map(row => <option key={row.id} value={row.id}>{[row.name, row.variant, row.equipment].filter(Boolean).join(' · ')}</option>)}</optgroup>)}{groupExercises(shared).map(section => <optgroup key={section.label} label={`Comuni · ${section.label}`}>{section.rows.map(row => <option key={row.id} value={row.id}>{[row.name, row.variant, row.equipment].filter(Boolean).join(' · ')}</option>)}</optgroup>)}</select></label>
     <button type="button" className="button secondary program-add-exercise" disabled={!chosen || busy} onClick={() => void add()}>{busy ? 'Aggiunta…' : 'Aggiungi esercizio'}</button>
     {error && <p role="alert" className="form-error">{error}</p>}
     {!personal.length && !shared.length && <p className="small muted">Nessun esercizio attivo corrispondente. Puoi aggiungerlo nel <a href="#/scheda/catalogo" className="text-link">catalogo</a> e tornare qui.</p>}
@@ -40,13 +47,13 @@ function ExercisePicker({ catalog, onAdd, dayId }: { catalog: { store: Exercises
 
 export function ProgramPreview({ document }: { document: ProgramDocument }) {
   return <div className="program-preview"><h3>{document.title}</h3><p className="catalog-note">{document.guidance || 'Nessuna istruzione generale'}</p>{document.days.map(day => <section key={day.id}><h4>{day.label} · {day.title}</h4>{day.note && <p className="catalog-note">{day.note}</p>}
-    <ol>{day.exercises.map(item => <li key={item.id}><strong>{item.exercise.name}</strong><p className="small muted">{[item.exercise.variant, item.exercise.equipment, loadLabels[item.exercise.loadConvention], item.exercise.loadUnit, item.exercise.perSide ? 'Per lato' : ''].filter(Boolean).join(' · ')}</p><p>{item.sets} serie{Number(item.optionalSets) > 0 ? ` + ${item.optionalSets} facoltative` : ''} · {item.exercise.measurementMode === 'reps' ? `${item.repsMin}–${item.repsMax} ripetizioni` : `${item.durationSeconds} secondi`} · Recupero {item.restSeconds} s{item.rir !== '' ? ` · RIR ${item.rir}` : ''}{item.rpe !== '' ? ` · RPE ${item.rpe}` : ''}</p>{item.note && <p className="catalog-note">{item.note}</p>}</li>)}</ol>{!day.exercises.length && <p>Nessun esercizio</p>}</section>)}</div>
+    <ol>{day.exercises.map(item => <li key={item.id}><strong>{item.exercise.name}</strong> <MuscleGroupBadge exercise={item.exercise} /><p className="small muted">{[item.exercise.variant, item.exercise.equipment, loadLabels[item.exercise.loadConvention], item.exercise.loadUnit, item.exercise.perSide ? 'Per lato' : ''].filter(Boolean).join(' · ')}</p><p>{item.sets} serie{Number(item.optionalSets) > 0 ? ` + ${item.optionalSets} facoltative` : ''} · {item.exercise.measurementMode === 'reps' ? `${item.repsMin}–${item.repsMax} ripetizioni` : `${item.durationSeconds} secondi`} · Recupero {item.restSeconds} s{item.rir !== '' ? ` · RIR ${item.rir}` : ''}{item.rpe !== '' ? ` · RPE ${item.rpe}` : ''}</p>{item.note && <p className="catalog-note">{item.note}</p>}</li>)}</ol>{!day.exercises.length && <p>Nessun esercizio</p>}</section>)}</div>
 }
 
 const fields = { sets: 'Serie obbligatorie', optionalSets: 'Serie facoltative', repsMin: 'Ripetizioni minime', repsMax: 'Ripetizioni massime', durationSeconds: 'Durata · secondi', restSeconds: 'Recupero · secondi', rir: 'RIR (facoltativo)', rpe: 'RPE (facoltativo)' }
 function PrescriptionFields({ item, onChange }: { item: PrescriptionDraft; onChange: (value: PrescriptionDraft) => void }) {
   const keys = (Object.keys(fields) as (keyof typeof fields)[]).filter(key => item.exercise.measurementMode === 'reps' ? key !== 'durationSeconds' : key !== 'repsMin' && key !== 'repsMax')
-  return <><p className="small muted">{[item.exercise.variant, item.exercise.equipment, loadLabels[item.exercise.loadConvention], item.exercise.loadUnit, item.exercise.perSide ? 'Per lato' : ''].filter(Boolean).join(' · ')}</p>
+  return <><MuscleGroupBadge exercise={item.exercise} /><p className="small muted">{[item.exercise.variant, item.exercise.equipment, loadLabels[item.exercise.loadConvention], item.exercise.loadUnit, item.exercise.perSide ? 'Per lato' : ''].filter(Boolean).join(' · ')}</p>
     <div className="program-numbers">{keys.map(key => <label key={key} htmlFor={`${item.id}-${key}`}>{fields[key]}<input id={`${item.id}-${key}`} data-field={key} inputMode={key === 'rir' || key === 'rpe' ? 'decimal' : 'numeric'} autoComplete="off" maxLength={30} value={item[key]} onChange={event => onChange({ ...item, [key]: event.target.value })} /></label>)}</div>
     <label htmlFor={`${item.id}-note`}>Note dell’esercizio<textarea id={`${item.id}-note`} rows={2} maxLength={4000} value={item.note} onChange={event => onChange({ ...item, note: event.target.value })} /></label>
   </>
@@ -55,7 +62,7 @@ function PrescriptionFields({ item, onChange }: { item: PrescriptionDraft; onCha
 export function ProgramEditor({ store, state, catalog }: { store: ProgramsStore; state: ProgramsState; catalog: { store: ExercisesStore | null; state: ExercisesState } }) {
   const [confirm, setConfirm] = useState<{ title: string; text: string; action: () => void } | null>(null)
   const editor = useRef<HTMLElement>(null)
-  const document = state.document!
+  const document = state.document ? withCatalogMuscleGroups(state.document, catalog.state.rows) : null!
   useEffect(() => { editor.current?.focus({ preventScroll: true }); editor.current?.scrollIntoView({ block: 'start' }) }, [document.id])
   const readonly = (state.base?.version.status === 'published' && !state.revising) || Boolean(state.base?.plan.archivedAt)
   const busy = ['saving', 'publishing', 'checking'].includes(state.phase)
