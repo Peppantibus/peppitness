@@ -1,16 +1,32 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { dietPromptExample, extractionPrompts, IMPORT_PROMPT_VERSION } from '../supabase/functions/_shared/import/prompts.ts'
+import { dietPromptExample, workoutPromptExample, extractionPrompts, IMPORT_PROMPT_VERSION } from '../supabase/functions/_shared/import/prompts.ts'
 import { createOpenAIProvider } from '../supabase/functions/_shared/import/openai-provider.ts'
 import { mergeSegmentExtractions, planSegments } from '../supabase/functions/_shared/import/segments.ts'
 import { offlineConfig, recordedTransport } from '../scripts/lib/import-evaluation.mjs'
 import { validateProposal } from '../src/import/validation/validate.ts'
 import { extractionSchemaIds, type DietExtraction, type NormalizedDocument } from '../src/import/contracts/index.ts'
+import { expandCompactExtraction } from '../supabase/functions/_shared/import/compact.ts'
 
 const fixture = <T>(path: string): T => JSON.parse(readFileSync(`tests/fixtures/import/${path}`, 'utf8')) as T
 const document = fixture<NormalizedDocument>('evaluation/documents/diet-week-evidence.json')
 const golden = fixture<DietExtraction>('evaluation/goldens/diet-week-complete-evidence.json')
+
+test('workout prompt: complete compact example uses one source row without certifying the wrong column', () => {
+  const wire = JSON.parse(extractionPrompts.workout.split('Esempio JSON completo e sintetico (id e valori solo illustrativi):\n')[1]!)
+  const source = { sourceHash: 'd'.repeat(64), readerVersion: 'synthetic-prompt/1', readingIssues: [], blocks: workoutPromptExample.blocks.map(b => ({
+    page: null, tableId: null, row: null, column: null, rowSpan: null, columnSpan: null, parentId: null, headingIds: [], origin: 'native', bbox: null, ...b,
+  })) } as NormalizedDocument
+  const expanded = expandCompactExtraction('workout', source, wire.extraction)
+  const checked = validateProposal('workout', source, expanded)
+  assert.equal(checked.status, 'draft')
+  if (checked.status === 'draft') assert.equal(checked.issues.some(i => ['missing_evidence', 'numeric_not_in_quote', 'text_not_in_quote', 'wrong_context'].includes(i.code)), false)
+  wire.extraction.sessions[0].exercises[0].sets = 3
+  const bad = validateProposal('workout', source, expandCompactExtraction('workout', source, wire.extraction))
+  assert.equal(bad.status, 'draft')
+  if (bad.status === 'draft') assert.ok(bad.issues.some(i => i.sourcePath === '/sessions/0/exercises/0/sets' && i.severity !== 'info'))
+})
 
 test('prompt example: exact alternatives and all critical fields pass the real validator', () => {
   const example = structuredClone(dietPromptExample)
@@ -28,7 +44,9 @@ test('prompt example: exact alternatives and all critical fields pass the real v
   assert.deepEqual(checked.issues.filter(i => i.severity === 'blocking'), [])
   assert.equal(checked.issues.some(i => ['unverified_detail', 'evidence_too_coarse', 'extra_quote_not_found'].includes(i.code)), false)
   // Test the example actually sent in the prompt, not a separate golden that can drift.
-  assert.deepEqual(JSON.parse(extractionPrompts.diet.split('Esempio JSON completo e sintetico (id e valori solo illustrativi):\n')[1]!), example)
+  const wireExample = JSON.parse(extractionPrompts.diet.split('Esempio JSON completo e sintetico (id e valori solo illustrativi):\n')[1]!)
+  assert.deepEqual(wireExample.blocks, example.blocks)
+  assert.deepEqual(expandCompactExtraction('diet', source, wireExample.extraction), example.extraction)
   const rewritten = structuredClone(example.extraction)
   rewritten.days[0]!.meals[0]!.alternatives[0] = 'Yogurt greco → latte 200 ml'
   const bad = validateProposal('diet', source, rewritten)

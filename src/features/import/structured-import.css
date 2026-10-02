@@ -1,0 +1,15 @@
+.si-template, .si-file, .si-preview, .si-saved, .si-pending { margin-top: 1rem; }
+.si-file .import-change { display: inline-flex; }
+.si-table-scroll { overflow-x: auto; max-width: 100%; }
+.si-preview table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+.si-preview th, .si-preview td { padding: .45rem; vertical-align: top; border-bottom: 1px solid var(--border, #ddd); }
+.si-cell { display: block; }
+.si-cell textarea { width: 100%; min-width: 5rem; resize: vertical; padding: .45rem; min-height: 2.6rem; box-sizing: border-box; }
+.si-preview > .si-cell textarea { min-width: 0; }
+.si-cell small, .si-error { color: var(--danger, #b42318); display: block; }
+.si-cell textarea[aria-invalid=true] { border-color: var(--danger, #b42318); }
+.si-preview details { margin: 1rem 0; }
+.si-preview summary { cursor: pointer; font-weight: 600; padding: .5rem 0; }
+.si-follow { display: flex; align-items: center; gap: .6rem; margin: 1rem 0; }
+.si-catalog { margin: 1rem 0; }
+.si-catalog details label { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem; margin: .6rem 0; }

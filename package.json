@@ -22,6 +22,10 @@
     "test:pwa:browser": "node scripts/pwa-browser-check.mjs",
     "test:api:local": "node --experimental-strip-types scripts/test-supabase-api.mjs",
     "test:infra": "node --test tests/local-supabase.test.mjs",
+    "test:import:structured": "node --experimental-strip-types --test tests/import-structured.test.ts",
+    "test:import:structured:browser": "node --experimental-strip-types scripts/import-structured-browser-check.mjs",
+    "test:import:structured:local": "node --experimental-strip-types scripts/import-structured-local-check.mjs",
+    "templates:import": "node --experimental-strip-types scripts/generate-structured-templates.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "build:pwa": "npm run typecheck && vite build --config vite.pwa.config.mjs"
   },

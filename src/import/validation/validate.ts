@@ -34,7 +34,7 @@ export { issueCatalog, validationIssueCodes, type RuleItem, type ValidationFindi
 export { readingIssueClasses } from './coverage.ts'
 export { pointerTokens, resolvePointer } from './evidence.ts'
 
-export const VALIDATION_RULES_VERSION = 'peppitness.import-validation.v2'
+export const VALIDATION_RULES_VERSION = 'peppitness.import-validation.v3'
 
 // ---------------------------------------------------------------------------
 // Risultati
@@ -51,12 +51,12 @@ export const rejectionReasons = [
 ] as const
 export type RejectionReason = typeof rejectionReasons[number]
 
-/** Origine di un valore per la revisione: «Dal documento», «Convertito da minuti», «Regola generale», «Modificato da te». */
+/** Origine nella revisione: fonte, conversione, regola generale, edit dell'utente o dose base predisposta dall'app. */
 export interface FieldProvenance {
   localId: string | null
   sourcePath: string | null
   field: string
-  origin: FieldOrigin | 'user'
+  origin: FieldOrigin | 'user' | 'app'
   rule: string | null
   sourceRefs: string[]
 }
@@ -401,7 +401,9 @@ export function validateDraft(document: NormalizedDocument, draft: ReviewDraft):
     if (item && !item.userFields.has(entry.field)) provenance.push({ ...entry, localId: item.localId })
   }
   for (const item of current) for (const field of item.userFields) {
-    provenance.push({ localId: item.localId, sourcePath: item.pointer === null ? null : `${item.pointer}/${field}`, field, origin: 'user', rule: null, sourceRefs: [] })
+    const edit = draft.decisions.filter(d => d.op === 'set' && d.localId === item.localId && d.field === field).at(-1)
+    provenance.push({ localId: item.localId, sourcePath: item.pointer === null ? null : `${item.pointer}/${field}`, field,
+      origin: edit?.decisionId.startsWith('prep-optional-') ? 'app' : 'user', rule: null, sourceRefs: [] })
   }
   return { issues: list.items.map(entry => entry.issue), findings: list.items, provenance }
 }

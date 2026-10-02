@@ -20,6 +20,7 @@ import {
   type ImportEvent, type ImportSession, type MappingReservations,
 } from '../import/review/state.ts'
 import type { ImportsRepository } from './imports-repository.ts'
+import { StructuredImportsStore } from './structured-imports-store.ts'
 export { createImportsRepository } from './imports-repository.ts'
 import { idleNetwork, ImportsStore, type DispatchResult, type ImportNetwork, type ImportSessionHost, type ImportsStoreOptions, type SessionEvent } from './imports-store.ts'
 
@@ -124,6 +125,7 @@ export class ImportReviewStore {
   private readonly writes: Record<ImportKind, Promise<void>> = { workout: Promise.resolve(), diet: Promise.resolve() }
   /** Coordinatore di rete (21) sulla stessa sessione e sullo stesso journal; null senza repository. */
   readonly imports: ImportsStore | null
+  readonly structured: StructuredImportsStore
 
   constructor(ownerId: string, options: ImportReviewOptions = {}) {
     this.ownerId = ownerId
@@ -146,16 +148,19 @@ export class ImportReviewStore {
     }
     const { repository, journal: _journal, createReader: _reader, now: _now, ...network } = options
     this.imports = repository ? new ImportsStore(host, repository, { ...network, newId: this.newId }) : null
+    this.structured = new StructuredImportsStore(ownerId, repository, options.refresh)
+    this.structured.subscribe(() => this.emit())
   }
 
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
   getSnapshot = () => this.state
 
   /** Avvio (idempotente): apre il journal dell'account, elimina i residui di altri account e riprende le letture. */
-  start() { this.opening ??= this.open() }
+  start() { if (!this.opening) { this.opening = this.open(); void this.structured.start() } }
 
   /** Interrompe letture e operazioni in corso; le risposte tardive non valgono più. Riutilizzabile (StrictMode). */
   stop() {
+    this.structured.stop()
     for (const kind of importKinds) this.abortRead(kind)
     this.scope.stop()
     this.opening = null
@@ -171,7 +176,7 @@ export class ImportReviewStore {
   }
 
   /** Ritorno online o in primo piano: riconcilia i salvataggi incerti e cerca le analisi interrotte, senza nuovi invii. */
-  resume() { return this.imports?.resume() ?? Promise.resolve() }
+  async resume() { await this.structured.resume(); await this.imports?.resume() }
 
   /**
    * Modifica della bozza in revisione (12/13): stessa proposta, decisioni rigiocate, comando non inviato decaduto.
@@ -236,6 +241,7 @@ export class ImportReviewStore {
   /** Logout: interrompe tutto e cancella dal dispositivo ogni sessione di questo account. */
   async clearDevice() {
     this.stop()
+    await this.structured.clear().catch(() => undefined)
     this.state = { ...this.state, slots: { workout: emptySlot(), diet: emptySlot() } }
     this.risks = { localDrafts: 0, uncertainCommands: 0 }
     this.emit()
@@ -527,9 +533,10 @@ export class ImportReviewStore {
 
   private emit() {
     const slots = importKinds.map(kind => this.state.slots[kind])
-    const busy = slots.some(slot => slot.session !== null && isBusy(slot.session))
-    const unsaved = slots.some(slot => slot.session !== null && (isDirty(slot.session) || (slot.session.persistence === 'volatile' && slot.session.document !== null)))
-    const guards = { busy, unsaved, logoutRisk: busy || unsaved || this.risks.localDrafts > 0 || this.risks.uncertainCommands > 0 }
+    const structured = this.structured?.guards
+    const busy = Boolean(structured?.busy) || slots.some(slot => slot.session !== null && isBusy(slot.session))
+    const unsaved = Boolean(structured?.unsaved) || slots.some(slot => slot.session !== null && (isDirty(slot.session) || (slot.session.persistence === 'volatile' && slot.session.document !== null)))
+    const guards = { busy, unsaved, logoutRisk: Boolean(structured?.logoutRisk) || busy || unsaved || this.risks.localDrafts > 0 || this.risks.uncertainCommands > 0 }
     const previous = this.state.guards
     if (previous.busy !== guards.busy || previous.unsaved !== guards.unsaved || previous.logoutRisk !== guards.logoutRisk) this.state = { ...this.state, guards }
     for (const listener of [...this.listeners]) listener()
@@ -549,5 +556,6 @@ export const createImportReviewStore = (ownerId: string, options: ImportReviewOp
 
 /** Logout senza motore caricato: nessuna sessione di questo account resta sul dispositivo. */
 export async function clearImportDevice(ownerId: string) {
+  await new StructuredImportsStore(ownerId).clear().catch(() => undefined)
   await new ReviewStore(indexedDbBackend(globalThis.indexedDB)).clearOwner(ownerId).catch(() => undefined)
 }

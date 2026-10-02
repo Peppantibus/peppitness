@@ -19,6 +19,7 @@ import {
   columnText, groupSpans, spanColumns, type ColumnRole, type SourceIndex, type UnitEvidence, type VerifiedSpan,
 } from './evidence.ts'
 import { finding, hasText, isRangeValue, type RuleItem, type ValidationFinding } from './issues.ts'
+import { instructionCanBeKept } from './workout-instructions.ts'
 
 // ---------------------------------------------------------------------------
 // Relazioni fra campi (valori correnti)
@@ -78,6 +79,10 @@ export function workoutRuleFindings(items: readonly RuleItem[], children: (key: 
   for (const rule of children(root.key, 'complexRules')) {
     const kind = rule.values.kind as ExtractedComplexRule['kind']
     const label = ruleKindLabels[kind]
+    if (rule.localId !== null && instructionCanBeKept(rule, items)) {
+      out.push(finding('complex_rule_preserved', rule, null, `${label}: conservata nelle indicazioni, da gestire manualmente.`, { refs: rule.values.sourceRefs as string[] }))
+      continue
+    }
     out.push(blockingRuleKinds.has(kind)
       ? finding('complex_rule_unresolved', rule, null, `${label}: il dominio attuale non la esegue da sé. Scegliere esplicitamente cosa importare (per esempio una fase o una settimana) e conservarla come istruzione.`, { refs: rule.values.sourceRefs as string[] })
       : finding('complex_rule_review', rule, null, `${label}: confermare come conservarla nel piano.`, { refs: rule.values.sourceRefs as string[] }))

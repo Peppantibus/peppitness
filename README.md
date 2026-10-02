@@ -11,6 +11,7 @@ peppitness nasce per rendere più semplice seguire una scheda e un piano aliment
 - Organizzare un piano alimentare e annotare i pasti senza perdere lo storico.
 - Vedere nei Progressi la costanza settimanale e l'andamento degli esercizi.
 - Partire da un catalogo di esercizi comuni o aggiungere i propri.
+- Importare scheda e piano alimentare dai due modelli Word strutturati scaricabili nell’app: anteprima modificabile, una conferma finale e lettura locale senza IA.
 
 L'app è pensata prima di tutto per il telefono: pochi passaggi, informazioni leggibili e comandi rapidi anche mentre ci si allena. I dati sono associati al proprio account e si ritrovano accedendo da un altro dispositivo.
 

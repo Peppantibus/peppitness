@@ -109,7 +109,7 @@ export async function importFlowFixture(request, url, state) {
     return flow.loseCommit ? (flow.loseCommit = false, { failure: 'ConnectionClosed' }) : { status: 200, data: structuredClone(known.receipt) }
   }
   const job = flow.jobs.get(command.provenance.analysis.jobId)
-  if (!job || job.owner !== owner || job.kind !== command.payload.kind) return { status: 403, data: { code: '42501', message: 'Import reference not available' } }
+  if (command.provenance.analysis.jobId !== null && (!job || job.owner !== owner || job.kind !== command.payload.kind)) return { status: 403, data: { code: '42501', message: 'Import reference not available' } }
   state.diary ??= { active_plans: [], meal_plans: [], workout_sessions: [], workout_set_logs: [], meal_logs: [], diary_days: [] }
   const selectionRow = state.diary.active_plans.find(row => row.owner_id === owner) ?? null
   const options = command.selectionOptions

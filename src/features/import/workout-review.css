@@ -65,3 +65,10 @@
 .wr-preview-head strong { overflow-wrap: anywhere; }
 .wr-preview-dose { font-size: var(--text-md); font-weight: var(--weight-semibold); }
 .wr-preview-ranges { margin: 0; padding-left: var(--space-5); font-size: var(--text-sm); color: var(--color-text-muted); }
+.wr-batch { display: grid; gap: var(--space-3); }
+.wr-batch details { padding: var(--space-3); border: 1px solid var(--color-border); border-radius: var(--radius-sm); min-width: 0; }
+.wr-batch summary { cursor: pointer; font-weight: var(--weight-semibold); overflow-wrap: anywhere; }
+.wr-batch ul { padding-left: var(--space-5); overflow-wrap: anywhere; }
+.wr-batch label, .wr-batch textarea, .wr-batch input { display: block; margin-block: var(--space-2); }
+.wr-batch textarea { width: 100%; min-height: 6rem; }
+.wr-batch input { width: 100%; max-width: 12rem; }

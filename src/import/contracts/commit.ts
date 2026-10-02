@@ -251,7 +251,7 @@ export const importProvenanceSchema = object({
     localId: localIdSchema,
     /** UUID tecnico dell'elemento salvato (seduta/prescrizione, giornata/pasto); null per il piano. */
     targetId: nullable(uuidSchema),
-    /** Elemento della proposta; null se aggiunto dall'utente. */
+    /** Puntatore nel DTO di estrazione; null per dati locali senza DTO. Nel DOCX strutturato localId è il vero blocco/cella, source contiene hash e versione del parser. */
     sourcePointer: nullable(proposalPointerSchema),
     decisions: array(object({ field: nullable(fieldNameSchema), reason: enumeration(decisionReasons) }), { maxItems: contractLimits.refsPerItem }),
   }), { maxItems: contractLimits.largeItems }),

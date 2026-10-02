@@ -91,6 +91,7 @@ export function findingState(draft: ReviewDraft, finding: ValidationFinding, sta
 export function originLabel(entry: FieldProvenance | undefined): string | null {
   if (!entry) return null
   if (entry.origin === 'user') return 'Modificato da te'
+  if (entry.origin === 'app') return 'Dose base predisposta'
   if (entry.origin === 'inherited') return 'Regola generale'
   if (entry.origin === 'converted') return entry.rule === 'minutes_seconds' ? 'Convertito da minuti e secondi' : 'Convertito da minuti'
   return 'Dal documento'

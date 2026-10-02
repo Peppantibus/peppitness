@@ -101,6 +101,7 @@ export const issueCatalog = {
   intensity_not_prescribed: rule('info', 'validation', NONE, 'RIR e RPE non prescritti: restano vuoti.'),
   complex_rule_unresolved: rule('blocking', 'validation', ['scope_choice'], 'Fase, progressione, scarico, superserie o circuito da risolvere esplicitamente.'),
   complex_rule_review: rule('confirmation', 'validation', ['scope_choice', 'user_edit'], 'Regola (cardio o altro) da confermare.'),
+  complex_rule_preserved: rule('info', 'validation', NONE, 'Indicazione conservata con una dose base utilizzabile; gestione manuale.'),
   rule_target_unresolved: rule('info', 'validation', NONE, 'Regola riferita a un elemento inesistente.'),
   no_days: rule('blocking', 'validation', EDIT_OR_REANALYZE, 'Nessuna giornata.'),
   day_name_missing: rule('blocking', 'validation', EDIT, 'Nome della giornata mancante.'),

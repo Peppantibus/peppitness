@@ -251,7 +251,7 @@ export function App() {
     </>
     if (!day) return <section className="panel empty-state plan-empty">
       {followable.length ? <><h2>Scegli il programma da seguire</h2><p>La Scheda mostra la versione corrente del programma scelto. Puoi cambiarlo in qualsiasi momento.</p><div className="plan-choices">{followable.map(item => <button key={item.plan.id} className="button secondary plan-choice" disabled={plans.state.selecting} onClick={() => void plans.store?.choose({ workoutPlanId: item.plan.id })}>{item.plan.name}</button>)}</div></>
-        : <><span className="empty-icon"><Icon name="calendar" size={32} /></span><h2>Nessun programma da seguire</h2><p>Imposta la tua settimana: per ogni giorno scegli gli esercizi oppure il riposo.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma<Icon name="arrow" size={20} /></a><a className="text-link" href="#/scheda/importa">Oppure importalo da un file Word o PDF</a></>}
+        : <><span className="empty-icon"><Icon name="calendar" size={32} /></span><h2>Nessun programma da seguire</h2><p>Imposta la tua settimana: per ogni giorno scegli gli esercizi oppure il riposo.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma<Icon name="arrow" size={20} /></a><a className="text-link" href="#/scheda/importa">Oppure importalo dal modello Word</a></>}
       {activeSession && <a className="button secondary" href="#/scheda/seduta">Riprendi l’allenamento in corso</a>}
     </section>
     return <>
@@ -269,7 +269,7 @@ export function App() {
     if (configured && plans.state.phase === 'error') return <section className="panel empty-state"><h2>Piano non disponibile</h2><p role="alert">{plans.state.message}</p>{retryPlans}</section>
     if (configured && !mealPlan) return <section className="panel empty-state plan-empty">
       {followableMeals.length ? <><h2>Scegli il piano alimentare da seguire</h2><div className="plan-choices">{followableMeals.map(plan => <button key={plan.id} className="button secondary plan-choice" disabled={plans.state.selecting} onClick={() => void plans.store?.choose({ mealPlanId: plan.id })}>{plan.name}</button>)}</div></>
-        : <><span className="empty-icon"><Icon name="fork" size={32} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo: comparirà qui.</p><a className="button primary" href="#/dieta/piani/nuovo">Crea il tuo piano<Icon name="arrow" size={20} /></a><a className="text-link" href="#/dieta/importa">Oppure importalo da un file Word o PDF</a></>}
+        : <><span className="empty-icon"><Icon name="fork" size={32} /></span><h2>Nessun piano alimentare</h2><p>Inserisci i pasti dei giorni di allenamento e di riposo: comparirà qui.</p><a className="button primary" href="#/dieta/piani/nuovo">Crea il tuo piano<Icon name="arrow" size={20} /></a><a className="text-link" href="#/dieta/importa">Oppure importalo dal modello Word</a></>}
     </section>
     return <>
       {configured && followableMeals.length > 1 && <section className="plan-selectors"><label className="plan-selector">Piano seguito<select value={mealPlan?.id ?? ''} disabled={plans.state.selecting} onChange={event => void plans.store?.choose({ mealPlanId: event.target.value })}>{followableMeals.map(plan => <option key={plan.id} value={plan.id}>{plan.name}</option>)}</select></label></section>}
@@ -297,8 +297,8 @@ export function App() {
     {configured && (showDaily || isSession) && <SyncStatus store={diary.store} state={diary.state} />}
     {showDaily && <>
       <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} extra={section === 'scheda'
-        ? [...(configured && workout ? [{ href: '#/scheda/programmi/modifica', icon: 'edit' as const, title: 'Modifica programma', detail: `Esercizi e giorni di «${workout.plan.name}»` }] : []), { href: '#/scheda/importa', icon: 'plus', title: 'Importa una scheda', detail: 'Da un file Word o PDF' }]
-        : [{ href: '#/dieta/importa', icon: 'plus', title: 'Importa un piano alimentare', detail: 'Da un file Word o PDF' }]} /></div>
+        ? [...(configured && workout ? [{ href: '#/scheda/programmi/modifica', icon: 'edit' as const, title: 'Modifica programma', detail: `Esercizi e giorni di «${workout.plan.name}»` }] : []), { href: '#/scheda/importa', icon: 'plus', title: 'Importa una scheda', detail: 'Da un modello Word strutturato' }]
+        : [{ href: '#/dieta/importa', icon: 'plus', title: 'Importa un piano alimentare', detail: 'Da un modello Word strutturato' }]} /></div>
       <DatePicker date={date} onChange={setDate} today={today} planned={section === 'scheda' ? trainingDates : []} done={section === 'scheda' ? sessionDates : mealDates} doneLabel={section === 'scheda' ? 'seduta completata' : 'pasti registrati'} />
       <DateContext date={date} today={today} onToday={() => setDate(today)} />
       {section === 'dieta' ? dietContent() : workoutContent()}

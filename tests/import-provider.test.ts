@@ -13,7 +13,7 @@ import {
 } from '../supabase/functions/_shared/import/provider.ts'
 import {
   buildOpenAIRequestBody, createOpenAIProvider, OPENAI_RESPONSES_URL, openAIUsage, strictExtractionSchema, strictSchemaLimits,
-  strictSchemaName, strictSchemaStats,
+  strictSchemaName, strictSchemaStats, strictProviderSchema,
 } from '../supabase/functions/_shared/import/openai-provider.ts'
 import { DOCUMENT_MESSAGE_HEADER, extractionPrompts, IMPORT_PROMPT_VERSION } from '../supabase/functions/_shared/import/prompts.ts'
 import {
@@ -236,7 +236,7 @@ test('richiesta: solo parametri autorizzati, prompt separati, documento come dat
   assert.deepEqual(body.reasoning, { effort: 'low' })
   assert.ok(!('temperature' in body) && !('previous_response_id' in body) && !('conversation' in body) && !('background' in body))
   assert.equal(body.instructions, extractionPrompts.workout)
-  assert.deepEqual(body.text, { format: { type: 'json_schema', name: strictSchemaName('workout'), schema: strictExtractionSchema('workout'), strict: true } })
+  assert.deepEqual(body.text, { format: { type: 'json_schema', name: strictSchemaName('workout'), schema: strictProviderSchema('workout'), strict: true } })
   const input = body.input as { role: string; content: { type: string; text: string }[] }[]
   assert.equal(input.length, 1)
   assert.equal(input[0]!.role, 'user')
@@ -271,7 +271,7 @@ test('richiesta: solo parametri autorizzati, prompt separati, documento come dat
 })
 
 test('prompt: due testi versionati distinti, esempi richiesti, nessuna istruzione dell’altro dominio', () => {
-  assert.equal(IMPORT_PROMPT_VERSION, 'peppitness.import-prompts.v2')
+  assert.equal(IMPORT_PROMPT_VERSION, 'peppitness.import-prompts.v4')
   const { workout, diet } = extractionPrompts
   assert.notEqual(workout, diet)
   assert.match(workout, /tipo richiesto: workout/)
@@ -437,6 +437,44 @@ test('abort e timeout: prima dell’invio nessuna rete, dopo l’invio esito inc
   assert.equal(count, 1)
 })
 
+test('interruzione del corpo: conserva header e correlazione senza considerare noto il costo', async () => {
+  for (const mode of ['network', 'aborted', 'timeout'] as const) {
+    const events: ProviderLogEvent[] = []
+    const controller = new AbortController()
+    let calls = 0
+    const provider = createOpenAIProvider({ ...config(), timeoutMs: 20 }, {
+      logger: event => events.push(event),
+      transport: async (_url, init) => {
+        calls++
+        return new Response(new ReadableStream({
+          start(stream) {
+            stream.enqueue(new TextEncoder().encode('{"private_partial_output":'))
+            if (mode === 'network') stream.error(new Error('private network detail'))
+            else {
+              init.signal.addEventListener('abort', () => stream.error(init.signal.reason), { once: true })
+              if (mode === 'aborted') setTimeout(() => controller.abort(), 1)
+            }
+          },
+        }), { status: 200, headers: { 'x-request-id': 'req_body_interrupted' } })
+      },
+    })
+    const keepAlive = setTimeout(() => {}, 1000)
+    try {
+      const call = provider.prepare(request('diet', document('diet-spec-example')), { clientRequestId: 'diagnostic-attempt-1' })
+      const error = await rejection(call.send(controller.signal))
+      assert.deepEqual([error.code, error.delivery, error.httpStatus, error.providerRequestId, error.usage, error.retryable],
+        [mode, 'uncertain', 200, 'req_body_interrupted', null, false])
+      assert.equal(calls, 1)
+      assert.equal(events.length, 1)
+      assert.equal(events[0]!.clientRequestId, 'diagnostic-attempt-1')
+      assert.equal(events[0]!.phase, 'body')
+      assert.equal(events[0]!.httpStatus, 200)
+      assert.equal(events[0]!.providerRequestId, 'req_body_interrupted')
+      assert.doesNotMatch(JSON.stringify(events) + JSON.stringify(error), /private_partial_output|private network detail/)
+    } finally { clearTimeout(keepAlive) }
+  }
+})
+
 test('segreti: errori e log contengono solo codici, token e latenza; niente chiave, documento, prompt o risposta', async () => {
   const events: ProviderLogEvent[] = []
   const doc = document('workout-spec-example')
@@ -450,7 +488,10 @@ test('segreti: errori e log contengono solo codici, token e latenza; niente chia
   }
   assert.equal(events.length, 6)
   for (const event of events) {
-    assert.deepEqual(Object.keys(event).sort(), ['code', 'event', 'httpStatus', 'inputTokens', 'latencyMs', 'model', 'outputTokens', 'profile', 'provider', 'providerRequestId', 'reasoningTokens', 'status'])
+    assert.deepEqual(Object.keys(event).sort(), ['clientRequestId', 'code', 'event', 'formatVersion', 'httpStatus', 'inputTokens', 'latencyMs', 'maxOutputTokens', 'model', 'outputTokens', 'phase', 'profile', 'promptVersion', 'provider', 'providerRequestId', 'reasoningEffort', 'reasoningTokens', 'requestBytes', 'responseBytes', 'status'])
+    assert.equal(event.promptVersion, IMPORT_PROMPT_VERSION)
+    assert.equal(event.formatVersion, 'compact.v2')
+    assert.ok(event.requestBytes > 0)
     const serialized = JSON.stringify(event)
     for (const text of forbidden) assert.ok(!serialized.includes(text), `log contiene ${text}`)
     assert.equal(event.latencyMs, 5)
@@ -462,6 +503,27 @@ test('segreti: errori e log contengono solo codici, token e latenza; niente chia
   // Il body serializzato (unico dato inviato) non contiene la chiave: è negli header.
   assert.ok(!buildOpenAIRequestBody(config(), request('workout', doc)).toString().includes(API_KEY))
   assert.ok(!JSON.stringify(buildOpenAIRequestBody(config(), request('workout', doc))).includes(API_KEY))
+})
+
+test('provider: an idle transport times out once and reports an uncertain delivery with its client request ID', async () => {
+  const events: ProviderLogEvent[] = []
+  let calls = 0
+  const provider = createOpenAIProvider(config({ IMPORT_PROVIDER_TIMEOUT_MS: '1000' }), {
+    logger: event => events.push(event),
+    transport: async (_url, init) => {
+      calls++
+      return new Promise((_resolve, reject) => init.signal.addEventListener('abort', () => reject(init.signal.reason), { once: true }))
+    },
+  })
+  const call = provider.prepare(request('workout', document('workout-spec-example')), { clientRequestId: 'idle-timeout-attempt' })
+  const error = await rejection(call.send(new AbortController().signal))
+  assert.equal(error.code, 'timeout')
+  assert.equal(error.delivery, 'uncertain')
+  assert.equal(calls, 1)
+  assert.equal(events.length, 1)
+  assert.equal(events[0]!.clientRequestId, 'idle-timeout-attempt')
+  assert.equal(events[0]!.phase, 'headers')
+  assert.equal(events[0]!.responseBytes, null)
 })
 
 test('grafo frontend: nessun modulo provider, prompt o chiave server importati da src/', () => {

@@ -39,6 +39,7 @@ export interface AnalysisLogEvent {
   profile: 'standard' | 'retry' | null
   outcome: string
   attempts: number
+  counts?: { sessions: number; exercises: number; days: number; meals: number; foods: number; uncoveredSections: number }
 }
 
 export interface AnalysisDeps {
@@ -179,7 +180,11 @@ export async function runAnalysis(deps: AnalysisDeps, input: AnalysisInput): Pro
   if (final.status === 'draft') { extraction = final.extraction; validationIssues = final.issues }
   else if (recoverableOutcomes.includes(final.reason)) { extraction = merged; validationIssues = [] }
   else return fail('provider_invalid_output')
-  log({ event: 'analysis_result', segment: null, profile: null, outcome: extraction.outcome, attempts: current.attemptCount })
+  const counts = extraction.kind === 'workout'
+    ? { sessions: extraction.sessions.length, exercises: extraction.sessions.reduce((n, s) => n + s.exercises.length, 0), days: 0, meals: 0, foods: 0 }
+    : { sessions: 0, exercises: 0, days: extraction.days.length, meals: extraction.days.reduce((n, d) => n + d.meals.length, 0), foods: extraction.days.reduce((n, d) => n + d.meals.reduce((m, meal) => m + meal.foods.length, 0), 0) }
+  log({ event: 'analysis_result', segment: null, profile: null, outcome: extraction.outcome, attempts: current.attemptCount,
+    counts: { ...counts, uncoveredSections: validationIssues.filter(i => i.code === 'section_not_covered').length } })
   try {
     const job = await jobs.complete(input.ownerId, current, {
       extraction, validationIssues,

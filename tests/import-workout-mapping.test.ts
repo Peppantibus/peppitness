@@ -148,9 +148,10 @@ test('09: load and tempo instructions remain notes; catalogue and source identit
   assert.equal('load' in p, false)
 })
 
-test('09: phases and supersets require explicit scope instruction and retain rule targets and limitations', () => {
+test('09: usable phase/superset instructions are preserved; ambiguous base still needs scope; targets and source retained', () => {
   const f = fixture('workout-partially-interpretable')
-  fails(map(f.draft, f.document), 'workout_scope_instruction_required')
+  assert.match(success(map(f.draft, f.document)).program.guidance, /Limite di esecuzione/)
+  fails(map(edit(f.draft, 'i4', 'sets', null), f.document), 'workout_scope_instruction_required')
   let draft = f.draft
   for (const item of draft.current.filter(i => i.collection === 'complexRules')) {
     draft = edit(draft, item.localId, 'text', `Importo la prima settimana. ${item.values.text}. Applicare manualmente, senza variazione automatica.`, 'scope_choice')
@@ -160,7 +161,7 @@ test('09: phases and supersets require explicit scope instruction and retain rul
   assert.match(result.program.guidance, /settimana 4 scarico al 60%/)
   assert.match(result.program.guidance, /seduta A, esercizio 2: Curl/)
   assert.match(result.program.guidance, /prima settimana/)
-  fails(map(edit(draft, 'i2', 'sets', 4), f.document), 'workout_scope_stale')
+  assert.ok(map(edit(draft, 'i2', 'sets', 4), f.document).ok)
   const noTarget = removeItem(draft, 'i4', 'scope_choice', decision()) as WorkoutReviewDraft
   fails(map(noTarget, f.document), 'workout_rule_target_missing')
 })

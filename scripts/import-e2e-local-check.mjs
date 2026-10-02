@@ -74,18 +74,21 @@ async function resolveWorkout(squat, choice='existing') {
   await tab.click(`#rv-item-${id}`)
   await type(`#rv-${id}-restSeconds`,'90')
   await press('Nessuna serie facoltativa',`#rv-detail-${id}`)
-  await tab.click(`#rv-${id}-catalog-pick`)
-  if (choice !== 'new') {
+  if (choice === 'existing') {
+    await tab.until(`${text(`#rv-detail-${id}`)}.includes('Dal tuo catalogo')`, 'catalog binding prepared automatically')
+  } else if (choice === 'shared') {
+    await tab.click(`#rv-${id}-catalog-pick`)
     await tab.until(`Boolean(document.querySelector('[data-candidate="${squat}"] button'))`)
     await tab.click(`[data-candidate="${squat}"] button`)
   } else {
-    await press('Nuovo esercizio','dialog[open]')
-    for(const label of ['Carico totale','kg','No']) await press(label,'dialog[open] .wr-new')
-    await tab.click('dialog[open] .wr-new input[type=checkbox]')
-    await press('Usa come nuovo esercizio','dialog[open]')
+    const catalogBefore = await api('/rest/v1/exercises?select=id',{token:testToken})
+    await type(`#rv-${id}-name`,'Squat nuovo E2E')
+    await tab.until(`${text(`#rv-detail-${id}`)}.includes('Verrà creato al salvataggio')`, 'new exercise prepared without metadata form')
+    assert.equal((await api('/rest/v1/exercises?select=id',{token:testToken})).length,catalogBefore.length,'no catalog write during preparation')
   }
   await tab.until(`Boolean(document.querySelector('[data-preview=workout]'))`)
 }
+let testToken
 async function run() {
   config = readLocalStatus() // validates loopback before ALL writes
   assert.match(config.publishableKey, /^sb_publishable_/)
@@ -117,6 +120,7 @@ async function run() {
   const a = await actor('a'), b = await actor('b')
   await writeFile(join(out,'recovery.json'),JSON.stringify({original,marker,users}))
   const token = a.session.access_token
+  testToken = token
   const squat = randomUUID()
   await api('/rest/v1/exercises', { token, method: 'POST', body: { id: squat, owner_id: a.id, name: 'Squat', variant: '', equipment: 'bilanciere', load_convention: 'total', load_unit: 'kg', measurement_mode: 'reps', per_side: false, note: '' } })
   await importLocalSql(`insert into public.shared_exercises(id,name,variant,equipment,load_convention,load_unit,measurement_mode,per_side,note)
@@ -244,6 +248,13 @@ async function run() {
   await api(`/rest/v1/workout_sessions?id=eq.${sessions[0].id}`,{token,method:'PATCH',body:{status:'completed',revision:2}})
   await choose('workout','workout.pdf')
   await resolveWorkout(squat,'new')
+  const preparedPdf = (await records()).find(r=>r.session.file.name==='workout.pdf').session
+  await tab.send('Page.reload')
+  await tab.until(`Boolean(document.querySelector('[data-preview=workout]'))`,'prepared new exercise restored from real IndexedDB')
+  const restoredPdf = (await records()).find(r=>r.session.file.name==='workout.pdf').session
+  assert.deepEqual(restoredPdf.draft,preparedPdf.draft)
+  assert.deepEqual(restoredPdf.reservations,preparedPdf.reservations)
+  pass('Nuovo esercizio predisposto senza form: reload della bozza mantiene decisioni e prenotazioni')
   await press('Continua alla conferma')
   await tab.until(`document.querySelector('.import-follow input')?.disabled === false`)
   await tab.click('.import-follow input');await tab.click('.import-save')
@@ -253,6 +264,9 @@ async function run() {
   const pdfWorkout=(await records()).find(r=>r.session.file.name==='workout.pdf').session
   assert.equal(pdfWorkout.document.readerVersion,'peppitness.pdf-reader.v1')
   assert.equal(pdfWorkout.commit.command.payload.resolved.catalog[0].choice.source,'new')
+  const newExercises = await api('/rest/v1/exercises?name=eq.Squat%20nuovo%20E2E&select=*',{token})
+  assert.equal(newExercises.length,1,'automatic preparation creates exactly one catalog row at commit')
+  assert.equal(newExercises[0].measurement_mode,'reps'); assert.equal(newExercises[0].load_unit,'kg')
   await tab.evaluate(`location.hash='#/scheda'`);await tab.send('Page.reload')
   await tab.until(`Boolean(document.querySelector('.workout-summary .primary'))`)
   await pause(1200)

@@ -8,7 +8,7 @@ export default mergeConfig(base, {
     registerType: 'prompt',
     injectRegister: false,
     manifest: false,
-    includeAssets: ['logo.svg', 'favicon.svg', 'icons/*.png', 'manifest.webmanifest'],
+    includeAssets: ['logo.svg', 'favicon.svg', 'icons/*.png', 'manifest.webmanifest', 'templates/*.docx'],
     workbox: {
       globPatterns: ['**/*.{js,css,html,svg,png,webmanifest}'],
       // Il worker del reader PDF (PDF.js 6.3.289 legacy + motore) è di circa 1,7 MiB, vicino ai 2 MiB
