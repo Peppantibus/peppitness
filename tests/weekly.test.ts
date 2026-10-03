@@ -72,3 +72,12 @@ test('dieta: struttura compatibile con il wizard', () => {
   assert.equal(fitsMealWizard({ guidance: '', days: [day('training'), day('training')] }), false)
   assert.equal(fitsMealWizard({ guidance: '', days: [day('rest')] }), false)
 })
+
+test('cardio a tempo: solo minuti, 1 serie e nessun recupero richiesti', () => {
+  const treadmill: CatalogExercise = { ...plank, id: 'aaaaaaaa-0000-4000-8000-000000000003', name: 'Camminata su tapis roulant', muscleGroup: 'Cardio' }
+  const item = { ...newPrescription(treadmill), durationSeconds: '1200' }
+  assert.equal(item.sets, '1')
+  assert.deepEqual(dayIssues({ ...emptyWeeklyDay(0), exercises: [item] }), {})
+  assert.equal(dayIssues({ ...emptyWeeklyDay(0), exercises: [{ ...item, durationSeconds: '' }] })[`${item.id}:duration`], 'Indica i minuti.')
+  assert.equal(newPrescription(plank).sets, '')
+})

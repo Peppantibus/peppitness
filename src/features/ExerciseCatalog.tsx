@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MuscleGroupSelect } from '../components/MuscleGroupSelect'
 import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
-import { exerciseMuscleGroup, groupExercises, inferMuscleGroup } from '../domain/muscle-groups'
+import { exerciseMuscleGroup, groupExercises, inferMuscleGroup, withCardioDefaults } from '../domain/muscle-groups'
 import type { MuscleGroupFilter } from '../domain/muscle-groups'
 
 import { SubpageHeader } from '../components/SubpageHeader'
@@ -48,20 +48,20 @@ export function ExerciseCatalog({ store, state }: { store: ExercisesStore | null
                 {scope === 'personal' && <label htmlFor="exercise-filter">Mostra<select id="exercise-filter" value={filter} onChange={event => setFilter(event.target.value as typeof filter)}><option value="active">Attivi</option><option value="archived">Archiviati</option><option value="all">Tutti</option></select></label>}
                 <div className="catalog-actions"><button ref={newButton} className="button primary" disabled={Boolean(draft)} onClick={() => { setScope('personal'); store.open() }}>Nuovo esercizio</button><button className="button secondary" disabled={Boolean(draft)} onClick={() => void store.load()}>Aggiorna elenco</button></div>
               </section>
-              {draft && <section ref={editor} tabIndex={-1} className="panel catalog-editor" aria-labelledby="exercise-editor-title">
+              {draft && (() => { const cardio = exerciseMuscleGroup(draft.values) === 'Cardio'; return <section ref={editor} tabIndex={-1} className="panel catalog-editor" aria-labelledby="exercise-editor-title">
                 <h2 id="exercise-editor-title">{draft.base ? 'Modifica esercizio' : 'Nuovo esercizio'}</h2>
                 <form className="catalog-form" onSubmit={event => { event.preventDefault(); void store.save() }}>
                   <fieldset disabled={busy || state.phase === 'uncertain'}>
-                    <label htmlFor="exercise-name">Nome<input id="exercise-name" required maxLength={120} value={draft.values.name} onChange={event => store.edit({ ...draft.values, name: event.target.value, ...(!draft.base && !groupChosen ? { muscleGroup: inferMuscleGroup(event.target.value, draft.values.variant) } : {}) })} /></label>
-                    <MuscleGroupSelect id="exercise-muscle-group" value={exerciseMuscleGroup(draft.values) ?? ''} onChange={muscleGroup => { setGroupChosen(true); store.edit({ ...draft.values, muscleGroup }) }} />
+                    <label htmlFor="exercise-name">Nome<input id="exercise-name" required maxLength={120} value={draft.values.name} onChange={event => store.edit(draft.base ? { ...draft.values, name: event.target.value } : withCardioDefaults({ ...draft.values, name: event.target.value, ...(!groupChosen ? { muscleGroup: inferMuscleGroup(event.target.value, draft.values.variant) } : {}) }))} /></label>
+                    <MuscleGroupSelect id="exercise-muscle-group" value={exerciseMuscleGroup(draft.values) ?? ''} onChange={muscleGroup => { setGroupChosen(true); store.edit(draft.base ? { ...draft.values, muscleGroup } : withCardioDefaults({ ...draft.values, muscleGroup })) }} />
                     {draft.base && <p className="small muted">Per cambiare variante, attrezzo o modalità, chiudi il modulo e scegli Crea variante. La rinomina conserva i collegamenti a questo esercizio.</p>}
                     <fieldset className="catalog-identity" disabled={Boolean(draft.base)}><legend>Come lo esegui</legend>
                       <label htmlFor="exercise-variant">Variante <span className="muted">(facoltativa)</span><input id="exercise-variant" maxLength={120} value={draft.values.variant} onChange={event => store.edit({ ...draft.values, variant: event.target.value })} /></label>
                       <label htmlFor="exercise-equipment">Attrezzo o macchina <span className="muted">(facoltativo)</span><input id="exercise-equipment" maxLength={120} value={draft.values.equipment} onChange={event => store.edit({ ...draft.values, equipment: event.target.value })} /></label>
-                      <label htmlFor="exercise-load">Carico indicato<select id="exercise-load" value={draft.values.loadConvention} onChange={event => store.edit({ ...draft.values, loadConvention: event.target.value as ExerciseValues['loadConvention'] })}>{Object.entries(loadLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                      <label htmlFor="exercise-unit">Unità del carico<select id="exercise-unit" value={draft.values.loadUnit} onChange={event => store.edit({ ...draft.values, loadUnit: event.target.value as ExerciseValues['loadUnit'] })}><option value="kg">Chilogrammi · kg</option><option value="lb">Libbre · lb</option></select></label>
-                      <label htmlFor="exercise-mode">Risultato della serie<select id="exercise-mode" value={draft.values.measurementMode} onChange={event => store.edit({ ...draft.values, measurementMode: event.target.value as ExerciseValues['measurementMode'] })}>{Object.entries(modeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-                      <label className="catalog-check"><input id="exercise-side" type="checkbox" checked={draft.values.perSide} onChange={event => store.edit({ ...draft.values, perSide: event.target.checked })} />Valori per ciascun lato</label>
+                      {cardio ? null : <><label htmlFor="exercise-load">Carico indicato<select id="exercise-load" value={draft.values.loadConvention} onChange={event => store.edit({ ...draft.values, loadConvention: event.target.value as ExerciseValues['loadConvention'] })}>{Object.entries(loadLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+                      <label htmlFor="exercise-unit">Unità del carico<select id="exercise-unit" value={draft.values.loadUnit} onChange={event => store.edit({ ...draft.values, loadUnit: event.target.value as ExerciseValues['loadUnit'] })}><option value="kg">Chilogrammi · kg</option><option value="lb">Libbre · lb</option></select></label></>}
+                      {cardio && !draft.base ? null : <label htmlFor="exercise-mode">Risultato della serie<select id="exercise-mode" value={draft.values.measurementMode} onChange={event => store.edit({ ...draft.values, measurementMode: event.target.value as ExerciseValues['measurementMode'] })}>{Object.entries(modeLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>}
+                      {cardio ? null : <label className="catalog-check"><input id="exercise-side" type="checkbox" checked={draft.values.perSide} onChange={event => store.edit({ ...draft.values, perSide: event.target.checked })} />Valori per ciascun lato</label>}
                     </fieldset>
                     <label htmlFor="exercise-note">Note <span className="muted">(facoltative)</span><textarea id="exercise-note" rows={4} maxLength={4000} value={draft.values.note} onChange={event => store.edit({ ...draft.values, note: event.target.value })} /></label>
                     {draft.base && <><label className="catalog-check"><input id="exercise-archived" type="checkbox" checked={Boolean(draft.values.archivedAt)} onChange={event => store.edit({ ...draft.values, archivedAt: event.target.checked ? new Date().toISOString() : null })} />Archiviato</label><p className="small muted">Nasconde l’esercizio dall’elenco degli attivi. Puoi ripristinarlo; i programmi e lo storico conservano i loro riferimenti.</p></>}
@@ -80,7 +80,7 @@ export function ExerciseCatalog({ store, state }: { store: ExercisesStore | null
                   </div>
                   {store.dirty && !state.message && <p className="small muted" role="status">Modifiche da salvare. Restano in questa pagina finché non le salvi online.</p>}
                 </form>
-              </section>}
+              </section> })()}
               {!draft && state.message && <p className="catalog-message" role="status">{state.message}</p>}
               <p className="small muted catalog-count" role="status">{rows.length} esercizi{scope === 'personal' ? filter === 'archived' ? ' archiviati' : filter === 'active' ? ' attivi' : '' : ' comuni'}</p>
               {adoptError && <p className="form-error" role="alert">{adoptError}</p>}

@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { MuscleGroupSelect } from '../components/MuscleGroupSelect'
 import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
 import { MuscleGroupImage } from '../components/MuscleGroupImage'
-import { exerciseMuscleGroup, groupExercises, inferMuscleGroup } from '../domain/muscle-groups'
+import { exerciseMuscleGroup, groupExercises, inferMuscleGroup, isTimedCardio, withCardioDefaults } from '../domain/muscle-groups'
 import type { MuscleGroupFilter } from '../domain/muscle-groups'
 
 import type { ReactNode } from 'react'
@@ -49,6 +49,14 @@ function RepsField({ item, onChange, error }: { item: PrescriptionDraft; onChang
   </div>
 }
 
+/** Cardio: si indicano solo i minuti; nel programma restano 1 serie da N secondi, senza recupero. */
+function MinutesField({ item, onChange, error }: { item: PrescriptionDraft; onChange: (item: PrescriptionDraft) => void; error?: string }) {
+  const seconds = Number(item.durationSeconds)
+  const minutes = item.durationSeconds !== '' && Number.isFinite(seconds) ? String(Math.round(seconds / 60 * 100) / 100) : ''
+  const set = (value: string) => onChange({ ...item, sets: '1', optionalSets: '0', restSeconds: '0', repsMin: '', repsMax: '', durationSeconds: value === '' ? '' : String(Number(value) * 60) })
+  return <QuickNumber id={`${item.id}-minutes`} label="Durata" unit="min" value={minutes} onChange={set} error={error} chips={['10', '15', '20', '30', '45'].map(value => ({ value, label: `${value} min` }))} />
+}
+
 function ExerciseCard({ item, index, count, issues, onChange, onMove, onRemove }: {
   item: PrescriptionDraft; index: number; count: number; issues: Record<string, string>
   onChange: (item: PrescriptionDraft) => void; onMove: (direction: -1 | 1) => void; onRemove: () => void
@@ -64,15 +72,16 @@ function ExerciseCard({ item, index, count, issues, onChange, onMove, onRemove }
         <button type="button" className="icon-button" aria-label={`Rimuovi ${item.exercise.name}`} onClick={onRemove}><Icon name="close" size={16} /></button>
       </div>
     </div>
+    {isTimedCardio(item.exercise) ? <MinutesField item={item} onChange={onChange} error={issues[`${item.id}:duration`]} /> : <>
     <QuickNumber id={`${item.id}-sets`} label="Serie" value={item.sets} onChange={sets => onChange({ ...item, sets })} error={issues[`${item.id}:sets`]} chips={['2', '3', '4', '5'].map(value => ({ value, label: value }))} />
     {item.exercise.measurementMode === 'reps'
       ? <RepsField item={item} onChange={onChange} error={issues[`${item.id}:reps`]} />
       : <QuickNumber id={`${item.id}-duration`} label="Durata" unit="sec" value={item.durationSeconds} onChange={durationSeconds => onChange({ ...item, durationSeconds })} error={issues[`${item.id}:duration`]} chips={['20', '30', '45', '60', '90'].map(value => ({ value, label: `${value}″` }))} />}
-    <QuickNumber id={`${item.id}-rest`} label="Recupero" unit="sec" value={item.restSeconds === '0' ? '' : item.restSeconds} onChange={restSeconds => onChange({ ...item, restSeconds: restSeconds || '0' })} error={issues[`${item.id}:rest`]} chips={restChips} />
+    <QuickNumber id={`${item.id}-rest`} label="Recupero" unit="sec" value={item.restSeconds === '0' ? '' : item.restSeconds} onChange={restSeconds => onChange({ ...item, restSeconds: restSeconds || '0' })} error={issues[`${item.id}:rest`]} chips={restChips} /></>}
     <details className="wz-more">
-      <summary>Serie facoltative, RIR/RPE e note</summary>
+      <summary>{isTimedCardio(item.exercise) ? 'RIR/RPE e note' : 'Serie facoltative, RIR/RPE e note'}</summary>
       <div className="wz-more-grid">
-        <label htmlFor={`${item.id}-optional`}>Serie facoltative<input id={`${item.id}-optional`} inputMode="numeric" maxLength={4} value={item.optionalSets} onChange={event => onChange({ ...item, optionalSets: event.target.value.replace(/[^\d]/g, '') || '0' })} /></label>
+        {!isTimedCardio(item.exercise) && <label htmlFor={`${item.id}-optional`}>Serie facoltative<input id={`${item.id}-optional`} inputMode="numeric" maxLength={4} value={item.optionalSets} onChange={event => onChange({ ...item, optionalSets: event.target.value.replace(/[^\d]/g, '') || '0' })} /></label>}
         <label htmlFor={`${item.id}-rir`}>RIR<input id={`${item.id}-rir`} inputMode="decimal" maxLength={4} placeholder="—" value={item.rir} onChange={event => onChange({ ...item, rir: event.target.value })} /></label>
         <label htmlFor={`${item.id}-rpe`}>RPE<input id={`${item.id}-rpe`} inputMode="decimal" maxLength={4} placeholder="—" value={item.rpe} onChange={event => onChange({ ...item, rpe: event.target.value })} /></label>
       </div>
@@ -120,14 +129,16 @@ function ExerciseSheet({ catalog, onAdd, onClose }: { catalog: { store: Exercise
         : catalog.state.phase === 'error' ? <p role="alert">Catalogo non disponibile. <button type="button" className="text-button" onClick={() => void catalog.store?.load()}>Riprova</button></p> : null}
       {search.trim() && !exact && catalog.state.phase !== 'error' && (draft ? <section className="wz-create" aria-label="Nuovo esercizio">
         <strong>Nuovo: {draft.name}</strong>
-        <MuscleGroupSelect id="wizard-muscle-group" value={exerciseMuscleGroup(draft) ?? ''} onChange={muscleGroup => setDraft({ ...draft, muscleGroup })} disabled={creating} />
+        <MuscleGroupSelect id="wizard-muscle-group" value={exerciseMuscleGroup(draft) ?? ''} onChange={muscleGroup => setDraft(withCardioDefaults({ ...draft, muscleGroup }))} disabled={creating} />
+        {exerciseMuscleGroup(draft) !== 'Cardio' && <>
         <Segmented label="Si misura in" value={draft.measurementMode} onChange={measurementMode => setDraft({ ...draft, measurementMode })} options={[{ value: 'reps', label: 'Ripetizioni' }, { value: 'seconds', label: 'Secondi' }]} />
         <Segmented label="Carico" value={draft.loadConvention} onChange={loadConvention => setDraft({ ...draft, loadConvention })} options={(Object.keys(loadLabels) as ExerciseValues['loadConvention'][]).map(key => ({ value: key, label: key === 'single-dumbbell' ? 'Un manubrio' : loadLabels[key] }))} />
+        </>}
         <label htmlFor="wizard-equipment">Attrezzo o macchina (facoltativo)<input id="wizard-equipment" maxLength={120} placeholder="Es. Pulley, Smith, manubri" value={draft.equipment} onChange={event => setDraft({ ...draft, equipment: event.target.value })} /></label>
-        <label className="wz-check"><input type="checkbox" checked={draft.perSide} onChange={event => setDraft({ ...draft, perSide: event.target.checked })} />Ripetizioni per lato</label>
+        {exerciseMuscleGroup(draft) !== 'Cardio' && <label className="wz-check"><input type="checkbox" checked={draft.perSide} onChange={event => setDraft({ ...draft, perSide: event.target.checked })} />Ripetizioni per lato</label>}
         {error && <p className="wz-error" role="alert">{error}</p>}
         <div className="program-actions"><button type="button" className="button secondary" onClick={() => setDraft(null)}>Annulla</button><button type="button" className="button primary wz-create-confirm" disabled={creating} onClick={() => void create()}>{creating ? 'Salvataggio…' : 'Crea e aggiungi'}</button></div>
-      </section> : <button type="button" className="wz-create-start" onClick={() => setDraft({ ...emptyExercise(), name: search.trim().slice(0, 120), muscleGroup: group === 'unclassified' ? null : group !== 'all' ? group : inferMuscleGroup(search.trim()) })}><Icon name="plus" size={20} /><span>Crea «{search.trim()}»</span><small>Nuovo esercizio nel tuo catalogo</small></button>)}
+      </section> : <button type="button" className="wz-create-start" onClick={() => setDraft(withCardioDefaults({ ...emptyExercise(), name: search.trim().slice(0, 120), muscleGroup: group === 'unclassified' ? null : group !== 'all' ? group : inferMuscleGroup(search.trim()) }))}><Icon name="plus" size={20} /><span>Crea «{search.trim()}»</span><small>Nuovo esercizio nel tuo catalogo</small></button>)}
       {error && <p className="wz-error" role="alert">{error}</p>}
       {rows.length > 0 && <section aria-label="I tuoi esercizi"><h3 className="wz-results-title">I tuoi esercizi</h3>{groupExercises(rows).map(section => <section key={section.label}><h4 className="wz-group-title">{section.label} <span>{section.rows.length}</span></h4><ul className="wz-results">{section.rows.map(row => <li key={row.id}><button type="button" disabled={creating} onClick={() => add(row)}><span><strong>{row.name}</strong><MuscleGroupBadge exercise={row} /><small>{[row.variant, row.equipment, row.measurementMode === 'seconds' ? 'a tempo' : 'ripetizioni', row.perSide ? 'per lato' : ''].filter(Boolean).join(' · ')}</small></span><Icon name="plus" size={20} /></button></li>)}</ul></section>)}</section>}
       {shared.length > 0 && <section aria-label="Esercizi comuni"><h3 className="wz-results-title">Esercizi comuni</h3>{groupExercises(shared).map(section => <section key={section.label}><h4 className="wz-group-title">{section.label} <span>{section.rows.length}</span></h4><ul className="wz-results">{section.rows.map(row => <li key={row.id}><button type="button" disabled={creating} onClick={() => void addShared(row)}><span><strong>{row.name}</strong><MuscleGroupBadge exercise={row} /><small>{[row.variant, row.equipment, row.measurementMode === 'seconds' ? 'a tempo' : 'ripetizioni', row.perSide ? 'per lato' : ''].filter(Boolean).join(' · ')}</small></span><Icon name="plus" size={20} /></button></li>)}</ul></section>)}</section>}

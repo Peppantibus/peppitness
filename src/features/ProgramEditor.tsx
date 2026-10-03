@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { MuscleGroupSelect } from '../components/MuscleGroupSelect'
 import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
-import { groupExercises } from '../domain/muscle-groups'
+import { groupExercises, isTimedCardio } from '../domain/muscle-groups'
 import type { MuscleGroupFilter } from '../domain/muscle-groups'
 
 import { Icon } from '../components/Icon'
@@ -47,12 +47,13 @@ function ExercisePicker({ catalog, onAdd, dayId }: { catalog: { store: Exercises
 
 export function ProgramPreview({ document }: { document: ProgramDocument }) {
   return <div className="program-preview"><h3>{document.title}</h3><p className="catalog-note">{document.guidance || 'Nessuna istruzione generale'}</p>{document.days.map(day => <section key={day.id}><h4>{day.label} · {day.title}</h4>{day.note && <p className="catalog-note">{day.note}</p>}
-    <ol>{day.exercises.map(item => <li key={item.id}><strong>{item.exercise.name}</strong> <MuscleGroupBadge exercise={item.exercise} /><p className="small muted">{[item.exercise.variant, item.exercise.equipment, loadLabels[item.exercise.loadConvention], item.exercise.loadUnit, item.exercise.perSide ? 'Per lato' : ''].filter(Boolean).join(' · ')}</p><p>{item.sets} serie{Number(item.optionalSets) > 0 ? ` + ${item.optionalSets} facoltative` : ''} · {item.exercise.measurementMode === 'reps' ? `${item.repsMin}–${item.repsMax} ripetizioni` : `${item.durationSeconds} secondi`} · Recupero {item.restSeconds} s{item.rir !== '' ? ` · RIR ${item.rir}` : ''}{item.rpe !== '' ? ` · RPE ${item.rpe}` : ''}</p>{item.note && <p className="catalog-note">{item.note}</p>}</li>)}</ol>{!day.exercises.length && <p>Nessun esercizio</p>}</section>)}</div>
+    <ol>{day.exercises.map(item => <li key={item.id}><strong>{item.exercise.name}</strong> <MuscleGroupBadge exercise={item.exercise} /><p className="small muted">{[item.exercise.variant, item.exercise.equipment, loadLabels[item.exercise.loadConvention], item.exercise.loadUnit, item.exercise.perSide ? 'Per lato' : ''].filter(Boolean).join(' · ')}</p><p>{isTimedCardio(item.exercise) ? `${Math.round(Number(item.durationSeconds) / 60 * 100) / 100} minuti` : <>{item.sets} serie{Number(item.optionalSets) > 0 ? ` + ${item.optionalSets} facoltative` : ''} · {item.exercise.measurementMode === 'reps' ? `${item.repsMin}–${item.repsMax} ripetizioni` : `${item.durationSeconds} secondi`} · Recupero {item.restSeconds} s</>}{item.rir !== '' ? ` · RIR ${item.rir}` : ''}{item.rpe !== '' ? ` · RPE ${item.rpe}` : ''}</p>{item.note && <p className="catalog-note">{item.note}</p>}</li>)}</ol>{!day.exercises.length && <p>Nessun esercizio</p>}</section>)}</div>
 }
 
 const fields = { sets: 'Serie obbligatorie', optionalSets: 'Serie facoltative', repsMin: 'Ripetizioni minime', repsMax: 'Ripetizioni massime', durationSeconds: 'Durata · secondi', restSeconds: 'Recupero · secondi', rir: 'RIR (facoltativo)', rpe: 'RPE (facoltativo)' }
 function PrescriptionFields({ item, onChange }: { item: PrescriptionDraft; onChange: (value: PrescriptionDraft) => void }) {
-  const keys = (Object.keys(fields) as (keyof typeof fields)[]).filter(key => item.exercise.measurementMode === 'reps' ? key !== 'durationSeconds' : key !== 'repsMin' && key !== 'repsMax')
+  const cardio = isTimedCardio(item.exercise)
+  const keys = (Object.keys(fields) as (keyof typeof fields)[]).filter(key => cardio ? ['durationSeconds', 'rir', 'rpe'].includes(key) : item.exercise.measurementMode === 'reps' ? key !== 'durationSeconds' : key !== 'repsMin' && key !== 'repsMax')
   return <><MuscleGroupBadge exercise={item.exercise} /><p className="small muted">{[item.exercise.variant, item.exercise.equipment, loadLabels[item.exercise.loadConvention], item.exercise.loadUnit, item.exercise.perSide ? 'Per lato' : ''].filter(Boolean).join(' · ')}</p>
     <div className="program-numbers">{keys.map(key => <label key={key} htmlFor={`${item.id}-${key}`}>{fields[key]}<input id={`${item.id}-${key}`} data-field={key} inputMode={key === 'rir' || key === 'rpe' ? 'decimal' : 'numeric'} autoComplete="off" maxLength={30} value={item[key]} onChange={event => onChange({ ...item, [key]: event.target.value })} /></label>)}</div>
     <label htmlFor={`${item.id}-note`}>Note dell’esercizio<textarea id={`${item.id}-note`} rows={2} maxLength={4000} value={item.note} onChange={event => onChange({ ...item, note: event.target.value })} /></label>

@@ -16,7 +16,7 @@ export const weekdays = [
   { code: 'Dom', name: 'Domenica', short: 'D' },
 ] as const
 
-import { muscleGroups } from './muscle-groups.ts'
+import { isTimedCardio, muscleGroups } from './muscle-groups.ts'
 export { muscleGroups } from './muscle-groups.ts'
 export const defaultDayTitle = 'Allenamento'
 
@@ -78,6 +78,7 @@ export function copyWeeklyDay(source: ProgramDay, index: number): ProgramDay {
  * Nessun valore inventato: senza un precedente i campi restano da compilare.
  */
 export function prefillFromDay(item: PrescriptionDraft, day: ProgramDay): PrescriptionDraft {
+  if (isTimedCardio(item.exercise)) return item
   const previous = [...day.exercises].reverse().find(other => other.exercise.measurementMode === item.exercise.measurementMode)
   if (!previous) return item
   return { ...item, sets: previous.sets, repsMin: previous.repsMin, repsMax: previous.repsMax, durationSeconds: previous.durationSeconds, restSeconds: previous.restSeconds }
@@ -88,12 +89,12 @@ export function dayIssues(day: ProgramDay): Record<string, string> {
   const issues: Record<string, string> = {}
   const integer = (value: string, min: number, max: number) => /^\d+$/.test(value.trim()) && Number(value) >= min && Number(value) <= max
   for (const item of day.exercises) {
-    if (!integer(item.sets, 1, 1000)) issues[`${item.id}:sets`] = 'Indica quante serie.'
+    if (!isTimedCardio(item.exercise) && !integer(item.sets, 1, 1000)) issues[`${item.id}:sets`] = 'Indica quante serie.'
     if (item.exercise.measurementMode === 'reps') {
       if (!integer(item.repsMin, 1, 10000) || !integer(item.repsMax, 1, 10000)) issues[`${item.id}:reps`] = 'Indica le ripetizioni.'
       else if (Number(item.repsMin) > Number(item.repsMax)) issues[`${item.id}:reps`] = 'Il minimo supera il massimo.'
-    } else if (!integer(item.durationSeconds, 1, 86400)) issues[`${item.id}:duration`] = 'Indica la durata in secondi.'
-    if (!integer(item.restSeconds, 0, 86400)) issues[`${item.id}:rest`] = 'Recupero in secondi, anche 0.'
+    } else if (!integer(item.durationSeconds, 1, 86400)) issues[`${item.id}:duration`] = isTimedCardio(item.exercise) ? 'Indica i minuti.' : 'Indica la durata in secondi.'
+    if (!isTimedCardio(item.exercise) && !integer(item.restSeconds, 0, 86400)) issues[`${item.id}:rest`] = 'Recupero in secondi, anche 0.'
   }
   return issues
 }

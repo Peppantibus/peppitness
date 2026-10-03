@@ -1,5 +1,5 @@
 import { isExerciseId } from './exercises.ts'
-import { exerciseMuscleGroup } from './muscle-groups.ts'
+import { exerciseMuscleGroup, isTimedCardio } from './muscle-groups.ts'
 import type { CatalogExercise, ExerciseValues } from './exercises.ts'
 import { parseNonNegativeNumber } from './validation.ts'
 
@@ -30,7 +30,7 @@ export function newDay(days: ProgramDay[]): ProgramDay {
   return { id: uuid(), label, title: `Seduta ${label}`, note: '', exercises: [] }
 }
 export function newPrescription(exercise: CatalogExercise): PrescriptionDraft {
-  return { id: uuid(), exercise: { ...exercise }, sets: '', optionalSets: '0', repsMin: '', repsMax: '', durationSeconds: '', restSeconds: '0', rir: '', rpe: '', note: '' }
+  return { id: uuid(), exercise: { ...exercise }, sets: isTimedCardio(exercise) ? '1' : '', optionalSets: '0', repsMin: '', repsMax: '', durationSeconds: '', restSeconds: '0', rir: '', rpe: '', note: '' }
 }
 export function duplicateDay(day: ProgramDay, days: ProgramDay[]): ProgramDay {
   return { ...structuredClone(day), id: uuid(), label: nextDayLabel(days), exercises: day.exercises.map(item => ({ ...structuredClone(item), id: uuid() })) }

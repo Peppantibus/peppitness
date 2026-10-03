@@ -7,6 +7,7 @@ import { Modal } from '../components/Modal'
 import { SubpageHeader } from '../components/SubpageHeader'
 import { Segmented } from '../components/Segmented'
 import { weekdays } from '../domain/weekly'
+import { isTimedCardio } from '../domain/muscle-groups'
 import { formatDate } from '../domain/dates'
 import { isWorkoutWeekday } from '../domain/settings'
 import { validateSet } from '../domain/validation'
@@ -119,7 +120,7 @@ function exerciseArea(exercise: ExercisePrescription): string | undefined {
   const area = exercise.area?.trim()
   return area && !exercise.name.toLowerCase().includes(area.toLowerCase()) ? area : undefined
 }
-const prescriptionText = (exercise: ExercisePrescription) => `${exercise.sets} × ${exercise.target}${exercise.mode === 'reps' ? ' rip.' : ''}`
+const prescriptionText = (exercise: ExercisePrescription) => isTimedCardio(exercise) && exercise.sets === 1 ? `${Math.round(parseInt(exercise.target, 10) / 60 * 100) / 100} min` : `${exercise.sets} × ${exercise.target}${exercise.mode === 'reps' ? ' rip.' : ''}`
 
 function PreviousResults({ previous, mode, unit }: { previous?: PreviousExercise; mode: ExercisePrescription['mode']; unit?: 'kg' | 'lb' }) {
   if (!previous) return <div className="no-previous"><Icon name="history" size={24} /><h3>La prima volta parte da qui</h3><p>Non ci sono ancora serie confrontabili per questo esercizio.</p></div>

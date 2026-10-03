@@ -30,6 +30,13 @@ export function inferMuscleGroup(name: string, variant = ''): MuscleGroup | null
 export function exerciseMuscleGroup(value: { name: string; variant?: string; comparison?: { variant?: string }; muscleGroup?: MuscleGroup | null }): MuscleGroup | null {
   return value.muscleGroup === undefined ? inferMuscleGroup(value.name, value.variant ?? value.comparison?.variant) : value.muscleGroup
 }
+/** Cardio a tempo: un solo blocco di minuti, senza serie né recupero (salvato come 1 serie da N secondi). */
+export const isTimedCardio = (value: Parameters<typeof exerciseMuscleGroup>[0] & { measurementMode?: string; mode?: string }) =>
+  exerciseMuscleGroup(value) === 'Cardio' && (value.measurementMode ?? value.mode) === 'seconds'
+/** Nuovo esercizio cardio: niente carico, lato o ripetizioni; solo tempo a corpo libero. */
+export function withCardioDefaults<T extends { name: string; variant?: string; muscleGroup?: MuscleGroup | null; loadConvention: string; measurementMode: string; perSide: boolean }>(values: T): T {
+  return exerciseMuscleGroup(values) === 'Cardio' ? { ...values, loadConvention: 'bodyweight', measurementMode: 'seconds', perSide: false } : values
+}
 export const muscleGroupLabel = (value: Parameters<typeof exerciseMuscleGroup>[0]) => exerciseMuscleGroup(value) ?? unclassifiedLabel
 export function groupExercises<T extends { name: string; variant?: string; muscleGroup?: MuscleGroup | null }>(rows: readonly T[]): { group: MuscleGroup | null; label: string; rows: T[] }[] {
   return [...muscleGroups, null].map(group => ({ group, label: group ?? unclassifiedLabel, rows: rows.filter(row => exerciseMuscleGroup(row) === group) })).filter(group => group.rows.length > 0)
