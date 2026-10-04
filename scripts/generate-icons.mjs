@@ -1,4 +1,4 @@
-// Esporta le icone dalla stessa sorgente SVG del marchio, senza librerie aggiuntive.
+// Esporta favicon e icone dalla stessa sorgente SVG del marchio (stessi colori ovunque), senza librerie aggiuntive.
 // Avvia, se necessario, un Chrome dedicato con profilo temporaneo; non usa quello personale.
 import { readFile, writeFile, mkdir } from 'node:fs/promises'
 import { ensureChrome, openTab } from './lib/import-browser-harness.mjs'
@@ -12,19 +12,18 @@ if (!viewBox || viewBox.length !== 4 || viewBox.some(value => !Number.isFinite(v
 const [x, y, width, height] = viewBox
 const scale = 128 * .72 / Math.max(width, height)
 const tx = (128 - width * scale) / 2 - x * scale, ty = (128 - height * scale) / 2 - y * scale
-const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" fill="#F5F6F2"/><g transform="translate(${tx} ${ty}) scale(${scale})" fill="none">${content}</g></svg>`
-// La favicon è solo la mela, senza sfondo e ritagliata sul disegno, con i colori del tema scuro
-// (corpo chiaro, dettagli scuri), così resta riconoscibile nella barra delle schede.
-const faviconColors = { '#234D41': '#8CC59F', '#D9EF85': '#16261F', '#79A83A': '#D9EF85' }
-const faviconContent = content.replace(/#(234D41|D9EF85|79A83A)/gi, color => faviconColors[color.toUpperCase()])
-const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="12.5 9.5 103 103" fill="none">${faviconContent}</svg>`
+// Fondo scuro del tema scuro: la mela salvia resta leggibile (circa 7:1); iOS non ammette trasparenza.
+const background = '#121A17'
+const icon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" fill="${background}"/><g transform="translate(${tx} ${ty}) scale(${scale})" fill="none">${content}</g></svg>`
+// La favicon è solo la mela, senza sfondo e ritagliata sul disegno: resta riconoscibile nella barra delle schede.
+const favicon = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="12.5 9.5 103 103" fill="none">${content}</svg>`
 const debugUrl = process.env.TEST_DEBUG_URL ?? 'http://127.0.0.1:9430'
 const chrome = await ensureChrome({ url: debugUrl })
 let tab
 try {
   tab = await openTab({ url: debugUrl })
   await mkdir(new URL('icons/', publicDir), { recursive: true })
-  await writeFile(new URL('favicon.svg', publicDir), favicon +'\n')
+  await writeFile(new URL('favicon.svg', publicDir), favicon + '\n')
   for (const [size, name] of [[180, 'apple-touch-icon.png'], [192, 'icon-192.png'], [512, 'icon-512.png']]) {
     const imageUrl = 'data:image/svg+xml;base64,' + Buffer.from(icon).toString('base64')
     const result = await tab.evaluate(`new Promise((resolve, reject) => { const image = new Image(); image.onload = () => { const canvas = document.createElement('canvas'); canvas.width = canvas.height = ${size}; canvas.getContext('2d').drawImage(image, 0, 0, ${size}, ${size}); resolve(canvas.toDataURL('image/png').split(',')[1]); }; image.onerror = () => reject(new Error('SVG non renderizzabile')); image.src = ${JSON.stringify(imageUrl)}; })`)

@@ -1,7 +1,7 @@
 /**
  * Mela con manubrio e battito in SVG inline: i colori vengono dai token
  * `--logo-body`, `--logo-detail` e `--logo-leaf`, uguali nel tema chiaro e in quello scuro.
- * Stessa geometria di `public/logo.svg`, che resta la fonte per favicon e icone dell'app.
+ * Stessa geometria e stessi colori di `public/logo.svg`, fonte di favicon e icone (`npm run icons`).
  */
 export function BrandLogo({ className = 'brand-logo', title }: { className?: string; title?: string }) {
   return <svg className={className} viewBox="0 0 128 128" width="128" height="128" role={title ? 'img' : undefined} aria-label={title} aria-hidden={title ? undefined : true} focusable="false">
