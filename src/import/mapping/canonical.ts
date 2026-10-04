@@ -85,7 +85,7 @@ function canonicalString(value: string, path: string): string {
 }
 
 function isPlainObject(value: object): value is Record<string, unknown> {
-  const prototype = Object.getPrototypeOf(value)
+  const prototype: unknown = Object.getPrototypeOf(value)
   return prototype === Object.prototype || prototype === null
 }
 
@@ -111,8 +111,8 @@ function write(value: unknown, path: string, depth: number, out: string[]): void
     out.push(']')
     return
   }
-  if (!isPlainObject(value as object)) throw new CanonicalJsonError(path, 'Oggetto non semplice')
-  const record = value as Record<string, unknown>
+  if (!isPlainObject(value)) throw new CanonicalJsonError(path, 'Oggetto non semplice')
+  const record = value
   const keys = Object.keys(record).sort(compareCodePoints)
   out.push('{')
   keys.forEach((key, index) => {

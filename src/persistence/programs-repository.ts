@@ -97,8 +97,8 @@ export function createProgramsRepository(client: SupabaseClient, owner: string):
       signal.throwIfAborted()
       if (error) throw failure(error)
       if (!Array.isArray(data)) fail()
-      if (!data!.length) return rows
-      for (const raw of data!) {
+      if (!data.length) return rows
+      for (const raw of data) {
         const row = owned(raw, owner), key = id(row.id)
         if ((cursor && key <= cursor) || (filter && row[filter[0]] !== filter[1])) fail()
         rows.push(row); cursor = key

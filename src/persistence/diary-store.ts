@@ -1,7 +1,9 @@
 import { applyOp, emptyDiary, emptyResults, mealLogKey, nextRestTimer, opKey, replay, setValues } from '../domain/diary.ts'
 import type { DiaryData, DiaryOp } from '../domain/diary.ts'
 import type { DayType, LocalDate, Meal, MealStatus, RestTimerState, SetResult, WorkoutDay, WorkoutSession } from '../domain/types.ts'
-import { DiaryFailure, dayFromRow, mealLogFromRow, sessionFromRow, setFromRow } from './diary-repository.ts'
+import { keyValueArchive } from './diary-archive.ts'
+import type { ServerArchive, ServerCopy } from './diary-archive.ts'
+import { DiaryFailure, dayFromRow, mealLogFromRow, mergeDiary, serverTime, sessionFromRow, setFromRow } from './diary-repository.ts'
 import type { DiaryTransport, Row } from './diary-repository.ts'
 
 /**
@@ -34,14 +36,24 @@ export const browserStorage: KeyValueStorage = {
   remove: key => { try { window.localStorage.removeItem(key) } catch { /* archivio non disponibile */ } },
 }
 
-interface Persisted {
-  version: 1; server: DiaryData; revisions: Record<string, number>; queue: DiaryOp[]; conflicts: DiaryConflict[]
-  restTimer: RestTimerState | null; refreshedAt: string | null
+/** Parte locale, piccola e sincrona (localStorage): ciò che esiste solo su questo dispositivo. */
+interface LocalPart {
+  version: 2; queue: DiaryOp[]; conflicts: DiaryConflict[]; restTimer: RestTimerState | null
   /** Operazioni già inviate almeno una volta: il server potrebbe averle applicate. */
   attempted: string[]
   /** Sedute le cui operazioni restano ferme sul dispositivo in attesa di una scelta. */
   blocked: string[]
+  /** Cambia a ogni salvataggio della copia confermata: avvisa le altre schede di rileggerla. */
+  serverStamp: string | null
 }
+type Persisted = Omit<LocalPart, 'version'> & Omit<ServerCopy, 'version'>
+/** Formato precedente: tutto in un'unica chiave (convertito al primo avvio). */
+interface LegacyV1 extends Omit<Persisted, 'serverStamp' | 'cursor' | 'fullAt'> { version: 1 }
+
+/** Dopo una lettura completa le incrementali bastano per un giorno; poi si rilegge tutto (rete di sicurezza). */
+export const FULL_REFRESH_MS = 24 * 60 * 60 * 1000
+/** Le incrementali ripartono un po' prima del cursore: scritture lente o orologi non allineati non sfuggono. */
+export const CURSOR_OVERLAP_MS = 5 * 60 * 1000
 
 const describe = (op: DiaryOp, data: DiaryData): { label: string; value: string } => {
   const session = 'sessionId' in op ? data.sessions.find(item => item.id === op.sessionId) : op.type === 'start' ? op.session : undefined
@@ -75,8 +87,15 @@ const sessionOf = (op: DiaryOp) => op.type === 'start' ? op.session.id : 'sessio
 export class DiaryStore {
   private transport: DiaryTransport | null
   private storage: KeyValueStorage
+  private archive: ServerArchive
   readonly storageKey: string
+  private legacyKey: string
   private data: Persisted
+  /** Copia confermata letta dall'archivio (asincrono): prima nessun invio né lettura dal server. */
+  private hydrated = false
+  private hydration: Promise<void>
+  private serverDirty = false
+  private saving: Promise<boolean> | null = null
   private state: DiaryState
   private listeners = new Set<() => void>()
   private flushing: AbortController | null = null
@@ -84,42 +103,121 @@ export class DiaryStore {
   private loading: AbortController | null = null
   private timer: ReturnType<typeof setTimeout> | null = null
   private stopped = false
+  /** Archivio scartato con l'uscita: nessuna risposta tardiva può riscriverlo. */
+  private cleared = false
   private waiting = false
   private acked = 0
   /** Operazioni e conflitti chiusi da questa scheda: non vanno reintrodotti dall'archivio. */
   private removed = new Set<string>()
 
-  constructor(transport: DiaryTransport | null, storage: KeyValueStorage, owner: string) {
-    this.transport = transport; this.storage = transport ? storage : memoryStorage(); this.storageKey = `peppitness:diary:v1:${owner}`
-    this.data = this.read() ?? this.empty()
-    this.state = { phase: transport && !this.data.refreshedAt ? 'loading' : 'ready', view: emptyDiary(), restTimer: this.data.restTimer, pending: 0, conflicts: [], sync: 'local', refreshedAt: this.data.refreshedAt, storage: true, message: '' }
+  /**
+   * `archive`: dove sta la copia confermata (IndexedDB nel browser). Senza, la stessa memoria chiave/valore
+   * della coda in una chiave separata: comodo nei test e senza Supabase.
+   */
+  constructor(transport: DiaryTransport | null, storage: KeyValueStorage, owner: string, archive?: ServerArchive) {
+    this.transport = transport; this.storage = transport ? storage : memoryStorage()
+    this.archive = transport && archive ? archive : keyValueArchive(this.storage, owner)
+    this.storageKey = `peppitness:diary:v2:${owner}`; this.legacyKey = `peppitness:diary:v1:${owner}`
+    const legacy = this.readLegacy()
+    this.data = { ...this.empty(), ...(legacy ?? {}), ...(this.readLocal() ?? {}) }
+    if (legacy) {
+      // Conversione dal formato v1: la coda passa subito nella nuova chiave; la vecchia si toglie
+      // solo quando anche la copia confermata è al sicuro nell'archivio.
+      this.persistLocal()
+    }
+    this.state = { phase: transport ? 'loading' : 'ready', view: emptyDiary(), restTimer: this.data.restTimer, pending: 0, conflicts: [], sync: 'local', refreshedAt: null, storage: true, message: '' }
     this.state = { ...this.state, ...this.derived() }
+    this.hydration = this.hydrate(legacy)
   }
 
-  private empty(): Persisted { return { version: 1, server: emptyDiary(), revisions: {}, queue: [], conflicts: [], restTimer: null, refreshedAt: null, attempted: [], blocked: [] } }
-  private read(): Persisted | null {
+  private empty(): Persisted {
+    return { server: emptyDiary(), revisions: {}, refreshedAt: null, cursor: null, fullAt: null, queue: [], conflicts: [], restTimer: null, attempted: [], blocked: [], serverStamp: null }
+  }
+  private readLocal(): Omit<LocalPart, 'version'> | null {
     try {
       const raw = this.storage.get(this.storageKey)
-      const parsed = raw ? JSON.parse(raw) as Persisted : null
-      return parsed?.version === 1 && Array.isArray(parsed.queue) && parsed.server ? { ...this.empty(), ...parsed } : null
+      const parsed = raw ? JSON.parse(raw) as LocalPart : null
+      if (parsed?.version !== 2 || !Array.isArray(parsed.queue)) return null
+      const { version: _version, ...local } = { ...this.localPart(), ...parsed }
+      return local
     } catch { return null }
   }
+  private readLegacy(): Omit<Persisted, 'serverStamp'> | null {
+    try {
+      const raw = this.storage.get(this.legacyKey)
+      const parsed = raw ? JSON.parse(raw) as LegacyV1 : null
+      if (parsed?.version !== 1 || !Array.isArray(parsed.queue) || !parsed.server) return null
+      const { version: _version, ...rest } = parsed
+      return { ...this.empty(), ...rest, cursor: null, fullAt: null }
+    } catch { return null }
+  }
+  private localPart(): LocalPart {
+    const { queue, conflicts, restTimer, attempted, blocked, serverStamp } = this.data ?? this.empty()
+    return { version: 2, queue, conflicts, restTimer, attempted, blocked, serverStamp }
+  }
+  private serverCopy(): ServerCopy {
+    const { server, revisions, refreshedAt, cursor, fullAt } = this.data
+    return { version: 2, server, revisions, refreshedAt, cursor, fullAt }
+  }
+  /** Copia confermata dall'archivio; resta quella più recente fra archivio e copia v1 in conversione. */
+  private async hydrate(legacy: Omit<Persisted, 'serverStamp'> | null) {
+    let copy = await this.archive.load().catch((): ServerCopy | null => null)
+    if (this.cleared) return
+    if (legacy && (!copy || (legacy.refreshedAt ?? '') > (copy.refreshedAt ?? ''))) copy = { version: 2, server: legacy.server, revisions: legacy.revisions, refreshedAt: legacy.refreshedAt, cursor: null, fullAt: null }
+    if (copy && (copy.refreshedAt ?? '') >= (this.data.refreshedAt ?? '')) this.adopt(copy)
+    this.hydrated = true
+    if (legacy) { this.serverDirty = true; void this.saveServer().then(saved => { if (saved) this.storage.remove(this.legacyKey) }) }
+    this.emit(this.data.refreshedAt ? { phase: 'ready' } : {})
+  }
+  private adopt(copy: ServerCopy) {
+    // Le revisioni lette altrove possono essere più recenti per alcune righe: si tiene la maggiore.
+    const revisions = { ...copy.revisions }
+    for (const [key, revision] of Object.entries(this.data.revisions)) if (revision > (revisions[key] ?? 0)) revisions[key] = revision
+    Object.assign(this.data, { server: copy.server, revisions, refreshedAt: copy.refreshedAt, cursor: copy.cursor, fullAt: copy.fullAt })
+  }
   /** Unisce ciò che un'altra scheda ha salvato e che questa non ha chiuso. */
-  private merge(stored: Persisted | null) {
+  private merge(stored: Omit<LocalPart, 'version'> | null) {
     if (!stored) return
     const own = new Set(this.data.queue.map(op => op.opId))
     for (const op of stored.queue) if (!own.has(op.opId) && !this.removed.has(op.opId)) this.data.queue.push(op)
     const conflicts = new Set(this.data.conflicts.map(item => item.id))
     for (const item of stored.conflicts) if (!conflicts.has(item.id) && !this.removed.has(item.id)) this.data.conflicts.push(item)
-    for (const [key, revision] of Object.entries(stored.revisions)) if (revision > (this.data.revisions[key] ?? 0)) this.data.revisions[key] = revision
     const live = new Set(this.data.queue.map(op => op.opId))
     this.data.attempted = [...new Set([...this.data.attempted, ...stored.attempted])].filter(id => live.has(id))
     const sessions = new Set(this.data.queue.map(sessionOf))
     const added = stored.blocked.filter(id => !this.data.blocked.includes(id) && !this.removed.has(`blocked:${id}`))
     this.data.blocked = [...this.data.blocked, ...added].filter(id => sessions.has(id))
   }
-  private persist() {
-    try { this.merge(this.read()); this.storage.set(this.storageKey, JSON.stringify(this.data)); return true } catch { return false }
+  /** Solo la parte locale: pochi KB anche dopo anni di storia, quindi ogni tasto resta veloce. */
+  private persistLocal() {
+    try { this.merge(this.readLocal()); this.storage.set(this.storageKey, JSON.stringify(this.localPart())); return true } catch { return false }
+  }
+  /**
+   * Salvataggi della copia confermata in sequenza, sempre con l'ultima versione. Se l'archivio
+   * non scrive, la copia vecchia viene tolta: meglio rileggere dal server che mostrare dati superati.
+   */
+  private saveServer(): Promise<boolean> {
+    // Il ciclo in corso salva anche le modifiche arrivate nel frattempo.
+    if (this.saving) return this.saving
+    const run = async () => {
+      let saved = true
+      while (this.serverDirty && !this.cleared) {
+        this.serverDirty = false
+        try {
+          await this.archive.save(this.serverCopy())
+          if (this.cleared) break
+          this.data.serverStamp = crypto.randomUUID()
+          this.persistLocal()
+        } catch {
+          saved = false
+          await this.archive.remove().catch(() => undefined)
+        }
+      }
+      return saved
+    }
+    const saving: Promise<boolean> = run().finally(() => { if (this.saving === saving) this.saving = null })
+    this.saving = saving
+    return saving
   }
   private derived(): Partial<DiaryState> {
     const pending = this.data.queue.length
@@ -129,7 +227,9 @@ export class DiaryStore {
     }
   }
   private emit(value: Partial<DiaryState> = {}) {
-    const stored = this.persist()
+    if (this.cleared) return
+    const stored = this.persistLocal()
+    if (this.serverDirty && this.hydrated) void this.saveServer()
     this.state = { ...this.state, ...this.derived(), ...value, storage: stored }
     this.listeners.forEach(listener => listener())
   }
@@ -155,9 +255,15 @@ export class DiaryStore {
 
   /** Un'altra scheda ha aggiornato l'archivio: si adotta la sua copia confermata e si uniscono le code. */
   reloadFromDevice = () => {
-    const stored = this.read()
+    const stored = this.readLocal()
     if (!stored) return
-    if ((stored.refreshedAt ?? '') >= (this.data.refreshedAt ?? '')) { this.data.server = stored.server; this.data.refreshedAt = stored.refreshedAt }
+    if (stored.serverStamp && stored.serverStamp !== this.data.serverStamp) {
+      this.data.serverStamp = stored.serverStamp
+      void this.archive.load().then(copy => {
+        if (!copy || this.cleared || (copy.refreshedAt ?? '') < (this.data.refreshedAt ?? '')) return
+        this.adopt(copy); this.emit()
+      }, () => undefined)
+    }
     // Le operazioni assenti nell'archivio sono state chiuse dall'altra scheda (l'archivio
     // contiene sempre l'unione delle code): tranne quella in invio qui, non si reinviano.
     if (this.state.storage) {
@@ -173,17 +279,21 @@ export class DiaryStore {
 
   // ------------------------------------------------------------------ letture
   refresh = async (): Promise<void> => {
-    if (!this.transport || this.loading || this.stopped) return
+    if (!this.transport || this.stopped) return
+    await this.hydration
+    if (this.loading || this.stopped || this.cleared) return
     const controller = new AbortController(); this.loading = controller
     const acked = this.acked
     if (!this.data.refreshedAt) this.emit({ phase: 'loading', message: '' })
     try {
-      const { data, revisions } = await this.transport.loadAll(AbortSignal.any([controller.signal, AbortSignal.timeout(20_000)]))
+      const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(20_000)])
+      const next = await this.read(signal)
       if (this.loading !== controller || controller.signal.aborted) return
       this.loading = null
       // Un invio confermato durante la lettura potrebbe mancare dalla copia letta: si rilegge.
       if (acked !== this.acked) { void this.refresh(); return }
-      this.data.server = data; this.data.revisions = revisions; this.data.refreshedAt = new Date().toISOString()
+      Object.assign(this.data, next, { refreshedAt: new Date().toISOString() })
+      this.serverDirty = true
       this.emit({ phase: 'ready', message: '' })
       this.schedule(0)
     } catch {
@@ -191,6 +301,26 @@ export class DiaryStore {
       this.emit(this.data.refreshedAt ? { phase: 'ready', message: 'Non riesco ad aggiornare il diario online. Stai vedendo i dati salvati sul dispositivo.' }
         : { phase: 'error', message: 'Non riesco a caricare il diario. Controlla la connessione e riprova.' })
     } finally { if (this.loading === controller) this.loading = null }
+  }
+
+  /**
+   * Lettura incrementale (righe cambiate dopo il cursore) quando c'è una lettura completa recente;
+   * altrimenti, o se le modifiche non si applicano alla copia, lettura completa.
+   */
+  private async read(signal: AbortSignal): Promise<Pick<Persisted, 'server' | 'revisions' | 'cursor' | 'fullAt'>> {
+    const transport = this.transport!
+    const { cursor, fullAt } = this.data
+    const recent = fullAt !== null && Date.now() - Date.parse(fullAt) < FULL_REFRESH_MS
+    if (transport.loadChanges && cursor && recent && this.data.refreshedAt) {
+      const since = new Date(serverTime(cursor) - CURSOR_OVERLAP_MS).toISOString()
+      const changes = await transport.loadChanges(since, signal)
+      try {
+        const merged = mergeDiary(this.data.server, this.data.revisions, changes)
+        return { server: merged.data, revisions: merged.revisions, cursor: changes.cursor && serverTime(changes.cursor) > serverTime(cursor) ? changes.cursor : cursor, fullAt }
+      } catch { /* copia non allineata: si ricostruisce da capo */ }
+    }
+    const full = await transport.loadAll(signal)
+    return { server: full.data, revisions: full.revisions, cursor: full.cursor ?? null, fullAt: new Date().toISOString() }
   }
 
   // ------------------------------------------------------------------ scritture locali
@@ -314,6 +444,9 @@ export class DiaryStore {
   }
   flush = async () => {
     if (!this.transport || this.flushing || this.stopped) return
+    // Senza la copia confermata le revisioni attese non sono note: si invia dopo averla letta.
+    if (!this.hydrated) await this.hydration
+    if (this.flushing || this.stopped || this.cleared) return
     const controller = new AbortController(); this.flushing = controller
     const active = () => this.flushing === controller && !controller.signal.aborted
     try {
@@ -323,15 +456,20 @@ export class DiaryStore {
         this.inFlight = op.opId
         if (!this.data.attempted.includes(op.opId)) this.data.attempted.push(op.opId)
         this.emit()
+        const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)])
         try {
-          await this.send(op, AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]))
+          await this.send(op, signal)
           this.drop(item => item.opId === op.opId)
           this.data.attempted = this.data.attempted.filter(id => id !== op.opId)
           this.acked++
           this.waiting = false
         } catch (error) {
           if (!active()) return
-          const kind = error instanceof DiaryFailure ? error.kind : 'unavailable'
+          let kind = error instanceof DiaryFailure ? error.kind : 'unavailable'
+          // Con il secondo fattore mancante la RLS respinge tutto: non è un rifiuto del dato, si attende la verifica.
+          // I conflitti restano tali: la revisione online è già stata letta e non va sovrascritta in silenzio.
+          if (kind === 'rejected' && !await this.mfaSatisfied(signal)) kind = 'session'
+          if (!active()) return
           if (kind === 'unavailable' || kind === 'session') {
             // L'operazione resta in coda sul dispositivo; nuovo tentativo più tardi.
             this.inFlight = null; this.waiting = true
@@ -340,9 +478,17 @@ export class DiaryStore {
           }
           this.reject(op, kind === 'rejected' ? 'rejected' : 'conflict', error instanceof RemoteValue ? error.remote : '')
         } finally { if (this.flushing === controller) this.inFlight = null }
+        // Invio confermato o valore online adottato: la copia confermata va salvata.
+        this.serverDirty = true
         this.emit()
       }
     } finally { if (this.flushing === controller) { this.flushing = null; this.inFlight = null; this.emit() } }
+  }
+
+  /** Nel dubbio (rete) non soddisfatto: meglio un nuovo tentativo che un rifiuto definitivo. */
+  private async mfaSatisfied(signal: AbortSignal) {
+    if (!this.transport?.mfaSatisfied) return true
+    try { return await this.transport.mfaSatisfied(signal) } catch { return false }
   }
 
   private setValuesFor(op: Extract<DiaryOp, { type: 'set' }>) {
@@ -394,6 +540,8 @@ export class DiaryStore {
         const removed = await transport.discard(op.sessionId, signal)
         const remote = removed ? null : await transport.fetch('workout_sessions', { id: op.sessionId }, signal)
         if (remote && remote.status === 'completed') throw new RemoteValue('rejected', 'La seduta risulta già completata online.')
+        // Senza secondo fattore la RLS nasconde la seduta: nulla è stato eliminato, si riprova dopo la verifica.
+        if (!removed && !remote && !await this.mfaSatisfied(signal)) throw new DiaryFailure('session')
         this.data.server = { ...this.data.server, sessions: this.data.server.sessions.filter(item => item.id !== op.sessionId) }
         delete this.data.revisions[key]
         return
@@ -418,7 +566,7 @@ export class DiaryStore {
         const values = { status: op.status, note: op.note }
         const remote = await this.write('meal_logs', { diary_date: op.date, meal_id: op.meal.id }, values,
           { meal_plan_id: op.planId, day_type: op.dayType, meal_snapshot: op.meal }, known, signal,
-          row => row.status === op.status && row.note === op.note, row => `${row.status}${row.note ? ` · ${String(row.note)}` : ''}`)
+          row => row.status === op.status && row.note === op.note, row => `${typeof row.status === 'string' ? row.status : ''}${typeof row.note === 'string' && row.note ? ` · ${row.note}` : ''}`)
         this.data.revisions[key] = Number(remote.revision)
         const parsed = mealLogFromRow(remote)
         this.data.server = { ...this.data.server, mealLogs: { ...this.data.server.mealLogs, [mealLogKey(op.date, op.meal.id)]: parsed.log } }
@@ -478,7 +626,12 @@ export class DiaryStore {
   }
 
   /** Logout esplicito con scarto: rimuove archivio e coda di questo account dal dispositivo. */
-  clearDevice = () => { this.stop(); this.storage.remove(this.storageKey) }
+  clearDevice = () => {
+    this.cleared = true; this.stop()
+    this.storage.remove(this.storageKey); this.storage.remove(this.legacyKey)
+    // Dopo un eventuale salvataggio in corso: la rimozione arriva sempre per ultima.
+    void (this.saving ?? Promise.resolve()).then(() => this.archive.remove()).catch(() => undefined)
+  }
 }
 
 class RemoteValue extends DiaryFailure {

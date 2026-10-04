@@ -55,5 +55,6 @@ try {
   pass('programma pubblicato → seduta → riclassificazione, snapshot storico identico')
   console.log(`PASS ${checks.length} gruppi API locali`)
 } finally {
-  for (const user of users) { const result = await admin.auth.admin.deleteUser(user); if (result.error) throw new Error('Pulizia account sintetico fallita') }
+  // Un errore di pulizia non deve nascondere quello del test: si segnala e si chiude con errore.
+  for (const user of users) { const result = await admin.auth.admin.deleteUser(user); if (result.error) { console.error('FAIL pulizia account sintetico'); process.exitCode = 1 } }
 }

@@ -33,7 +33,7 @@ async function request(path, { method = 'GET', body, token, admin = false } = {}
   else if (admin && key.startsWith('eyJ')) headers.Authorization = `Bearer ${key}`
   const response = await fetch(`${config.apiUrl}${path}`, { method, headers, body: body === undefined ? undefined : JSON.stringify(body), signal: AbortSignal.timeout(15_000) })
   const raw = await response.text()
-  let data = null
+  let data
   try { data = raw ? JSON.parse(raw) : null } catch { data = null }
   return { ok: response.ok, status: response.status, data }
 }

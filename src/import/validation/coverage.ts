@@ -13,7 +13,7 @@
  * - i problemi di lettura restano visibili anche senza blocchi (pagina scansionata, immagine);
  * - `unassigned` copre il blocco ma chiede una scelta, salvo `other_domain` in un documento misto.
  */
-import type { ExtractionKind, ReadingIssue, SourceBlock, UnassignedContent } from '../contracts/index.ts'
+import type { ExtractionKind, SourceBlock, UnassignedContent } from '../contracts/index.ts'
 import { isSuspiciousText, type SourceIndex } from './evidence.ts'
 import { finding, type RuleItem, type ValidationFinding, type ValidationIssueCode } from './issues.ts'
 
@@ -61,7 +61,7 @@ export function coverageFindings(input: CoverageInput): ValidationFinding[] {
   const document = index.document
 
   // Problemi di lettura: sempre visibili, anche senza blocchi collegati.
-  for (const issue of document.readingIssues as ReadingIssue[]) {
+  for (const issue of document.readingIssues) {
     const code = readingIssueClasses[issue.code] ?? 'reading_uncertain'
     const refs = issue.sourceRefs.filter(id => index.blocks.has(id))
     const pages = [...new Set(refs.map(id => index.blocks.get(id)!.page).filter((page): page is number => page !== null))]

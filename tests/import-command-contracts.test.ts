@@ -95,6 +95,7 @@ test('canonicalizzazione: numeri in notazione semplice e valori non JSON rifiuta
     [1.5e22, '15000000000000000000000'], [123.456, '123.456'], [Number.MAX_SAFE_INTEGER, '9007199254740991'], [5e-324, `0.${'0'.repeat(323)}5`]]
   for (const [value, expected] of numbers) assert.equal(canonicalNumber(value), expected, String(value))
   for (const value of [Number.NaN, Number.POSITIVE_INFINITY]) assert.throws(() => canonicalJson([value]), CanonicalJsonError)
+  // eslint-disable-next-line no-sparse-arrays -- un buco nell'array è proprio il caso da rifiutare
   const invalid: unknown[] = [undefined, { a: undefined }, () => 1, new Date(0), new Map(), [1, , 3], 'x\u0000', 'a\ud800', 1n, Symbol('s')]
   for (const value of invalid) assert.throws(() => canonicalJson(value), CanonicalJsonError, String(typeof value))
   let deep: unknown = 1

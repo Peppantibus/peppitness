@@ -1,6 +1,6 @@
 import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
 import { MuscleGroupImage } from '../components/MuscleGroupImage'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
@@ -213,9 +213,8 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
   const [correcting, setCorrecting] = useState(false)
   const [options, setOptions] = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
-  const endCorrection = useRef(onEndCorrection)
-  endCorrection.current = onEndCorrection
-  useEffect(() => () => endCorrection.current?.(), [])
+  const endCorrection = useEffectEvent(() => onEndCorrection?.())
+  useEffect(() => () => endCorrection(), [])
   const required = session.day.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)
   const completedRequired = session.day.exercises.reduce((sum, exercise) => sum + Math.min(exercise.sets, (session.results[exercise.id] ?? []).filter(set => set.completed).length), 0)
   const exerciseCount = session.day.exercises.length

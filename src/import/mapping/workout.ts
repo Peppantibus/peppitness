@@ -5,6 +5,7 @@ import { validateNormalizedDocument, type NormalizedDocument } from '../contract
 import { exerciseChoiceValues, sameJsonValue, type ExerciseChoice, type ValidationIssue, type WorkoutReviewDraft } from '../contracts/review.ts'
 import { identityFields } from '../matching/exercises.ts'
 import { openFindings, verifyDraft } from '../review/decisions.ts'
+import { textOf } from '../validation/issues.ts'
 import { draftRuleItems, validateDraft } from '../validation/validate.ts'
 import { instructionCanBeKept } from '../validation/workout-instructions.ts'
 
@@ -95,7 +96,7 @@ export function mapReviewedWorkout(document: NormalizedDocument, draft: WorkoutR
     }
     const scope = scopes.length ? scopes.join('; ') : 'intera scheda'
     const originalRule = edited(rule.localId, 'text')[0]
-    if (complex && originalRule?.op === 'set') guidance.push(`[${rule.values.kind} — ${scope}; regola prima della scelta] ${String(originalRule.before)}`)
+    if (complex && originalRule?.op === 'set') guidance.push(`[${rule.values.kind} — ${scope}; regola prima della scelta] ${textOf(originalRule.before)}`)
     guidance.push(`[${rule.values.kind} — ${scope}] ${rule.values.text}`)
   }
   if (rules.some(rule => ['phase', 'progression', 'deload', 'superset', 'circuit'].includes(rule.values.kind))) {

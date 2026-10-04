@@ -49,7 +49,7 @@ async function request(path, { method = 'GET', body, token, admin = false, repre
   } catch (error) {
     const cause = error?.name === 'TimeoutError' ? 'timeout' : 'rete o redirect'
     // Solo metodo e percorso statico: omette filtri, ID, token e messaggi del trasporto.
-    throw new Error(`Richiesta API locale: ${method} ${path.split('?')[0]}, ${cause} dopo ${Date.now() - started} ms.`)
+    throw new Error(`Richiesta API locale: ${method} ${path.split('?')[0]}, ${cause} dopo ${Date.now() - started} ms.`, { cause: error })
   }
   let data = null
   if (raw) {
@@ -331,12 +331,10 @@ try { await run() } catch (error) {
   for (const id of cleanupIds) {
     try {
       const response = await request(`/auth/v1/admin/users/${id}`, { method: 'DELETE', admin: true })
-      if (!response.ok) throw new Error('cleanup')
-      cleaned++
-    } catch {
-      failed = true
-      console.error(`FAIL pulizia fixture locale ${id}; rimuoverla da Authentication del solo ambiente locale.`)
-    }
+      if (response.ok) { cleaned++; continue }
+    } catch { /* stesso esito di una risposta non riuscita */ }
+    failed = true
+    console.error(`FAIL pulizia fixture locale ${id}; rimuoverla da Authentication del solo ambiente locale.`)
   }
 }
 console.log(`Result: ${failed ? 'FAIL' : 'PASS'}; controlli superati: ${checks}; fixture eliminate: ${cleaned}/${cleanupIds.size}.`)

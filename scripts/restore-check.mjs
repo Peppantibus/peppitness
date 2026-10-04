@@ -2,7 +2,7 @@
 // container Postgres effimero, senza porte pubblicate e senza toccare il cloud,
 // poi confronta i conteggi con il manifest. Uso: node scripts/restore-check.mjs [cartella]
 import { spawnSync } from 'node:child_process'
-import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { join, resolve } from 'node:path'
 

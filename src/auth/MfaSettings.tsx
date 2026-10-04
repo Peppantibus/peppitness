@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { Modal } from '../components/Modal'
 import { mfaErrorMessage } from './errors'
+import { forgetMfaNotRequired } from './MfaGate'
 
 type Enrollment = { factorId: string; qr: string; secret: string }
 
@@ -34,7 +35,8 @@ export function MfaSettings({ client, userId }: { client: SupabaseClient; userId
     setPending(true); setError('')
     try {
       const { error: failure } = await client.auth.mfa.challengeAndVerify({ factorId: enrollment.factorId, code: code.trim() })
-      if (failure) setError(mfaErrorMessage(failure)); else { setEnabled(true); setEnrollment(null) }
+      // Da ora l'account richiede il fattore: niente apertura senza verifica in base alla risposta precedente.
+      if (failure) setError(mfaErrorMessage(failure)); else { forgetMfaNotRequired(userId); setEnabled(true); setEnrollment(null) }
     } catch { setError(mfaErrorMessage(null)) }
     finally { setCode(''); setPending(false) }
   }

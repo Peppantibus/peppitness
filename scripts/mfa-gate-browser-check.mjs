@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { mkdir, writeFile } from 'node:fs/promises'
-import { fixturePassword, fixtureSession, fixtureStorageKey, installAuthFixture } from './lib/browser-auth-fixture.mjs'
+import { fixtureSession, fixtureStorageKey, installAuthFixture } from './lib/browser-auth-fixture.mjs'
 import { sampleMeals, sampleWorkoutDays, seedFollowedPlans } from './lib/diary-fixture.mjs'
 
 const baseUrl = process.env.TEST_BASE_URL ?? 'http://127.0.0.1:4173'
@@ -39,19 +39,12 @@ async function input(selector, value) {
   await evaluate(`(() => { const el=document.querySelector(${JSON.stringify(selector)});Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,${JSON.stringify(value)});el.dispatchEvent(new Event('input',{bubbles:true})); })()`)
 }
 async function click(selector) { await evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`) }
-async function route(path) { await evaluate(`location.hash=${JSON.stringify(path)}`) }
-async function login(account, password = fixturePassword) {
-  await input('#login-email', `${account}@example.invalid`)
-  await input('#login-password', password)
-  await click('.auth-form button')
-}
 
 
 try {
   await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable')
   const mock = await installAuthFixture(send, socket, baseUrl)
   for (const account of ['a', 'b']) seedFollowedPlans(mock, fixtureSession(account).user.id, { workoutDays: sampleWorkoutDays, meals: sampleMeals })
-  const reset = () => evaluate(`localStorage.clear()`)
 
   // 1) Requisito attivo, nessun fattore: registrazione obbligatoria, app nascosta finché non verificata.
   mock.mfaSatisfied = false
@@ -92,6 +85,28 @@ try {
   await send('Page.reload')
   await until('document.querySelectorAll(".meal-card").length === 4')
   assert.equal(await evaluate('Boolean(document.querySelector("#mfa-code"))'), false)
+  // 3b) Verifica non raggiungibile ma «non richiesto» già confermato dal server per questo account: l'app si apre.
+  const notRequiredKey = `peppitness:mfa-not-required:v1:${fixtureSession().user.id}`
+  assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(notRequiredKey)})`), '1', 'risposta «non richiesto» ricordata')
+  mock.failMfaStatus = true
+  await send('Page.reload')
+  await until('document.querySelectorAll(".meal-card").length === 4')
+  // 3c) Verifica non raggiungibile e nessuna conferma precedente: niente app, solo Riprova/Esci.
+  await evaluate(`localStorage.removeItem(${JSON.stringify(notRequiredKey)})`)
+  await send('Page.reload')
+  await until('document.querySelector("#auth-title")?.textContent.includes("non riuscita")')
+  assert.equal(await evaluate('Boolean(document.querySelector(".meal-card"))'), false, 'App nascosta senza verifica')
+  assert.equal(await evaluate('Boolean(document.querySelector("#mfa-code"))'), false, 'Nessuna iscrizione senza risposta del server')
+  mock.failMfaStatus = false
+  await evaluate('[...document.querySelectorAll(".auth-card button")].find(b => b.textContent === "Riprova").click()')
+  await until('document.querySelectorAll(".meal-card").length === 4')
+  // 3d) Il server dice «richiesto»: la conferma precedente viene dimenticata.
+  mock.mfaSatisfied = false; mock.mfaFactors = [{ id: 'factor-fixture', factor_type: 'totp', status: 'verified', friendly_name: 'peppitness' }]
+  await send('Page.reload')
+  await until('Boolean(document.querySelector("#mfa-code"))')
+  assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(notRequiredKey)})`), null, 'conferma dimenticata')
+  mock.mfaSatisfied = true
+  await send('Page.reload'); await until('document.querySelectorAll(".meal-card").length === 4')
   // 4) Attivazione volontaria dall'account (requisito server spento).
   mock.mfaFactors = []
   await send('Page.reload'); await until('document.querySelectorAll(".meal-card").length === 4')
@@ -103,9 +118,10 @@ try {
   await until('document.querySelector("dialog [role=alert]")?.textContent.includes("non corretto")')
   await input('#mfa-setup-code', '123456'); await click('dialog button[type="submit"]')
   await until('!document.querySelector("dialog") && document.querySelector(".account-panel [role=status]")?.textContent.includes("Attiva")')
+  assert.equal(await evaluate(`localStorage.getItem(${JSON.stringify(notRequiredKey)})`), null, 'attivazione: conferma «non richiesto» dimenticata')
   assert.deepEqual(runtimeErrors, [])
   assert.deepEqual(mock.failures, [])
-  const report = { status: 'passed', mode: 'Auth HTTP simulato, nessuna richiesta al cloud', checks: ['enrollment obbligatorio', 'QR sotto CSP', 'codice errato', 'codice corretto', 'challenge con fattore esistente', 'nessun requisito', 'attivazione volontaria da Account', '3 larghezze'] }
+  const report = { status: 'passed', mode: 'Auth HTTP simulato, nessuna richiesta al cloud', checks: ['enrollment obbligatorio', 'QR sotto CSP', 'codice errato', 'codice corretto', 'challenge con fattore esistente', 'verifica irraggiungibile: apertura solo con conferma precedente', 'Riprova', 'conferma dimenticata se richiesto o attivato', 'nessun requisito', 'attivazione volontaria da Account', '3 larghezze'] }
   await mkdir('artifacts', { recursive: true })
   await writeFile('artifacts/mfa-gate-browser-report.json', JSON.stringify(report, null, 2))
   console.log(JSON.stringify(report, null, 2))

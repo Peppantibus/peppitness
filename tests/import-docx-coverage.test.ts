@@ -6,11 +6,11 @@ import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { DocumentReaderError, normalizeSourceText, validateDocumentReadResult, type DocumentReadResult, type SourceBlock } from '../src/import/contracts/index.ts'
+import { DocumentReaderError, normalizeSourceText, validateDocumentReadResult, type DocumentReadResult } from '../src/import/contracts/index.ts'
 import { docxReadingIssueCodes, readDocx } from '../src/import/readers/docx.ts'
 import { CONTACT_MINIMIZATION_VERSION, contactMinimizationRules, minimizeContactData } from '../src/import/readers/minimize.ts'
 // @ts-expect-error modulo JavaScript dei generatori di fixture, senza dichiarazioni di tipo
-import { buildDocx, comment, commented, CONTENT_TYPES, docxFixtureBuilders, endnoteRef, footnoteRef, note, notesPart, p, para, r, sidePart, tbl, tc, tr } from '../scripts/lib/docx-fixtures.mjs'
+import { buildDocx, comment, commented, CONTENT_TYPES, endnoteRef, footnoteRef, note, notesPart, p, para, r, sidePart, tbl, tc, tr } from '../scripts/lib/docx-fixtures.mjs'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const folder = join(root, 'tests', 'fixtures', 'import', 'docx')

@@ -1,6 +1,5 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { commitFixtureCases } from '../scripts/lib/import-commit-fixtures.mjs'
 import type { CommitCommand, ImportReceipt } from '../src/import/contracts/index.ts'
@@ -56,10 +55,6 @@ function fakeClient(options: { user?: string | null; reply?: (call: Call) => Rep
   return { client: client as unknown as SupabaseClient, calls }
 }
 const signal = () => new AbortController().signal
-const httpError = (status: number, body: unknown) => ({
-  data: null, error: Object.assign(new Error('http'), { name: 'FunctionsHttpError' }),
-  response: new Response(typeof body === 'string' ? body : JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } }),
-})
 
 test('21: sessione catturata per account; Authorization esplicita, retry SDK spento e segnale sempre passato', async () => {
   const { client, calls } = fakeClient({ user: OTHER })

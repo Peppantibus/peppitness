@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useEffectEvent, useRef } from 'react'
 
 export interface ToastMessage { id: number; message: string; undo?: () => void }
 
@@ -8,11 +8,10 @@ export interface ToastMessage { id: number; message: string; undo?: () => void }
  */
 export function Toast({ toast, onClose }: { toast: ToastMessage; onClose: () => void }) {
   const ref = useRef<HTMLDivElement>(null)
-  const close = useRef(onClose)
-  close.current = onClose
+  const close = useEffectEvent(() => onClose())
   useEffect(() => {
     let timer = 0
-    const start = () => { window.clearTimeout(timer); timer = window.setTimeout(() => close.current(), 6000) }
+    const start = () => { window.clearTimeout(timer); timer = window.setTimeout(() => close(), 6000) }
     const stop = () => window.clearTimeout(timer)
     const element = ref.current
     start()

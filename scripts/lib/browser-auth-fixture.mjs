@@ -49,7 +49,11 @@ export async function installAuthFixture(rawSend, socket, appOrigin, state = {})
       status = state.failLogout ? 503 : 204
       data = { code: 'unexpected_failure' }
     } else if (url.pathname === '/auth/v1/user') data = { ...fixtureSession().user, factors: state.mfaFactors ?? [] }
-    else if (url.pathname === '/rest/v1/rpc/is_mfa_satisfied') data = state.mfaSatisfied ?? true
+    else if (url.pathname === '/rest/v1/rpc/is_mfa_satisfied') {
+      // Verifica non raggiungibile (rete assente a metà): la schermata non deve aprire l'app alla cieca.
+      if (state.failMfaStatus) { await send('Fetch.failRequest', { requestId, errorReason: 'InternetDisconnected' }); return }
+      data = state.mfaSatisfied ?? true
+    }
     else if (url.pathname === '/auth/v1/factors' && request.method === 'POST') {
       state.mfaEnrolled = (state.mfaEnrolled ?? 0) + 1
       data = { id: 'factor-fixture', type: 'totp', totp: { qr_code: 'data:image/svg+xml;utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22/%3E', secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/fixture' } }

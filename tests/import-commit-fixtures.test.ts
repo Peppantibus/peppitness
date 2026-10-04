@@ -60,7 +60,7 @@ test('20: guard SQL sul JSON canonico compatto = limite di mealPlanTooLarge, anc
   const utf8 = (text: string) => new TextEncoder().encode(text).length
   const plan = commitFixtureCases().find(c => c.id === 'diet-reviewed-conditions')!.command.payload.resolved.plan
   const tricky = structuredClone(plan.document)
-  tricky.guidance = 'virgolette " barra \ tab\tcapo\nè 😀     fine'
+  tricky.guidance = 'virgolette " barra \\ tab\tcapo\nè 😀     fine'
   for (const document of [plan.document, tricky]) assert.equal(utf8(canonicalJson(document)), utf8(JSON.stringify(document)))
   const limit = domainLimits.diet.documentBytes
   assert.equal(limit, MEAL_PLAN_MAX_BYTES)

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { useAuth } from '../auth/AuthProvider'
+import { browserArchive } from './diary-archive'
 import { createDiaryTransport } from './diary-repository'
 import { browserStorage, DiaryStore } from './diary-store'
 
@@ -7,7 +8,8 @@ import { browserStorage, DiaryStore } from './diary-store'
 export function useDiary() {
   const { client, state: auth } = useAuth()
   const owner = auth.session?.user.id
-  const store = useMemo(() => new DiaryStore(client && owner ? createDiaryTransport(client, owner) : null, browserStorage, owner ?? 'local'), [client, owner])
+  // Coda in localStorage (sincrona, piccola), copia confermata in IndexedDB (grande, scritta di rado).
+  const store = useMemo(() => new DiaryStore(client && owner ? createDiaryTransport(client, owner) : null, browserStorage, owner ?? 'local', owner ? browserArchive(owner, browserStorage) : undefined), [client, owner])
   const state = useSyncExternalStore(store.subscribe, store.getSnapshot)
   useEffect(() => {
     store.start()

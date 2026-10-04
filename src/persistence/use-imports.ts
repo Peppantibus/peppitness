@@ -31,7 +31,6 @@ export function useImports(active: boolean, onSaved?: ImportSavedHandler) {
   useEffect(() => {
     if (!active || engine) return
     let cancelled = false
-    setLoadFailed(false)
     loadEngine().then(module => {
       if (cancelled) return
       void module.purgeLegacyImportDb()
@@ -60,7 +59,7 @@ export function useImports(active: boolean, onSaved?: ImportSavedHandler) {
   // Le guardie derivano dallo stato del motore: si ricalcolano a ogni suo cambiamento.
   useSyncExternalStore(engine?.subscribe ?? subscribeIdle, engine?.getSnapshot ?? getIdle)
   const guards = engine?.guards ?? noGuards
-  const retryLoad = useCallback(() => setAttempt(value => value + 1), [])
+  const retryLoad = useCallback(() => { setLoadFailed(false); setAttempt(value => value + 1) }, [])
   /** Logout: nessuna bozza d'importazione di questo account resta sul dispositivo, motore caricato o no. */
   const clearDevice = useCallback(() => engine ? engine.clear().then(() => undefined, () => undefined) : loadEngine().then(module => module.clearImportDevice(owner), () => undefined), [engine, owner])
 

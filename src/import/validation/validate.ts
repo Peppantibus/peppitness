@@ -26,7 +26,7 @@ import {
   collectEvidence, fieldUnits, indexSource, isSuspiciousText, parentPointer, pointerTokens, quoteOffsets, resolvePointer, textInQuotes,
   type SourceIndex, type UnitEvidence,
 } from './evidence.ts'
-import { finding, FindingList, type RuleItem, type ValidationFinding, type ValidationIssueCode } from './issues.ts'
+import { finding, FindingList, textOf, type RuleItem, type ValidationFinding, type ValidationIssueCode } from './issues.ts'
 import { dietDocumentBytesFinding, dietLimitFindings, workoutLimitFindings } from './limits.ts'
 import { workoutRuleFindings, workoutSourceFindings, type FieldOrigin } from './workout.ts'
 
@@ -302,14 +302,14 @@ function valueFindings(kind: ExtractionKind, items: readonly RuleItem[]): { rela
   const root = items.find(item => item.collection === 'root')!
   if (kind === 'workout') {
     const relations = workoutRuleFindings(items, children, domainLimits.workout.cycleStart)
-    const rules = children(root.key, 'complexRules').map(rule => String(rule.values.text ?? ''))
+    const rules = children(root.key, 'complexRules').map(rule => textOf(rule.values.text))
     const limits = items.flatMap(item => workoutLimitFindings(item, {
       sessions: children(item.key, 'sessions').length, exercises: children(item.key, 'exercises').length, rules,
     }))
     return { relations, limits }
   }
   const relations = dietRuleFindings(items, children)
-  const rules = children(root.key, 'globalRules').map(rule => String(rule.values.text ?? ''))
+  const rules = children(root.key, 'globalRules').map(rule => textOf(rule.values.text))
   const limits = items.flatMap(item => dietLimitFindings(item, {
     days: children(item.key, 'days').length, meals: children(item.key, 'meals').length, foods: children(item.key, 'foods').length, rules,
     foodNotes: children(item.key, 'foods').flatMap(food => food.values.notes as string[]),

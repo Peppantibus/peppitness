@@ -14,7 +14,7 @@
  */
 import { normalizeSourceText, type ExtractedDietRule, type SourceBlock } from '../contracts/index.ts'
 import { groupSpans, type SourceIndex, type UnitEvidence, type VerifiedSpan } from './evidence.ts'
-import { finding, hasText, type RuleItem, type ValidationFinding } from './issues.ts'
+import { finding, hasText, textOf, type RuleItem, type ValidationFinding } from './issues.ts'
 import type { FieldOrigin } from './workout.ts'
 
 const fold = (value: string) => normalizeSourceText(value).toLocaleLowerCase('it')
@@ -26,7 +26,7 @@ export function dietRuleFindings(items: readonly RuleItem[], children: (key: str
   if (!hasText(root.values.title)) out.push(finding('title_missing', root, 'title', 'Manca il nome del piano.'))
   const days = children(root.key, 'days')
   if (!days.length) out.push(finding('no_days', root, null, 'La proposta non contiene giornate.'))
-  const globalTexts = new Set(children(root.key, 'globalRules').map(rule => fold(String(rule.values.text ?? ''))).filter(Boolean))
+  const globalTexts = new Set(children(root.key, 'globalRules').map(rule => fold(textOf(rule.values.text))).filter(Boolean))
 
   for (const day of days) {
     if (!hasText(day.values.name)) out.push(finding('day_name_missing', day, 'name', 'Manca il nome della giornata.'))
@@ -75,7 +75,7 @@ function alternativeRegionsOf(spans: readonly VerifiedSpan[]): Region[] {
   return spans.flatMap(span => {
     const markers = [...span.quote.matchAll(/\(\s*in alternativa\b/giu)]
     if (markers.length !== 1 || markers[0]!.index === 0) return regionsOf([span])
-    const start = markers[0]!.index!
+    const start = markers[0]!.index
     let depth = 1, end = start + 1
     for (; end < span.quote.length && depth > 0; end++) {
       if (span.quote[end] === '(') depth++
@@ -100,7 +100,7 @@ export function dietSourceFindings(input: DietSourceInput): { findings: Validati
   const root = items.find(item => item.collection === 'root')!
   const days = children(root.key, 'days')
   const rules = children(root.key, 'globalRules')
-  const globalTexts = new Set(rules.map(rule => fold(String(rule.values.text ?? ''))).filter(Boolean))
+  const globalTexts = new Set(rules.map(rule => fold(textOf(rule.values.text))).filter(Boolean))
 
   // Fonti delle regole globali: blocchi indicati e regioni citate (aggiunte e sostituzioni generali).
   const ruleBlocks = new Set<string>()
@@ -177,7 +177,7 @@ export function dietSourceFindings(input: DietSourceInput): { findings: Validati
         for (const field of ['name', 'quantityText', 'notes'] as const) {
           const outside = spansOf(food, field).filter(span => !inScope(meal.key, span.block))
           if (outside.length && !reported) {
-            findings.push(finding('wrong_context', food, field, `Alimento citato fuori dal pasto «${String(meal.values.name ?? '')}» («${outside[0]!.quote}»).`, { refs: outside.map(span => span.blockId) }))
+            findings.push(finding('wrong_context', food, field, `Alimento citato fuori dal pasto «${textOf(meal.values.name)}» («${outside[0]!.quote}»).`, { refs: outside.map(span => span.blockId) }))
             reported = true
           }
         }

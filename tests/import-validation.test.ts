@@ -7,7 +7,6 @@ import {
   domainLimits, validateReviewDraft, validateValidationIssue,
   type ExtractionKind, type NormalizedDocument, type ReviewDraft, type ValidationIssue,
 } from '../src/import/contracts/index.ts'
-import * as validation from '../src/import/validation/validate.ts'
 import {
   issueCatalog, proposalRuleItems, validateDraft, validateProposal, validationIssueCodes, type ProposalValidation,
 } from '../src/import/validation/validate.ts'

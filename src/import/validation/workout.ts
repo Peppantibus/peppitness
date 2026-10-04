@@ -66,7 +66,7 @@ export function workoutRuleFindings(items: readonly RuleItem[], children: (key: 
     const s = session.values
     if (!hasText(s.label)) out.push(finding('session_label_missing', session, 'label', 'Manca l’etichetta della seduta (per esempio A, B, 1).'))
     else {
-      const label = (s.label as string).trim()
+      const label = s.label.trim()
       if (labels.has(label)) out.push(finding('session_label_duplicate', session, 'label', `Etichetta «${label}» già usata da un’altra seduta.`))
       labels.set(label, session)
     }
@@ -146,10 +146,10 @@ function durations(text: string): Located[] {
   const found: Located[] = []
   const take = (pattern: RegExp, make: (match: RegExpExecArray) => Value | null) => {
     for (const match of work.matchAll(pattern)) {
-      const value = make(match as RegExpExecArray)
+      const value = make(match)
       if (!value) continue
-      found.push({ ...value, start: match.index!, end: match.index! + match[0].length })
-      work = work.slice(0, match.index) + ' '.repeat(match[0].length) + work.slice(match.index! + match[0].length)
+      found.push({ ...value, start: match.index, end: match.index + match[0].length })
+      work = work.slice(0, match.index) + ' '.repeat(match[0].length) + work.slice(match.index + match[0].length)
     }
   }
   take(/(\d+)\s*['′’]\s*(\d{1,2})\s*(?:"|″|''|”)?(?!\d)/g, m => { const s = Number(m[1]) * 60 + Number(m[2]); return { min: s, max: s, rule: 'minutes_seconds' } })
@@ -392,7 +392,7 @@ export function workoutSourceFindings(input: SourceCheckInput): SourceCheckResul
     if (!ok) findings.push(finding('value_unverified', root, 'schedule', schedule === 'weekly' ? 'La citazione non indica giorni della settimana.' : 'La citazione non indica una rotazione.', { refs: scheduleSpans.map(span => span.blockId) }))
   }
   const start = evidence.get('/cycle/startDate')
-  if (start?.spans.length && !start.spans.some(span => START_WORD.test(span.quote) || START_WORD.test(span.block.text.slice(Math.max(0, span.offsets[0]! - 20), span.offsets[0]!)))) {
+  if (start?.spans.length && !start.spans.some(span => START_WORD.test(span.quote) || START_WORD.test(span.block.text.slice(Math.max(0, span.offsets[0]! - 20), span.offsets[0])))) {
     findings.push(finding('cycle_start_unconfirmed', root, 'cycle', 'La fonte non presenta questa data come inizio del ciclo (una data in copertina non basta).', { refs: start.spans.map(span => span.blockId), path: '/cycle/startDate' }))
   }
   const weeks = evidence.get('/cycle/weeks')
@@ -406,8 +406,8 @@ export function workoutSourceFindings(input: SourceCheckInput): SourceCheckResul
   function verifyNumber(field: NumericField, target: { min: number; max: number }, exercise: RuleItem, session: RuleItem, spans: VerifiedSpan[], rows: SourceBlock[]) {
     const refs = [...new Set([...spans.map(span => span.blockId), ...rows.map(row => row.id)])]
     const matches = (reading: Reading) => reading.values.find(value => value.min === target.min && value.max === target.max)
-    const originOf = (value: Value, inherited = false) => ({
-      origin: (inherited ? 'inherited' : value.rule === 'minutes' || value.rule === 'minutes_seconds' ? 'converted' : 'source') as FieldOrigin,
+    const originOf = (value: Value, inherited = false): { origin: FieldOrigin; rule: Value['rule'] | 'inherited_rule' } => ({
+      origin: inherited ? 'inherited' : value.rule === 'minutes' || value.rule === 'minutes_seconds' ? 'converted' : 'source',
       rule: inherited ? 'inherited_rule' as const : value.rule,
     })
     const make = (code: Parameters<typeof finding>[0], message: string) => ({ finding: finding(code, exercise, field, message, { refs }), origin: null })

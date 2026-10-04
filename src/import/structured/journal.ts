@@ -15,7 +15,7 @@ export function structuredJournal(): StructuredJournal {
     const request = indexedDB.open(STRUCTURED_DB, 1)
     request.onupgradeneeded = () => request.result.createObjectStore('drafts', { keyPath: ['owner', 'kind'] })
     request.onsuccess = () => resolve(request.result)
-    request.onerror = () => reject(request.error)
+    request.onerror = () => reject(request.error ?? new Error('Archivio locale non disponibile.'))
   })
   async function transact<T>(run: (store: IDBObjectStore, done: (value: T) => void, fail: (message: string) => void) => void): Promise<T> {
     const db = await open()
@@ -43,7 +43,7 @@ export function structuredJournal(): StructuredJournal {
     write: (record, expected) => transact((store, done, fail) => {
       const request = store.get([record.owner, record.kind])
       request.onsuccess = () => {
-        if ((request.result?.revision ?? null) !== expected) { fail('Bozza modificata in un’altra scheda: ricarica prima di continuare.'); return }
+        if (((request.result as StructuredRecord | undefined)?.revision ?? null) !== expected) { fail('Bozza modificata in un’altra scheda: ricarica prima di continuare.'); return }
         store.put(record); done(undefined)
       }
     }),

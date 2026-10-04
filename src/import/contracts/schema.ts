@@ -95,7 +95,7 @@ export function object<P extends Record<string, Schema<unknown>>>(properties: P)
   return schema({ type: 'object', properties: Object.fromEntries(Object.entries(properties).map(([key, value]) => [key, value.node])) })
 }
 export function refine<T>(inner: Schema<T>, rules: readonly Rule<T>[], json: JsonObject = {}): Schema<T> {
-  return schema({ type: 'refine', inner: inner.node, rules: rules as readonly Rule<never>[], json })
+  return schema({ type: 'refine', inner: inner.node, rules: rules, json })
 }
 
 function objectNode(target: Schema<unknown>, builder: string) {
@@ -167,7 +167,7 @@ export const escapePointerToken = (token: string) => token.replace(/~/g, '~0').r
 const invalidText = /\u0000|[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/
 const isPlainObject = (value: unknown): value is Record<string, unknown> => {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
-  const prototype = Object.getPrototypeOf(value)
+  const prototype: unknown = Object.getPrototypeOf(value)
   return prototype === Object.prototype || prototype === null
 }
 const describe = (value: unknown) => value === null ? 'null' : Array.isArray(value) ? 'array' : typeof value

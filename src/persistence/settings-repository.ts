@@ -22,7 +22,7 @@ function decodeSettings(data: unknown, ownerId: string): SavedSettings {
   if (row.owner_id !== ownerId || typeof row.display_name !== 'string' || typeof row.time_zone !== 'string'
     || !Array.isArray(row.workout_weekdays) || !row.workout_weekdays.every(day => typeof day === 'number')
     || typeof row.revision !== 'number' || !Number.isInteger(row.revision) || row.revision < 1) throw new SettingsFailure('unavailable')
-  const value = { displayName: row.display_name, timeZone: row.time_zone, workoutWeekdays: row.workout_weekdays as number[], revision: row.revision }
+  const value = { displayName: row.display_name, timeZone: row.time_zone, workoutWeekdays: row.workout_weekdays, revision: row.revision }
   if (validateSettings(value)) throw new SettingsFailure('unavailable')
   return value
 }

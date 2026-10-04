@@ -231,7 +231,9 @@ export class ProgramsStore {
     try {
       await this.repository.activate(base, signal)
       const remote = await this.repository.get(base.version.id, signal)
-      if (this.current(controller)) remote ? this.accept(remote, 'Versione ripristinata: è di nuovo quella in uso.') : this.emit({ phase: 'error', message: 'Versione non più disponibile.' })
+      if (!this.current(controller)) return
+      if (remote) this.accept(remote, 'Versione ripristinata: è di nuovo quella in uso.')
+      else this.emit({ phase: 'error', message: 'Versione non più disponibile.' })
     } catch {
       if (!this.current(controller)) return
       try {

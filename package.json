@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "typecheck": "tsc -b",
+    "lint": "eslint .",
     "build": "npm run typecheck && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
@@ -25,6 +26,7 @@
     "test:wizard:browser": "node scripts/wizard-browser-check.mjs",
     "test:pwa:browser": "node scripts/pwa-browser-check.mjs",
     "test:mfa:local": "node --experimental-strip-types scripts/mfa-api-local-check.mjs",
+    "test:diary:incremental:local": "node --experimental-strip-types scripts/diary-incremental-local-check.mjs",
     "test:api:local": "node --experimental-strip-types scripts/test-supabase-api.mjs",
     "test:infra": "node --test tests/local-supabase.test.mjs",
     "test:import:structured": "node --experimental-strip-types --test tests/import-structured.test.ts",
@@ -34,7 +36,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "backup:cloud": "node scripts/backup-cloud.mjs",
     "backup:restore-check": "node scripts/restore-check.mjs",
-    "verify:release": "npm audit --audit-level=high && npm test && npm run test:infra && npm run build:pwa",
+    "verify:release": "npm audit --audit-level=high && npm run lint && npm test && npm run test:infra && npm run build:pwa",
     "build:pwa": "npm run typecheck && vite build --config vite.pwa.config.mjs"
   },
   "dependencies": {
@@ -44,12 +46,17 @@
     "react-dom": "19.2.3"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "@types/node": "^24.10.0",
     "@types/react": "19.2.14",
     "@types/react-dom": "19.2.3",
     "@vitejs/plugin-react": "5.1.2",
+    "eslint": "10.12.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.13.0",
     "supabase": "2.118.0",
     "typescript": "5.9.3",
+    "typescript-eslint": "8.71.0",
     "vite": "7.3.6",
     "vite-plugin-pwa": "1.3.0"
   }

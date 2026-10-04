@@ -56,6 +56,35 @@ try {
   await until('document.readyState === "complete"')
   await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: clearOnFirstLoad.identifier })
   await send('Page.reload')
+  // Prima visita senza sessione: landing pubblica, nessun dato e nessuna chiamata alle API dei dati.
+  await until('Boolean(document.querySelector("#landing-title"))')
+  assert.equal(await evaluate('Boolean(document.querySelector("#login-email") || document.querySelector(".meal-card"))'), false, 'Landing prima del login')
+  assert.equal(mock.requests.filter(path => path.includes('/rest/v1/')).length, 0, 'Landing senza richieste ai dati')
+  assert.equal(await evaluate('document.title'), 'peppitness · Un giorno alla volta')
+  for (const scheme of ['light', 'dark']) {
+    await send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: scheme }] })
+    for (const width of [320, 390, 1440]) {
+      await send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 720 })
+      assert.ok(await evaluate('document.documentElement.scrollWidth <= innerWidth'), `Landing overflow ${scheme} ${width}`)
+      const shot = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })
+      await writeFile(`artifacts/landing-${scheme}-${width}.png`, Buffer.from(shot.data, 'base64'))
+    }
+  }
+  await send('Emulation.setEmulatedMedia', { features: [] })
+  // «Come funziona» scorre alla sezione senza cambiare la rotta.
+  await evaluate('[...document.querySelectorAll(".landing-actions button")].find(b => b.textContent === "Come funziona").click()')
+  await until('document.activeElement?.id === "landing-steps"')
+  assert.equal(await evaluate('location.hash'), '')
+  // Accedi → modulo; indietro → landing; «Cos’è peppitness?» → landing.
+  await click('.landing-actions a.primary')
+  await until('Boolean(document.querySelector("#login-email")) && location.hash === "#/accedi"')
+  await evaluate('history.back()')
+  await until('Boolean(document.querySelector("#landing-title"))')
+  await click('.landing-bar-signin')
+  await until('Boolean(document.querySelector("#login-email"))')
+  await click('.auth-back a')
+  await until('Boolean(document.querySelector("#landing-title")) && location.hash === "#/benvenuto"')
+  await click('.landing-cta a')
   await until('Boolean(document.querySelector("#login-email"))')
   assert.equal(await evaluate('Boolean(document.querySelector(".meal-card"))'), false)
   for (const width of [320, 390, 1440]) {
@@ -70,6 +99,8 @@ try {
   assert.equal(await evaluate('document.querySelector("#login-password").value'), '')
   await login('a')
   await until('document.querySelectorAll(".meal-card").length === 4')
+  assert.equal(await evaluate('location.hash'), '#/dieta', 'Dopo l’accesso la rotta pubblica lascia il posto alla Dieta')
+  assert.equal(await evaluate('localStorage.getItem("peppitness:returning-device")'), '1')
   await send('Page.reload')
   await until('document.querySelectorAll(".meal-card").length === 4')
   assert.equal(mock.requests.filter(path => path === 'POST /auth/v1/token').length, 2, 'Reload riusa la sessione')
@@ -102,6 +133,8 @@ try {
   if (!mock.diary.meal_logs.length) console.error('DIAG', JSON.stringify({ requests: mock.requests.filter(r => !r.startsWith('OPTIONS')).slice(-14), failures: mock.failures, sync: await evaluate('document.querySelector(".sync-status")?.textContent ?? document.querySelector(".sync-indicator")?.dataset.sync') }))
   assert.equal(mock.diary.meal_logs.length, 1, 'Pasto inviato dopo il ritorno della connessione')
   await until('document.querySelector(".sync-indicator")?.dataset.sync === "synced"')
+  // La copia confermata del diario sta in IndexedDB (la coda in localStorage resta piccola).
+  await until(`new Promise(resolve => { const open = indexedDB.open('peppitness-diary'); open.onerror = () => resolve(false); open.onsuccess = () => { const db = open.result; if (!db.objectStoreNames.contains('server')) { db.close(); resolve(false); return } const count = db.transaction('server').objectStore('server').count(${JSON.stringify(fixtureSession('a').user.id)}); count.onsuccess = () => { db.close(); resolve(count.result === 1) } } })`)
   await route('/impostazioni'); await until('Boolean(document.querySelector(".account-panel"))')
   mock.failLogout = true
   // Nulla in sospeso: uscita diretta, senza richiesta di scarto.
@@ -114,6 +147,8 @@ try {
   await login('b'); await until('document.querySelector(".account-email")?.textContent === "b@example.invalid"')
   await route('/dieta'); await until('document.querySelectorAll(".meal-card").length === 4 && !document.querySelector(".meal-card .status")')
   assert.equal(await evaluate(`Object.keys(localStorage).some(key => key.includes(${JSON.stringify(fixtureSession('a').user.id)}))`), false, 'Uscita di A: nessuna copia del suo diario sul dispositivo')
+  // Copia confermata del diario in IndexedDB: nessuna voce di A dopo l'uscita.
+  assert.equal(await evaluate(`new Promise(resolve => { const open = indexedDB.open('peppitness-diary'); open.onerror = () => resolve(-1); open.onsuccess = () => { const db = open.result; if (!db.objectStoreNames.contains('server')) { db.close(); resolve(0); return } const count = db.transaction('server').objectStore('server').count(${JSON.stringify(fixtureSession('a').user.id)}); count.onsuccess = () => { db.close(); resolve(count.result) } } })`), 0, 'Uscita di A: nessuna copia confermata in IndexedDB')
   assert.equal(mock.diary.meal_logs.filter(row => row.owner_id === fixtureSession('a').user.id).length, 1, 'Il pasto di A resta online nel suo account')
 
   // Evento SDK propagato da un’altra scheda: nessun archivio precedente resta visibile.
@@ -122,7 +157,7 @@ try {
   assert.equal(await evaluate('Boolean(document.querySelector(".meal-card"))'), false)
   assert.deepEqual(runtimeErrors, [])
   assert.deepEqual(mock.failures, [])
-  const report = { status: 'passed', mode: 'Auth HTTP simulato, nessuna richiesta al cloud', checks: ['login mobile', 'errore password', 'login A', 'sessione dopo reload', 'rinnovo SDK', 'annullamento logout con registrazione non sincronizzata', 'invio dopo ritorno della connessione', 'errore logout', 'logout e rimozione sessione', 'account B senza residui di A', 'copia locale del diario rimossa all’uscita', 'logout da altra scheda'], date: new Date().toISOString() }
+  const report = { status: 'passed', mode: 'Auth HTTP simulato, nessuna richiesta al cloud', checks: ['landing prima visita (temi, larghezze, nessuna API dati)', 'landing ↔ accesso con indietro', 'login mobile', 'errore password', 'login A', 'sessione dopo reload', 'rinnovo SDK', 'annullamento logout con registrazione non sincronizzata', 'invio dopo ritorno della connessione', 'errore logout', 'logout e rimozione sessione', 'account B senza residui di A', 'copia locale del diario rimossa all’uscita', 'logout da altra scheda'], date: new Date().toISOString() }
   await writeFile('artifacts/auth-browser-report.json', JSON.stringify(report, null, 2))
   console.log(JSON.stringify(report, null, 2))
 } finally {

@@ -115,7 +115,7 @@ export function replayDecisions(draft: DraftCore): ReviewItem[] {
       case 'catalog': {
         const target = node(decision.localId, index)
         if (target.collection !== 'exercises') throw new DecisionError('invalid_decision', 'Solo un esercizio ha una scelta del catalogo.', index)
-        if (!sameJsonValue((target.catalog ?? null) as JsonValue, decision.before as JsonValue)) throw new DecisionError('stale_decision', 'La scelta del catalogo non è più quella vista.', index)
+        if (!sameJsonValue((target.catalog ?? null), decision.before)) throw new DecisionError('stale_decision', 'La scelta del catalogo non è più quella vista.', index)
         target.catalog = structuredClone(decision.after)
         return
       }
@@ -146,7 +146,7 @@ export function verifyDraft(value: unknown): DraftCheck {
     if (error instanceof DecisionError) return { ok: false, reason: 'replay_failed', message: error.message, errors: error.errors }
     throw error
   }
-  if (!sameJsonValue(replayed as unknown as JsonValue, shape.value.current as unknown as JsonValue)) {
+  if (!sameJsonValue(replayed, shape.value.current)) {
     return { ok: false, reason: 'current_mismatch', message: 'Il contenuto corrente non deriva dalle decisioni registrate.', errors: [] }
   }
   return { ok: true, draft: shape.value }
@@ -217,7 +217,7 @@ export function moveItem(draft: ReviewDraft, localId: string, toParentLocalId: s
 export function chooseCatalog(draft: ReviewDraft, localId: string, choice: ExerciseChoice | null, options?: DecisionOptions): ReviewDraft {
   const item = requireItem(draft, localId)
   const before = 'catalog' in item ? item.catalog : null
-  if (sameJsonValue((before ?? null) as JsonValue, choice as JsonValue)) return draft
+  if (sameJsonValue((before ?? null), choice)) return draft
   return applyDecision(draft, { op: 'catalog', decisionId: newDecisionId(options), localId, before: structuredClone(before ?? null), after: structuredClone(choice), reason: 'catalog_choice' })
 }
 

@@ -174,7 +174,10 @@ export function ProgramWizard({ store, state, catalog, step, setStep, onAdvanced
   // Un ciclo nuovo parte di default dal prossimo lunedì per 8 settimane; tutto modificabile.
   useEffect(() => { if (state.document && !state.cycleDraft && !state.revising) store.setCycleDraft({ start: mondayOf(today, true), weeks: 8 }) }, [store, state.document, state.cycleDraft, state.revising, today])
   const heading = useRef<HTMLHeadingElement>(null)
-  useEffect(() => { heading.current?.focus({ preventScroll: true }); window.scrollTo({ top: 0 }); setChecked(false); setMessage('') }, [step])
+  // Cambio di passo: controlli e messaggi ripartono (nel render), focus e scorrimento nell'effetto.
+  const [shownStep, setShownStep] = useState(step)
+  if (shownStep !== step) { setShownStep(step); setChecked(false); setMessage('') }
+  useEffect(() => { heading.current?.focus({ preventScroll: true }); window.scrollTo({ top: 0 }) }, [step])
   // Titolo deciso all'apertura: dopo il salvataggio un programma nuovo non diventa "modifica".
   const [editing] = useState(() => step === 'done' ? state.revisionFinished : Boolean(state.base) || state.index.some(item => item.plan.id === state.document?.planId))
   const busy = saving || ['saving', 'publishing', 'checking'].includes(state.phase)

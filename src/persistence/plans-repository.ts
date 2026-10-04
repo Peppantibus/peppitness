@@ -84,8 +84,8 @@ export function createPlansRepository(client: SupabaseClient, owner: string): Pl
         signal.throwIfAborted()
         if (error) throw failure(error)
         if (!Array.isArray(data)) bad()
-        if (!data!.length) return plans.sort((a, b) => a.name.localeCompare(b.name, 'it') || a.id.localeCompare(b.id))
-        for (const row of data!) { const plan = mealPlanFromRow(row, owner); if (cursor && plan.id <= cursor) bad(); plans.push(plan); cursor = plan.id }
+        if (!data.length) return plans.sort((a, b) => a.name.localeCompare(b.name, 'it') || a.id.localeCompare(b.id))
+        for (const row of data) { const plan = mealPlanFromRow(row, owner); if (cursor && plan.id <= cursor) bad(); plans.push(plan); cursor = plan.id }
       }
     },
     async mealPlan(id, signal) {

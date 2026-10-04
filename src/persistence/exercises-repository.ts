@@ -37,7 +37,7 @@ function decode(data: unknown, owner: string): CatalogExercise {
     id: row.id, name: row.name as string, variant: row.variant as string, equipment: row.equipment as string,
     loadConvention: row.load_convention as ExerciseValues['loadConvention'], loadUnit: row.load_unit as ExerciseValues['loadUnit'],
     measurementMode: row.measurement_mode as ExerciseValues['measurementMode'], perSide: row.per_side,
-    note: row.note as string, archivedAt: row.archived_at as string | null, revision: row.revision,
+    note: row.note as string, archivedAt: row.archived_at, revision: row.revision,
     ...(row.source_template_id === undefined ? {} : { sourceTemplateId: typeof row.source_template_id === 'string' ? row.source_template_id : null }),
   }
   if (validateExercise(value) || (value.sourceTemplateId && !isExerciseId(value.sourceTemplateId))) throw new ExercisesFailure('unavailable')
@@ -51,10 +51,10 @@ function decodeShared(data: unknown): CatalogExercise {
     || typeof row.per_side !== 'boolean') throw new ExercisesFailure('unavailable')
   const value: CatalogExercise = {
     ...category(row),
-    id: row.id as string, name: row.name as string, variant: row.variant as string,
+    id: row.id, name: row.name as string, variant: row.variant as string,
     equipment: row.equipment as string, loadConvention: row.load_convention as ExerciseValues['loadConvention'],
     loadUnit: row.load_unit as ExerciseValues['loadUnit'], measurementMode: row.measurement_mode as ExerciseValues['measurementMode'],
-    perSide: row.per_side as boolean, note: row.note as string, archivedAt: null, revision: 1,
+    perSide: row.per_side, note: row.note as string, archivedAt: null, revision: 1,
   }
   if (!isExerciseId(value.id) || validateExercise(value)) throw new ExercisesFailure('unavailable')
   return value

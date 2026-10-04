@@ -39,6 +39,10 @@ try {
   await send('Page.enable'); await send('Runtime.enable'); await send('Network.enable')
   const mock = await installAuthFixture(send, socket, baseUrl)
   seedFollowedPlans(mock, fixtureSession().user.id, { workoutDays: sampleWorkoutDays, meals: sampleMeals })
+  // Worker e cache lasciati da prove precedenti si azzerano dal browser, prima di aprire la pagina: un
+  // unregister() dalla pagina che il worker controlla verrebbe annullato dal register() successivo
+  // (stesso script, nessuna nuova installazione) e la precache resterebbe vuota.
+  await send('Storage.clearDataForOrigin', { origin: baseUrl, storageTypes: 'service_workers,cache_storage' })
   await send('Page.navigate', { url: baseUrl })
   await until('document.readyState === "complete"')
   await evaluate(`(async () => { for (const r of await navigator.serviceWorker.getRegistrations()) await r.unregister(); for (const k of await caches.keys()) await caches.delete(k); localStorage.clear(); localStorage.setItem(${JSON.stringify(fixtureStorageKey)}, ${JSON.stringify(JSON.stringify(fixtureSession()))}) })()`)
@@ -50,7 +54,11 @@ try {
   await send('Page.reload')
   await until('Boolean(navigator.serviceWorker.controller)')
   await until('Boolean(document.querySelector(".workout-overview"))')
-  const cached = await evaluate(`(async () => { const urls = []; for (const k of await caches.keys()) for (const r of await (await caches.open(k)).keys()) urls.push(r.url); return urls })()`)
+  // Il worker di una prova precedente può controllare la pagina finché il nuovo non ha finito
+  // l'installazione: si attende la precache completa invece di leggerla una volta sola.
+  const cachedUrls = `(async () => { const urls = []; for (const k of await caches.keys()) for (const r of await (await caches.open(k)).keys()) urls.push(r.url); return urls })()`
+  await until(`${cachedUrls}.then(urls => urls.some(url => new URL(url).pathname === '/index.html'))`)
+  const cached = await evaluate(cachedUrls)
   assert.ok(cached.some(url => new URL(url).pathname === '/index.html'), 'Shell dell’app in precache')
   assert.ok(cached.every(url => url.startsWith(baseUrl)), 'Nessuna risposta API o esterna nella cache')
 

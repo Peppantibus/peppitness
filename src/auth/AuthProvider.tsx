@@ -1,9 +1,10 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, useSyncExternalStore } from 'react'
 import type { ReactNode } from 'react'
 import { BrandLogo } from '../components/BrandLogo'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getSupabaseClient } from './client'
 import { authErrorMessage } from './errors'
+import { Landing, landingHash, signInHash } from './Landing'
 import { MfaGate } from './MfaGate'
 import { observeSession } from './session'
 import type { AuthState } from './session'
@@ -23,10 +24,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={{ state, client, logoutUnconfirmed, reportLogoutFailure: () => setLogoutUnconfirmed(true) }}>{children}</AuthContext.Provider>
 }
 
+/** Dispositivo già usato per accedere: niente presentazione, si va dritti al modulo. Nessun dato dell'account. */
+const returningKey = 'peppitness:returning-device'
+function knownDevice() { try { return localStorage.getItem(returningKey) === '1' } catch { return false } }
+function rememberDevice() { try { localStorage.setItem(returningKey, '1') } catch { /* archivio non disponibile */ } }
+/** PWA aperta dalla schermata Home: chi l'ha installata vuole accedere, non leggere la presentazione. */
+function installedApp() { return window.matchMedia?.('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true }
+function subscribeHash(callback: () => void) { window.addEventListener('hashchange', callback); return () => window.removeEventListener('hashchange', callback) }
+const currentHash = () => window.location.hash
+
 export function AuthGate({ children }: { children: ReactNode }) {
   const { state, client, logoutUnconfirmed } = useAuth()
+  const hash = useSyncExternalStore(subscribeHash, currentHash)
+  const signedIn = state.status === 'signed-in'
+  // Dopo l'accesso le rotte pubbliche non esistono nell'app: si apre la Dieta.
+  useEffect(() => {
+    if (!signedIn) return
+    rememberDevice()
+    if (hash === signInHash || hash === landingHash) window.location.replace('#/dieta')
+  }, [signedIn, hash])
+  const showLanding = state.status === 'signed-out' && Boolean(client) && hash !== signInHash
+    && (hash === landingHash || !(logoutUnconfirmed || knownDevice() || installedApp()))
+  useEffect(() => {
+    if (state.status === 'signed-out') document.title = showLanding ? 'peppitness · Un giorno alla volta' : 'Accedi · peppitness'
+  }, [state.status, showLanding])
   if (state.status === 'unconfigured') return children
-  if (state.status === 'signed-in') return client ? <MfaGate client={client} session={state.session}>{children}</MfaGate> : children
+  if (signedIn) return client ? <MfaGate client={client} session={state.session}>{children}</MfaGate> : children
+  if (showLanding) return <Landing />
   return <main className="auth-page" id="main-content">
     <section className="panel auth-card" aria-labelledby="auth-title">
       <BrandLogo className="auth-logo" title="peppitness" />
@@ -61,5 +85,6 @@ function SignIn({ client }: { client: SupabaseClient }) {
       <button className="button primary full-width" type="submit" disabled={pending}>{pending ? 'Accesso in corso…' : 'Accedi'}</button>
     </form>
     <p className="auth-help">Accesso riservato agli account abilitati. Per attivare un account o recuperare l’accesso, contatta l’amministratore.</p>
+    <p className="auth-back"><a href={landingHash}>Cos’è peppitness?</a></p>
   </>
 }

@@ -447,7 +447,7 @@ export class StoryReader {
         const kind: NoteKind = child.name === 'w:footnoteReference' ? 'footnote' : child.name === 'w:endnoteReference' ? 'endnote' : 'comment'
         if (id === undefined || !noteIdPattern.test(id)) break
         context.notes.push({ kind, id })
-        if (kind !== 'comment') for (const name of this.bookmarks.values()) this.sink.bookmarkNotes.set(name, { kind: kind as 'footnote' | 'endnote', id })
+        if (kind !== 'comment') for (const name of this.bookmarks.values()) this.sink.bookmarkNotes.set(name, { kind: kind, id })
         break
       }
       case 'w:delText': case 'w:delInstrText': bump(context.found, 'tracked_changes'); break

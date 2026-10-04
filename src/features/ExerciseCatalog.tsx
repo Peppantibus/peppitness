@@ -27,10 +27,13 @@ export function ExerciseCatalog({ store, state }: { store: ExercisesStore | null
   const editor = useRef<HTMLElement>(null)
   const newButton = useRef<HTMLButtonElement>(null)
   const draft = state.draft
+  const draftId = draft?.id
+  // Nuova bozza aperta: la scelta del gruppo riparte (stato derivato, aggiornato nel render).
+  const [shownDraftId, setShownDraftId] = useState(draftId)
+  if (shownDraftId !== draftId) { setShownDraftId(draftId); setGroupChosen(false) }
   useEffect(() => {
-    setGroupChosen(false)
-    if (draft) { editor.current?.scrollIntoView({ block: 'start' }); editor.current?.focus({ preventScroll: true }) }
-  }, [draft?.id])
+    if (draftId) { editor.current?.scrollIntoView({ block: 'start' }); editor.current?.focus({ preventScroll: true }) }
+  }, [draftId])
   const busy = ['saving', 'checking'].includes(state.phase)
   const rows = searchExercises(scope === 'shared' ? state.sharedRows : state.rows, search, scope === 'shared' ? 'active' : filter, group)
   const close = () => { store?.close(); setConfirmDiscard(false); newButton.current?.focus() }

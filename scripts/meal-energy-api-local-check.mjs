@@ -45,6 +45,6 @@ try{
  pass('SDK: contratto energetico invalido respinto dal DB')
  console.log(`PASS ${checks.length} controlli API locali`)
 }finally{
- let removed=0;for(const id of users){const result=await admin.auth.admin.deleteUser(id);if(result.error)throw Error('Pulizia fixture locale fallita');removed++}
+ let removed=0;for(const id of users){const result=await admin.auth.admin.deleteUser(id);if(result.error){console.error('FAIL pulizia fixture locale');process.exitCode=1;continue}removed++}
  console.log(`Fixture locali eliminate ${removed}/${users.length}`)
 }

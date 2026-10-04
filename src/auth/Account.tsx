@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../components/Modal'
 import { useAuth } from './AuthProvider'
+import { forgetMfaNotRequired } from './MfaGate'
 import { MfaSettings } from './MfaSettings'
 
 export function Account({ hasUnsavedData, busy = false, onSignedOut }: { hasUnsavedData: boolean; busy?: boolean; onSignedOut?: () => void }) {
@@ -16,6 +17,7 @@ export function Account({ hasUnsavedData, busy = false, onSignedOut }: { hasUnsa
       const { error: failure } = await client.auth.signOut({ scope: 'local' })
       // La sessione locale viene rimossa anche se la revoca online fallisce: la copia
       // del diario di questo account non deve restare sul dispositivo.
+      forgetMfaNotRequired(state.session.user.id)
       onSignedOut?.()
       if (failure) { reportLogoutFailure(); setError('Uscita non riuscita. Controlla la connessione e riprova.') }
     } catch { reportLogoutFailure(); setError('Uscita non riuscita. Controlla la connessione e riprova.') }

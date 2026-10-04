@@ -118,7 +118,7 @@ export class ExercisesStore {
     try { saved = await this.repository.save(id, clean, null, AbortSignal.timeout(15_000)) }
     catch { try { saved = await this.repository.get(id, AbortSignal.timeout(15_000)) } catch { saved = null } }
     if (!saved || !sameExercise(saved, clean)) return null
-    this.publish({ rows: [...this.state.rows.filter(row => row.id !== saved!.id), saved] })
+    this.publish({ rows: [...this.state.rows.filter(row => row.id !== saved.id), saved] })
     return saved
   }
   /** Il template condiviso entra nel catalogo personale solo quando viene scelto. */
@@ -134,7 +134,7 @@ export class ExercisesStore {
       try { adopted = await this.repository.adopt(templateId, signal) }
       catch { adopted = (await this.repository.list(signal)).find(row => row.sourceTemplateId === templateId) ?? null }
       if (!adopted || adopted.archivedAt || controller.signal.aborted) return null
-      this.publish({ rows: [...this.state.rows.filter(row => row.id !== adopted!.id), adopted] })
+      this.publish({ rows: [...this.state.rows.filter(row => row.id !== adopted.id), adopted] })
       return adopted
     } catch { return null }
     finally { if (this.adoption === controller) this.adoption = null }

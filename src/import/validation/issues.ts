@@ -187,6 +187,8 @@ export class FindingList {
   addAll(entries: Iterable<ValidationFinding>) { for (const entry of entries) this.add(entry) }
 }
 
+/** Valore testuale di un campo, '' se assente o di altro tipo (mai «null» o «[object Object]» nei messaggi). */
+export const textOf = (value: unknown): string => typeof value === 'string' ? value : ''
 /** Testo non vuoto dopo trim. */
 export const hasText = (value: unknown): value is string => typeof value === 'string' && value.trim() !== ''
 export const isRangeValue = (value: unknown): value is { min: number; max: number } =>
