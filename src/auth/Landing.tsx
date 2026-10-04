@@ -1,9 +1,9 @@
 import { BrandLogo } from '../components/BrandLogo'
 import { Icon } from '../components/Icon'
 import type { IconName } from '../components/Icon'
-import breakfast from '../assets/meals/breakfast.png'
-import lunch from '../assets/meals/lunch.png'
-import legs from '../assets/muscle-groups/legs.png'
+import breakfast from '../assets/meals/breakfast.webp'
+import lunch from '../assets/meals/lunch.webp'
+import legs from '../assets/muscle-groups/legs.webp'
 import './landing.css'
 
 /** Hash delle due viste pubbliche: la landing e il modulo di accesso. */

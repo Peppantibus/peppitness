@@ -2,7 +2,7 @@
 
 Sei illustrazioni originali generate con `image_gen`: colazione, metà mattina,
 pranzo, merenda, cena e un piatto neutro per i pasti personalizzati.
-PNG 192 × 192 con trasparenza, 281676 byte complessivi; palette verde bosco,
+WebP 192 × 192 con trasparenza (qualità 0,9, `npm run images:webp` dai PNG), circa 70 KB complessivi; palette verde bosco,
 salvia e lime coordinata con peppitness. Prompt completi in [prompts.json](prompts.json).
 
 Le immagini identificano il momento del pasto: gli ingredienti illustrati sono

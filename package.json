@@ -34,6 +34,7 @@
     "test:import:structured:local": "node --experimental-strip-types scripts/import-structured-local-check.mjs",
     "templates:import": "node --experimental-strip-types scripts/generate-structured-templates.mjs",
     "icons": "node scripts/generate-icons.mjs",
+    "images:webp": "node scripts/convert-images-webp.mjs",
     "backup:cloud": "node scripts/backup-cloud.mjs",
     "backup:restore-check": "node scripts/restore-check.mjs",
     "verify:release": "npm audit --audit-level=high && npm run lint && npm test && npm run test:infra && npm run build:pwa",

@@ -1,10 +1,10 @@
 import type { Meal } from '../domain/types'
-import breakfast from '../assets/meals/breakfast.png'
-import morningSnack from '../assets/meals/morning-snack.png'
-import lunch from '../assets/meals/lunch.png'
-import afternoonSnack from '../assets/meals/afternoon-snack.png'
-import dinner from '../assets/meals/dinner.png'
-import generic from '../assets/meals/meal.png'
+import breakfast from '../assets/meals/breakfast.webp'
+import morningSnack from '../assets/meals/morning-snack.webp'
+import lunch from '../assets/meals/lunch.webp'
+import afternoonSnack from '../assets/meals/afternoon-snack.webp'
+import dinner from '../assets/meals/dinner.webp'
+import generic from '../assets/meals/meal.webp'
 
 /** Nome e orario identificano l'illustrazione; l'ordine dei pasti non conta. */
 function imageForMeal(meal: Pick<Meal, 'name' | 'timeLabel'>): string {
