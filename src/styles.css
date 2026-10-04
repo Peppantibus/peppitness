@@ -46,9 +46,9 @@
   --color-timer-fg: #ffffff;
   --color-raised: #ffffff;          /* elemento scelto dentro un gruppo tinto (segmented) */
   --color-on-accent-soft: #234d41;  /* testo su fondo lime tenue: 8,5:1 */
-  --logo-body: #234d41;
-  --logo-detail: #d9ef85;
-  --logo-leaf: #79a83a;
+  --logo-body: #8cc59f;              /* logo: stessi colori in entrambi i temi */
+  --logo-detail: #16261f;
+  --logo-leaf: #d9ef85;
   --color-on-dark-hover: rgb(255 255 255 / .12);  /* hover su superfici scure (timer, avvisi) */
   --color-nav-bg: rgb(255 255 255 / .94);        /* barra inferiore traslucida */
 
@@ -126,9 +126,6 @@
     --color-timer-fg: #e6ede8;
     --color-timer-ended: #24472f;
     --color-nav-bg: rgb(26 36 32 / .94);
-    --logo-body: #8cc59f;
-    --logo-detail: #16261f;
-    --logo-leaf: #d9ef85;
     --success-fg: #8fd1a4; --success-bg: #1c3326; --success-border: #2f5a40;
     --warning-fg: #e8c27a; --warning-bg: #3a2f17; --warning-border: #5c4a22;
     --danger-fg: #f0a597; --danger-bg: #3d211c; --danger-border: #6a3a31;
@@ -169,9 +166,6 @@
   --color-timer-fg: #e6ede8;
   --color-timer-ended: #24472f;
   --color-nav-bg: rgb(26 36 32 / .94);
-  --logo-body: #8cc59f;
-  --logo-detail: #16261f;
-  --logo-leaf: #d9ef85;
   --success-fg: #8fd1a4; --success-bg: #1c3326; --success-border: #2f5a40;
   --warning-fg: #e8c27a; --warning-bg: #3a2f17; --warning-border: #5c4a22;
   --danger-fg: #f0a597; --danger-bg: #3d211c; --danger-border: #6a3a31;

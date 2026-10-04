@@ -1,8 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><rect width="128" height="128" fill="#F5F6F2"/><g transform="translate(17.92 17.92) scale(0.72)" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="12.5 9.5 103 103" fill="none">
   <title>peppitness — mela, manubrio e battito</title>
-  <path fill="#234D41" d="M64 38C54 30 36 30 28 46C18 64 24 94 40 108C48 114 56 112 64 108C72 112 80 114 88 108C104 94 110 64 100 46C92 30 74 30 64 38Z"/>
-  <path stroke="#234D41" stroke-width="6" stroke-linecap="round" d="M64 38C64 30 67 23 73 18"/>
-  <path fill="#79A83A" d="M70 27C70 14 82 9 94 11C94 23 83 30 70 27Z"/>
-  <g fill="#D9EF85"><rect x="40" y="55" width="9" height="38" rx="4"/><rect x="31" y="62" width="7" height="24" rx="3.5"/><rect x="79" y="55" width="9" height="38" rx="4"/><rect x="90" y="62" width="7" height="24" rx="3.5"/></g>
-  <path stroke="#D9EF85" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" d="M49 74H56L60 63L67 87L71 74H79"/>
-</g></svg>
+  <path fill="#8CC59F" d="M64 38C54 30 36 30 28 46C18 64 24 94 40 108C48 114 56 112 64 108C72 112 80 114 88 108C104 94 110 64 100 46C92 30 74 30 64 38Z"/>
+  <path stroke="#8CC59F" stroke-width="6" stroke-linecap="round" d="M64 38C64 30 67 23 73 18"/>
+  <path fill="#D9EF85" d="M70 27C70 14 82 9 94 11C94 23 83 30 70 27Z"/>
+  <g fill="#16261F"><rect x="40" y="55" width="9" height="38" rx="4"/><rect x="31" y="62" width="7" height="24" rx="3.5"/><rect x="79" y="55" width="9" height="38" rx="4"/><rect x="90" y="62" width="7" height="24" rx="3.5"/></g>
+  <path stroke="#16261F" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" d="M49 74H56L60 63L67 87L71 74H79"/>
+</svg>
