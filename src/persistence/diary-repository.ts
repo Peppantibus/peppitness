@@ -13,7 +13,21 @@ export type Row = Record<string, unknown>
 
 /** Contratto minimo verso Supabase; sostituibile nei test. Nessun retry automatico. */
 /** Righe cambiate dopo un istante, più gli ID delle sedute ancora attive (per riconoscere quelle annullate altrove). */
-export interface DiaryChanges { sessions: unknown[]; sets: unknown[]; meals: unknown[]; days: unknown[]; activeSessionIds: string[]; cursor: string | null }
+/** Numero di righe per tabella sul server: rivela le cancellazioni, che le righe cambiate non mostrano. */
+export interface DiaryCounts { sessions: number; sets: number; meals: number; days: number }
+export interface DiaryChanges { sessions: unknown[]; sets: unknown[]; meals: unknown[]; days: unknown[]; activeSessionIds: string[]; cursor: string | null; counts?: DiaryCounts }
+
+/** Righe conosciute dalla copia confermata: una revisione per riga del server. */
+export function countsOf(revisions: Record<string, number>): DiaryCounts {
+  const counts: DiaryCounts = { sessions: 0, sets: 0, meals: 0, days: 0 }
+  for (const key of Object.keys(revisions)) {
+    if (key.startsWith('session:')) counts.sessions++
+    else if (key.startsWith('set:')) counts.sets++
+    else if (key.startsWith('meal:')) counts.meals++
+    else if (key.startsWith('day:')) counts.days++
+  }
+  return counts
+}
 
 export interface DiaryTransport {
   /** Lettura completa; `cursor` è l'`updated_at` più recente letto (assente nei trasporti di prova). */
@@ -260,7 +274,16 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
       const sets = await pages('workout_set_logs', 'id', signal, since)
       const meals = await pages('meal_logs', 'id', signal, since)
       const days = await pages('diary_days', 'diary_date', signal, since)
-      return { sessions, sets, meals, days, activeSessionIds, cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]) }
+      // Conteggi dopo le modifiche: una riga cancellata (anche dall'amministratore) li rende diversi dalla copia.
+      const count = async (table: DiaryTable) => {
+        const { count: rows, error: countError } = await client.from(table).select('owner_id', { count: 'exact', head: true }).eq('owner_id', owner)
+          .setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+        signal.throwIfAborted()
+        if (countError) throw failure(countError)
+        return typeof rows === 'number' ? rows : bad()
+      }
+      const counts = { sessions: await count('workout_sessions'), sets: await count('workout_set_logs'), meals: await count('meal_logs'), days: await count('diary_days') }
+      return { sessions, sets, meals, days, activeSessionIds, cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]), counts }
     },
     async start(args, signal) {
       const auth = await token(signal)

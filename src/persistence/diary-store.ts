@@ -3,7 +3,7 @@ import type { DiaryData, DiaryOp } from '../domain/diary.ts'
 import type { DayType, LocalDate, Meal, MealStatus, RestTimerState, SetResult, WorkoutDay, WorkoutSession } from '../domain/types.ts'
 import { keyValueArchive } from './diary-archive.ts'
 import type { ServerArchive, ServerCopy } from './diary-archive.ts'
-import { DiaryFailure, dayFromRow, mealLogFromRow, mergeDiary, serverTime, sessionFromRow, setFromRow } from './diary-repository.ts'
+import { countsOf, DiaryFailure, dayFromRow, mealLogFromRow, mergeDiary, serverTime, sessionFromRow, setFromRow } from './diary-repository.ts'
 import type { DiaryTransport, Row } from './diary-repository.ts'
 
 /**
@@ -305,7 +305,8 @@ export class DiaryStore {
 
   /**
    * Lettura incrementale (righe cambiate dopo il cursore) quando c'è una lettura completa recente;
-   * altrimenti, o se le modifiche non si applicano alla copia, lettura completa.
+   * altrimenti, se le modifiche non si applicano alla copia o se il numero di righe non coincide con
+   * quello del server (cancellazioni), lettura completa.
    */
   private async read(signal: AbortSignal): Promise<Pick<Persisted, 'server' | 'revisions' | 'cursor' | 'fullAt'>> {
     const transport = this.transport!
@@ -316,6 +317,9 @@ export class DiaryStore {
       const changes = await transport.loadChanges(since, signal)
       try {
         const merged = mergeDiary(this.data.server, this.data.revisions, changes)
+        // Righe diverse dal server dopo l'unione: qualcosa è stato cancellato (o letto a metà) → lettura completa.
+        const local = countsOf(merged.revisions), remote = changes.counts
+        if (remote && (local.sessions !== remote.sessions || local.sets !== remote.sets || local.meals !== remote.meals || local.days !== remote.days)) throw new DiaryFailure('unavailable')
         return { server: merged.data, revisions: merged.revisions, cursor: changes.cursor && serverTime(changes.cursor) > serverTime(cursor) ? changes.cursor : cursor, fullAt }
       } catch { /* copia non allineata: si ricostruisce da capo */ }
     }

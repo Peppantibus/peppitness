@@ -91,6 +91,27 @@ test('dopo una lettura completa la successiva è incrementale (cursore meno il m
   reopened.stop()
 })
 
+test('cancellazione sul server (anche di righe completate): conteggi diversi → lettura completa', async () => {
+  const history = buildDiary([sessionRow(S2, 'completed')], [], [mealRow('2026-10-01')], [])
+  let current = history
+  const calls: string[] = []
+  const transport = {
+    loadAll: async () => { calls.push('full'); return { data: structuredClone(current.data), revisions: { ...current.revisions }, cursor: '2026-10-01T10:00:00+00:00' } },
+    loadChanges: async () => { calls.push('changes'); const counts = { sessions: current.data.sessions.length, sets: 0, meals: Object.keys(current.data.mealLogs).length, days: 0 }; return noChanges({ counts }) },
+  } as unknown as DiaryTransport
+  const store = new DiaryStore(transport, memoryStorage(), OWNER)
+  await store.refresh()
+  await store.refresh()
+  assert.deepEqual(calls, ['full', 'changes'], 'conteggi uguali: resta incrementale')
+  // L'amministratore svuota lo storico: nessuna riga cambiata, ma i conteggi scendono.
+  current = buildDiary([], [], [], [])
+  await store.refresh()
+  assert.deepEqual(calls, ['full', 'changes', 'changes', 'full'])
+  assert.equal(store.getSnapshot().view.sessions.length, 0, 'sedute cancellate sparite dalla copia')
+  assert.deepEqual(store.getSnapshot().view.mealLogs, {}, 'pasti cancellati spariti dalla copia')
+  store.stop()
+})
+
 test('modifiche non applicabili alla copia: ripiego immediato sulla lettura completa', async () => {
   const { transport, calls, setChanges } = server()
   const store = new DiaryStore(transport, memoryStorage(), OWNER)
@@ -185,10 +206,12 @@ test('trasporto: lettura incrementale con filtro updated_at, sedute attive lette
   const calls: string[] = []
   const builder = (table: string, rows: unknown[]) => {
     const chain: Record<string, unknown> = {}
-    for (const method of ['setHeader', 'abortSignal', 'retry', 'select', 'order', 'range']) chain[method] = () => chain
+    let head = false
+    for (const method of ['setHeader', 'abortSignal', 'retry', 'order', 'range']) chain[method] = () => chain
+    chain.select = (_columns: string, options?: { head?: boolean }) => { head = Boolean(options?.head); return chain }
     chain.eq = (column: string, value: string) => { if (column !== 'owner_id') calls.push(`${table}:${column}=${value}`); return chain }
     chain.gt = (column: string, value: string) => { calls.push(`${table}:${column}>${value}`); return chain }
-    chain.then = (resolve: (value: unknown) => unknown) => Promise.resolve({ data: rows, error: null }).then(resolve)
+    chain.then = (resolve: (value: unknown) => unknown) => Promise.resolve(head ? { data: null, count: rows.length + 10, error: null } : { data: rows, error: null }).then(resolve)
     return chain
   }
   const encode = (value: unknown) => Buffer.from(JSON.stringify(value)).toString('base64url')
@@ -200,5 +223,6 @@ test('trasporto: lettura incrementale con filtro updated_at, sedute attive lette
   assert.equal(calls[0], 'workout_sessions:status=active', 'sedute attive prima delle modifiche')
   assert.ok(['workout_sessions', 'workout_set_logs', 'meal_logs', 'diary_days'].every(table => calls.includes(`${table}:updated_at>2026-10-04T00:00:00.000Z`)))
   assert.deepEqual(changes.activeSessionIds, [S1])
+  assert.deepEqual(changes.counts, { sessions: 10, sets: 10, meals: 11, days: 10 }, 'conteggi per tabella')
   assert.equal(changes.cursor, '2026-10-05T12:00:00.5+00:00')
 })

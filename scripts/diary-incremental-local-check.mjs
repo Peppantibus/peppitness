@@ -32,9 +32,10 @@ try {
   assert.deepEqual(exact.days.map(row => row.diary_date), ['2026-10-01'], 'solo la riga modificata')
   assert.ok(exact.cursor && serverTime(exact.cursor) > serverTime(full.cursor), 'cursore avanzato')
   assert.deepEqual(exact.activeSessionIds, [])
+  assert.deepEqual(exact.counts, { sessions: 0, sets: 0, meals: 0, days: 2 }, 'conteggi reali per tabella (RLS)')
   const future = await transport.loadChanges(new Date(Date.now() + 3600_000).toISOString(), signal())
   assert.equal(future.days.length + future.meals.length + future.sessions.length + future.sets.length, 0, 'nulla dopo il futuro')
-  console.log('PASS lettura incrementale su PostgREST locale: filtro updated_at, cursore, sedute attive')
+  console.log('PASS lettura incrementale su PostgREST locale: filtro updated_at, cursore, sedute attive, conteggi')
 } finally {
   await admin.auth.admin.deleteUser(owner)
   console.log('fixture eliminata')
