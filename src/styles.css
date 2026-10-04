@@ -981,6 +981,8 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .auth-card > p { font-size: var(--text-md); color: var(--color-text-muted); }
 .auth-form { display: grid; gap: var(--space-5); margin: var(--space-6) 0 var(--space-5); }
 .auth-card .auth-help { font-size: var(--text-sm); }
+.mfa-qr { display: block; margin: var(--space-3) auto; background: #fff; padding: var(--space-2); border-radius: var(--radius-md, 8px); }
+.mfa-secret { overflow-wrap: anywhere; user-select: all; }
 
 /* ================================================================== 9. Catalogo, editor avanzati e wizard */
 

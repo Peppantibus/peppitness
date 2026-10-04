@@ -38,6 +38,7 @@ export class PlansStore {
   private key: string
   private state: PlansState
   private listeners = new Set<() => void>()
+  private stopped = false
   private loading: AbortController | null = null
   private writing: AbortController | null = null
   private editing: AbortController | null = null
@@ -53,6 +54,7 @@ export class PlansStore {
     catch { return null }
   }
   private emit(value: Partial<PlansState>) {
+    if (this.stopped) return
     this.state = { ...this.state, ...value }
     if (this.state.phase === 'ready' && !this.state.cached) {
       const { programs, selection, workout, mealPlans } = this.state
@@ -70,7 +72,12 @@ export class PlansStore {
   }
   getSnapshot = () => this.state
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
-  stop = () => { this.loading?.abort(); this.writing?.abort(); this.editing?.abort() }
+  stop = () => {
+    this.stopped = true
+    const controllers = [this.loading, this.writing, this.editing]
+    this.loading = this.writing = this.editing = null
+    controllers.forEach(controller => controller?.abort())
+  }
   /** Uscita esplicita: rimuove la copia offline dei piani di questo account. */
   clearDevice = () => { this.stop(); try { this.storage.remove(this.key) } catch { /* archivio non disponibile */ } }
   get mealDirty() {
@@ -85,6 +92,7 @@ export class PlansStore {
   }
 
   load = async () => {
+    this.stopped = false
     this.loading?.abort()
     const controller = new AbortController(); this.loading = controller
     const signal = AbortSignal.any([controller.signal, AbortSignal.timeout(20_000)])

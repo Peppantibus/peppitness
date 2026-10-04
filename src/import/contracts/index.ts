@@ -1,6 +1,6 @@
 /**
- * Contratti V1 dell'importazione: unica sorgente condivisa da browser, worker e Edge Function
- * (ponte in supabase/functions/_shared/import/contracts.ts). Solo import relativi `.ts`,
+ * Contratti V1 dell'importazione, condivisi da browser, worker e comandi di salvataggio.
+ * Solo import relativi `.ts`,
  * niente DOM, React o SDK. I costruttori di schema restano in schema.ts per i contratti successivi.
  */
 export {
@@ -10,9 +10,8 @@ export {
 export * from './normalized-document.ts'
 export * from './extraction.ts'
 export * from './reader.ts'
-export type * from './provider.ts'
 // Task 02: revisione, conferma e protocollo dell'analisi.
 export * from './domain-limits.ts'
 export * from './review.ts'
 export * from './commit.ts'
-export * from './jobs.ts'
+export * from './limits.ts'

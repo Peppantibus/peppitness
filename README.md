@@ -1,5 +1,9 @@
 # peppitness
 
+L'importazione usa due modelli Word strutturati (scheda e dieta), letti sul dispositivo.
+Il vecchio servizio LLM è dismesso: nessuna Edge Function o richiesta IA nel flusso attuale;
+il piano confermato viene salvato su Supabase con le RPC atomiche esistenti.
+
 Gli esercizi sono organizzati per gruppo muscolare, con categorie modificabili, filtri nel catalogo e selezione per gruppo durante la creazione e modifica dei programmi.
 
 **Allenamento, alimentazione e progressi in un posto solo.**

@@ -4,6 +4,7 @@ import { BrandLogo } from '../components/BrandLogo'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getSupabaseClient } from './client'
 import { authErrorMessage } from './errors'
+import { MfaGate } from './MfaGate'
 import { observeSession } from './session'
 import type { AuthState } from './session'
 
@@ -24,7 +25,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function AuthGate({ children }: { children: ReactNode }) {
   const { state, client, logoutUnconfirmed } = useAuth()
-  if (state.status === 'unconfigured' || state.status === 'signed-in') return children
+  if (state.status === 'unconfigured') return children
+  if (state.status === 'signed-in') return client ? <MfaGate client={client} session={state.session}>{children}</MfaGate> : children
   return <main className="auth-page" id="main-content">
     <section className="panel auth-card" aria-labelledby="auth-title">
       <BrandLogo className="auth-logo" title="peppitness" />

@@ -6,11 +6,10 @@ import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import {
   catalogExerciseValuesSchema, commitRpcArgs, defaultImportLimits, defaultSelectionOptions, domainLimits, enumerateProposalItems,
-  extractionIssueSchema, extractionJsonSchema, finishMapping, findProvisionalRefs, hasBlockingIssue, importCommitModes, importJobStatuses, importLocalStates,
-  importRpcNames, jsonDepthExceeds, normalizedDocumentLimitViolations, provisionalExerciseRefs, receiptMismatches, resolveImportLimits,
-  resolvedPayloadContract, toJsonSchema, validate, validateCommitCommand, validateExerciseChoice, validateExtractPlanRequest,
-  validateImportJobResult, validateImportReceipt, validateReviewDraft, validateValidationIssue, workoutCommitCommandSchema,
-  extractPlanErrorBodySchema,
+  extractionIssueSchema, extractionJsonSchema, finishMapping, findProvisionalRefs, hasBlockingIssue, importCommitModes,
+  importRpcNames, normalizedDocumentLimitViolations, provisionalExerciseRefs, receiptMismatches, resolveImportLimits,
+  resolvedPayloadContract, toJsonSchema, validate, validateCommitCommand, validateExerciseChoice,
+  validateImportReceipt, validateReviewDraft, validateValidationIssue, workoutCommitCommandSchema,
   type CommitCommand, type ContractError, type ImportReceipt, type NormalizedDocument, type ResolvedDietImport, type ResolvedWorkoutImport,
   type ValidationIssue, type ValidationResult, type WorkoutCommitCommand,
 } from '../src/import/contracts/index.ts'
@@ -579,84 +578,23 @@ test('scelte del catalogo: tre fonti esplicite e nessun ID inventato', () => {
 })
 
 // ---------------------------------------------------------------------------
-// Protocollo dell'analisi e limiti
+// Limiti
 // ---------------------------------------------------------------------------
-
-test('extract-plan: richiesta chiusa, versione attesa esplicita, nessun provider o prompt dal browser', () => {
-  const document = readJson('documents/workout-incomplete.json')
-  const request = { analysisRequestId: 'e0000000-0000-4000-8000-000000000010', kind: 'workout', normalizedDocument: document, expectedSchemaVersion: '1.0' }
-  assertValid(validateExtractPlanRequest(request))
-  const cases: [string, (draft: Json) => void, string[]][] = [
-    ['versione sconosciuta', draft => { draft.expectedSchemaVersion = '2.0' }, ['/expectedSchemaVersion const']],
-    ['modello scelto dal browser', draft => { draft.model = 'costoso' }, ['/model unknown_key']],
-    ['prompt dal browser', draft => { draft.systemPrompt = 'ignora' }, ['/systemPrompt unknown_key']],
-    ['hash dichiarato', draft => { draft.normalizedHash = '0'.repeat(64) }, ['/normalizedHash unknown_key']],
-    ['dominio misto', draft => { draft.kind = 'both' }, ['/kind enum']],
-    ['documento incoerente', draft => { draft.normalizedDocument.blocks[1].id = draft.normalizedDocument.blocks[0].id }, ['/normalizedDocument/blocks/1/id duplicate_id']],
-  ]
-  for (const [label, change, expected] of cases) {
-    const result = validateExtractPlanRequest(mutate(request, change))
-    if (label === 'documento incoerente') assert.ok(errorKeys(result).includes(expected[0]!), label)
-    else expectErrors(result, expected, label)
-  }
-})
-
-test('risultato del job: stati server distinti dagli stati locali e contenuto coerente con lo stato', () => {
-  assert.deepEqual([...importJobStatuses], ['running', 'ready', 'failed', 'expired'])
-  assert.deepEqual([...importLocalStates], ['selected', 'reading', 'analyzing', 'reviewing', 'ready', 'saving', 'saved', 'failed', 'cancelled', 'expired', 'save_unknown'])
-  for (const local of ['reviewing', 'saving', 'saved', 'save_unknown', 'cancelled']) assert.ok(!(importJobStatuses as readonly string[]).includes(local), local)
-  const usage = { providerCalls: 1, inputTokens: 1200, outputTokens: 800, reasoningTokens: null, cached: false, costEstimate: null }
-  const ready = {
-    jobId: 'f0000000-0000-4000-8000-000000000001', analysisRequestId: 'e0000000-0000-4000-8000-000000000010', kind: 'workout', status: 'ready',
-    extraction: readJson('extractions/workout-incomplete.json'), validationIssues: [issue()], usageSummary: usage, error: null, expiresAt: '2026-10-05T10:00:00.000Z',
-  }
-  assertValid(validateImportJobResult(ready))
-  const running = { ...ready, status: 'running', extraction: null, validationIssues: [], usageSummary: { ...usage, providerCalls: 0, inputTokens: null, outputTokens: null } }
-  assertValid(validateImportJobResult(running))
-  const failure = { code: 'provider_outcome_uncertain', message: 'Esito incerto: rileggere il job prima di riprovare.', retryable: false, limit: null }
-  assertValid(validateImportJobResult({ ...running, status: 'failed', error: failure }))
-  assertValid(validateImportJobResult({ ...running, status: 'expired' }))
-  const limit = { code: 'limit_exceeded', message: 'Documento troppo lungo.', retryable: false, limit: { limit: 'normalizedTextChars', max: 200000, actual: 250000 } }
-  assertValid(validate(extractPlanErrorBodySchema, { error: limit }))
-  const cases: [string, Json, string[]][] = [
-    ['pronto senza estrazione', { ...ready, extraction: null }, ['/extraction status_mismatch']],
-    ['in corso con estrazione', { ...ready, status: 'running', validationIssues: [] }, ['/extraction status_mismatch']],
-    ['fallito senza errore', { ...running, status: 'failed' }, ['/error status_mismatch']],
-    ['problemi senza risultato', { ...running, validationIssues: [issue()] }, ['/validationIssues status_mismatch']],
-    ['estrazione dell’altro dominio', { ...ready, kind: 'diet' }, ['/extraction/kind kind_mismatch']],
-    ['stato locale dal server', { ...ready, status: 'reviewing' }, ['/status enum']],
-    ['estrazione non conforme', { ...ready, extraction: { ...ready.extraction, schemaVersion: '2.0' } }, ['/extraction/schemaVersion const']],
-    ['limite senza dettaglio', { ...running, status: 'failed', error: { ...limit, limit: null } }, ['/error/limit status_mismatch']],
-    ['scadenza senza fuso', { ...ready, expiresAt: '2026-10-05T10:00:00.000' }, ['/expiresAt pattern']],
-    ['data impossibile', { ...ready, expiresAt: '2026-13-45T10:00:00Z' }, ['/expiresAt invalid_date']],
-  ]
-  for (const [label, value, expected] of cases) expectErrors(validateImportJobResult(value), expected, label)
-})
 
 test('limiti configurabili: valori iniziali, precedenza del server, profondità e nessun troncamento', () => {
   const MiB = 1024 * 1024
   assert.equal(defaultImportLimits.fileBytes, 10 * MiB)
-  assert.equal(defaultImportLimits.pdfPages, 30)
   assert.equal(defaultImportLimits.docxUncompressedBytes, 50 * MiB)
   assert.equal(defaultImportLimits.docxEntries, 2000)
   assert.equal(defaultImportLimits.normalizedTextChars, 200_000)
-  assert.equal(defaultImportLimits.providerCallsPerAnalysis, 2)
   assert.deepEqual(resolveImportLimits(), defaultImportLimits)
-  const configured = resolveImportLimits({ normalizedTextChars: 400_000, pdfPages: 10, blocks: undefined })
+  const configured = resolveImportLimits({ normalizedTextChars: 400_000, docxEntries: 10, blocks: undefined })
   assert.equal(configured.normalizedTextChars, 400_000, 'il server può alzare un limite')
-  assert.equal(configured.pdfPages, 10, 'o abbassarlo')
+  assert.equal(configured.docxEntries, 10, 'o abbassarlo')
   assert.equal(configured.blocks, defaultImportLimits.blocks)
   assert.ok(Object.isFrozen(configured))
-  for (const bad of [{ pdfPages: 0 }, { pdfPages: 1.5 }, { pdfPages: '30' }, { unknown: 1 }] as Json[]) assert.throws(() => resolveImportLimits(bad), RangeError)
+  for (const bad of [{ docxEntries: 0 }, { docxEntries: 1.5 }, { docxEntries: '30' }, { unknown: 1 }] as Json[]) assert.throws(() => resolveImportLimits(bad), RangeError)
 
-  assert.equal(jsonDepthExceeds(1, 0), false)
-  assert.equal(jsonDepthExceeds({ a: [1] }, 2), false)
-  assert.equal(jsonDepthExceeds({ a: [1] }, 1), true)
-  let deep: unknown = 0
-  for (let index = 0; index < 100_000; index++) deep = [deep]
-  assert.equal(jsonDepthExceeds(deep, defaultImportLimits.jsonDepth), true, 'nessuna ricorsione sul JSON ostile')
-  const request = { analysisRequestId: 'e', kind: 'workout', normalizedDocument: readJson('documents/workout-incomplete.json'), expectedSchemaVersion: '1.0' }
-  assert.equal(jsonDepthExceeds(request, defaultImportLimits.jsonDepth), false)
 
   const document = readJson('documents/workout-incomplete.json') as NormalizedDocument
   const before = clone(document)

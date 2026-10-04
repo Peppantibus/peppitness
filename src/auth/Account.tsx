@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Modal } from '../components/Modal'
 import { useAuth } from './AuthProvider'
+import { MfaSettings } from './MfaSettings'
 
 export function Account({ hasUnsavedData, busy = false, onSignedOut }: { hasUnsavedData: boolean; busy?: boolean; onSignedOut?: () => void }) {
   const { client, state, reportLogoutFailure } = useAuth()
@@ -25,6 +26,7 @@ export function Account({ hasUnsavedData, busy = false, onSignedOut }: { hasUnsa
     <p className="account-email">{state.session.user.email}</p>
     <button className="button secondary" disabled={pending || busy} onClick={() => hasUnsavedData ? setConfirm(true) : void signOut()}>{pending ? 'Uscita in corso…' : 'Esci'}</button>
     {error && <p className="form-error" role="alert">{error}</p>}
+    <MfaSettings client={client} userId={state.session.user.id} />
     {confirm && <Modal label="Uscire dall’account?" onClose={() => { if (!pending) setConfirm(false) }}>
       <h2>Uscire dall’account?</h2><p className="logout-explanation">Le modifiche non salvate e le registrazioni non ancora sincronizzate saranno eliminate da questo dispositivo. I dati già salvati online rimangono nel tuo account.</p>
       <div className="account-actions"><button className="button secondary" disabled={pending} onClick={() => setConfirm(false)}>Resta</button><button className="button danger" disabled={pending} onClick={() => void signOut()}>Esci e scarta</button></div>

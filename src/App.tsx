@@ -69,7 +69,7 @@ export function App() {
     if (catalogStore) { await catalogStore.load(); if (catalogStore.getSnapshot().phase === 'error') throw new Error('Catalogo non riletto') }
     if (programsStore && programsStore.getSnapshot().phase !== 'idle') { await programsStore.load(); if (programsStore.getSnapshot().phase === 'error') throw new Error('Programmi non riletti') }
   }, [plansStore, catalogStore, programsStore])
-  // Importazione: il motore si carica sulla sua pagina o in Impostazioni (logout); lettura e analisi proseguono fuori pagina.
+  // Importazione: il motore si carica sulla sua pagina o in Impostazioni (logout).
   const importReview = useImports(isImport || route === '/impostazioni', onImportSaved)
   const diary = useDiary()
   const configured = Boolean(plans.store)
@@ -316,7 +316,7 @@ export function App() {
       followedPlanId={plans.state.selection?.workoutPlanId ?? null} followedDays={workout?.document.days ?? null} onFollow={followProgram} onDeleted={async () => { await plans.store?.load() }} deletionBlocked={diary.store.hasPending || diary.store.hasVolatileData} today={today} /></Suspense>}
     {isProgress && <Progress workout={workout} days={workoutDays} sessions={programSessions} today={today} />}
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={mealMode} setMode={setMealMode} step={mealStep} setStep={setMealStep} deletionBlocked={diary.store.hasPending || diary.store.hasVolatileData} /></Suspense>}
-    {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} store={importReview.store} state={importReview.state} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}
+    {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} engine={importReview.engine} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}
     {isSettings && <Settings backSection={lastSection.current} weeklyProgram={weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy} onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice(); void importReview.clearDevice() }} {...settings} />}
     {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} syncSlot={syncIndicator}
       onDiscard={() => { diary.store.discardSession(activeSession.id); navigate('/scheda'); setAnnouncement('Seduta eliminata.') }}

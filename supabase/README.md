@@ -1,5 +1,26 @@
 # Database peppitness
 
+## Stato corrente — 03/10/2026
+
+Il vecchio import LLM è dismesso. `extract-plan` è stata rimossa dal progetto cloud,
+il budget è disabilitato e le bozze legacy sono state scartate con
+`20261003120000_retire_llm_import_content.sql` (migrazioni cloud 18/18).
+Restano ricevute, piani, diario, metadati job, contabilità e retention;
+le riserve `uncertain` non sono azzerate. Lo schema legacy è conservato per
+queste dipendenze, senza eliminazioni in cascata.
+
+L'import Word usa il reader locale, il journal `peppitness-structured-import-v1`
+e `commit_workout_import` / `commit_diet_import` con `jobId=null`.
+Il frontend ripulisce il vecchio IndexedDB `peppitness-import` quando carica
+il motore; il nuovo frontend deve quindi raggiungere il dispositivo per eseguire
+questa pulizia. Non riapre né rinnova analisi legacy.
+
+Verifica SQL: `supabase/checks/verify_llm_import_retired.sql`.
+Prove attuali: `supabase test db --local`, `npm run test:api:local -- --summary`,
+`npm run test:import:structured:browser` e `npm run test:import:structured:local`.
+Le sezioni che descrivono Edge, provider e runner di valutazione sono storia del
+percorso ritirato: i relativi sorgenti e comandi non sono più presenti.
+
 Audit residui import/LLM (02/10): `checks/audit_import_cleanup.sql` legge soli
 conteggi/metadati, retention, dipendenze RPC/FK e Storage. Report
 `../docs/SUPABASE_CLEANUP_AUDIT.md`: infrastruttura legacy ancora attiva,

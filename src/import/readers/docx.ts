@@ -29,7 +29,7 @@
  *   segnaposto secondo `minimize.ts`, con avviso `contact_data_removed`.
  */
 import { contractLimits } from '../contracts/schema.ts'
-import { defaultImportLimits, type ImportLimits } from '../contracts/jobs.ts'
+import { defaultImportLimits, type ImportLimits } from '../contracts/limits.ts'
 import { TEXT_NORMALIZATION_VERSION, type ReadingIssue, type SourceBlock } from '../contracts/normalized-document.ts'
 import {
   DocumentReaderError, validateDocumentReadResult,

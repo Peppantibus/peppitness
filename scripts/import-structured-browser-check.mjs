@@ -26,8 +26,14 @@ async function type(label, value) {
 try {
   preview = await ensurePreview(); chrome = await ensureChrome(); tab = await openTab()
   const mock = await installAuthFixture(tab.send, tab.socketProxy, baseUrl, {})
-  await tab.navigate(baseUrl); await tab.evaluate(`localStorage.setItem(${JSON.stringify(fixtureStorageKey)},${JSON.stringify(JSON.stringify(fixtureSession('a')))});location.hash='#/scheda/importa';location.reload()`)
+  await tab.navigate(baseUrl)
+  // Simula il journal lasciato dalla versione LLM senza creare analisi o inviare documenti.
+  await tab.evaluate(`new Promise((resolve,reject)=>{const r=indexedDB.open('peppitness-import');r.onupgradeneeded=()=>r.result.createObjectStore('legacy');r.onsuccess=()=>{r.result.close();resolve(true)};r.onerror=()=>reject(r.error)})`)
+  await tab.evaluate(`localStorage.setItem(${JSON.stringify(fixtureStorageKey)},${JSON.stringify(JSON.stringify(fixtureSession('a')))});location.hash='#/scheda/importa';location.reload()`)
   await tab.until(`Boolean(document.querySelector('.si-template'))`)
+  await tab.until(`Boolean(document.querySelector('.si-file input[type=file]:not(:disabled)'))`)
+  await tab.until(`indexedDB.databases().then(dbs=>!dbs.some(db=>db.name==='peppitness-import'))`)
+  pass('vecchio journal LLM eliminato sul dispositivo senza ripristino o rinnovo di analisi')
   for (const kind of ['workout', 'diet']) {
     const file = join(root, `public/templates/peppitness-${kind}-v1.docx`)
     const before = mock.importFlow?.commits.length ?? 0
@@ -114,6 +120,7 @@ try {
   pass('caso indipendente 3 sedute/18 esercizi/9 istruzioni: zero problemi, sei identità nuove deduplicate, conferma finale unica e import completo')
   assert.equal(mock.failures.length, 0, mock.failures.join('\n'))
   assert.ok(!mock.requests.some(r => r.includes('extract-plan')))
+  assert.ok(!mock.requests.some(r => /\/rest\/v1\/(import_jobs|import_drafts|rpc\/(get_import_job|find_import_job|renew_import_job|discard_import_job))/.test(r)))
   assert.deepEqual(tab.errors.filter(e => !e.includes('ERR_CONNECTION_CLOSED')), [])
   await writeFile(join(out, 'browser-report.json'), JSON.stringify({ result: 'PASS', mode: 'browser-api-simulated', checks, providerRequests: 0, personal: false }, null, 2))
 } finally { await tab?.close(); await chrome?.stop(); await preview?.stop() }

@@ -3,7 +3,7 @@
  * dimensione, firma dei byte e impronta SHA-256. Il MIME del browser è soltanto informativo:
  * può essere vuoto o falso e non decide mai il formato.
  */
-import { defaultImportLimits, type ImportLimits } from '../contracts/jobs.ts'
+import { defaultImportLimits, type ImportLimits } from '../contracts/limits.ts'
 import { DocumentReaderError, type DocumentFormat } from '../contracts/reader.ts'
 
 export const DOCX_MEDIA_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'

@@ -48,7 +48,17 @@ export async function installAuthFixture(rawSend, socket, appOrigin, state = {})
     } else if (url.pathname === '/auth/v1/logout') {
       status = state.failLogout ? 503 : 204
       data = { code: 'unexpected_failure' }
-    } else if (url.pathname === '/auth/v1/user') data = fixtureSession().user
+    } else if (url.pathname === '/auth/v1/user') data = { ...fixtureSession().user, factors: state.mfaFactors ?? [] }
+    else if (url.pathname === '/rest/v1/rpc/is_mfa_satisfied') data = state.mfaSatisfied ?? true
+    else if (url.pathname === '/auth/v1/factors' && request.method === 'POST') {
+      state.mfaEnrolled = (state.mfaEnrolled ?? 0) + 1
+      data = { id: 'factor-fixture', type: 'totp', totp: { qr_code: 'data:image/svg+xml;utf-8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%221%22 height=%221%22/%3E', secret: 'JBSWY3DPEHPK3PXP', uri: 'otpauth://totp/fixture' } }
+    } else if (/^\/auth\/v1\/factors\/[^/]+\/challenge$/.test(url.pathname)) data = { id: 'challenge-fixture', expires_at: Math.floor(Date.now() / 1000) + 300 }
+    else if (/^\/auth\/v1\/factors\/[^/]+\/verify$/.test(url.pathname)) {
+      const body = JSON.parse(request.postData ?? '{}')
+      if (body.code === '123456') { state.mfaSatisfied = true; state.mfaVerified = (state.mfaVerified ?? 0) + 1; data = fixtureSession() }
+      else { status = 400; data = { code: 'mfa_verification_failed', message: 'Invalid TOTP code' } }
+    }
     else if (url.pathname === '/rest/v1/user_settings') {
       const authorization = Object.entries(request.headers).find(([name]) => name.toLowerCase() === 'authorization')?.[1]
       const owner = JSON.parse(Buffer.from(authorization?.split('.')[1] ?? '', 'base64url').toString()).sub

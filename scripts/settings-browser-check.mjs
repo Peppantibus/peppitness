@@ -60,7 +60,7 @@ try {
   await a.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: seed.identifier })
   assert.equal(mock.settings.size, 0)
   assert.equal(await a.evaluate('document.querySelector("#display-name").value'), '')
-  assert.equal(mock.requests.some(path => path.startsWith('POST /rest')), false)
+  assert.equal(mock.requests.some(path => path.startsWith('POST /rest') && path !== 'POST /rest/v1/rpc/is_mfa_satisfied'), false)
   checks.push('account vuoto senza scrittura automatica')
   await a.input('#display-name', 'Preferenze fixture A')
   await a.click('.weekday-options input[value="1"]')

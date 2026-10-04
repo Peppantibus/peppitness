@@ -3,7 +3,6 @@ import assert from 'node:assert/strict'
 import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import * as bridge from '../supabase/functions/_shared/import/validation.ts'
 import {
   domainLimits, validateReviewDraft, validateValidationIssue,
   type ExtractionKind, type NormalizedDocument, type ReviewDraft, type ValidationIssue,
@@ -157,10 +156,7 @@ test('06: il modello non decide le severità; le sue segnalazioni restano solo d
   assert.equal(unsupported.sourcePath, '')
 })
 
-test('06: stesso nucleo per Node, browser e Deno: ponte identico e import solo relativi senza runtime specifici', () => {
-  for (const name of ['validateProposal', 'validateDraft', 'proposalRuleItems', 'draftRuleItems', 'issueCatalog', 'readingIssueClasses', 'resolvePointer'] as const) {
-    assert.equal((bridge as Json)[name], (validation as Json)[name], name)
-  }
+test('06: il nucleo usa import solo relativi senza runtime specifici', () => {
   const visited = new Set<string>()
   const visit = (file: string) => {
     if (visited.has(file)) return
@@ -179,10 +175,6 @@ test('06: stesso nucleo per Node, browser e Deno: ponte identico e import solo r
   }
   visit(join(root, 'src', 'import', 'validation', 'validate.ts'))
   assert.ok(visited.size >= 10)
-  // Stesso risultato attraverso il ponte.
-  for (const item of validationManifest.cases) {
-    assert.deepEqual(bridge.validateProposal(item.domain, load(item.document), load(item.proposal)), validateProposal(item.domain, load(item.document), load(item.proposal)))
-  }
 })
 
 test('06: limiti del dominio in code point e byte, senza clamp né arrotondamenti', () => {

@@ -5,7 +5,6 @@ import { readdirSync, readFileSync } from 'node:fs'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import * as contracts from '../src/import/contracts/index.ts'
-import * as bridge from '../supabase/functions/_shared/import/contracts.ts'
 import { array, enumeration, nullable, object, string, validate } from '../src/import/contracts/schema.ts'
 import {
   DocumentReaderError, extractionJsonSchema, reviewDecisionSchema, extractionSchemaIds, normalizeSourceText, parseExtractionJson, throwIfCancelled,
@@ -420,15 +419,9 @@ test('protocollo reader: errori tipizzati e cancellazione senza documento parzia
   await assert.rejects(pending, (error: unknown) => error instanceof DocumentReaderError && error.code === 'cancelled')
 })
 
-test('confine Deno: il ponte riesporta la stessa sorgente, con soli import relativi espliciti', () => {
-  for (const name of ['validateWorkoutExtraction', 'validateDietExtraction', 'validateNormalizedDocument', 'normalizeSourceText', 'extractionJsonSchema', 'DocumentReaderError'] as const) {
-    assert.equal(bridge[name], contracts[name], `${name} non è una copia`)
-  }
-  assert.deepEqual(Object.keys(bridge).sort(), Object.keys(contracts).sort())
-
+test('confine dei contratti: soli import relativi espliciti, nessuna dipendenza da ambiente o framework', () => {
   const contractsDir = join(root, 'src', 'import', 'contracts')
-  const bridgeFile = join(root, 'supabase', 'functions', '_shared', 'import', 'contracts.ts')
-  const files = [...readdirSync(contractsDir).map(name => join(contractsDir, name)), bridgeFile]
+  const files = readdirSync(contractsDir).map(name => join(contractsDir, name))
   const specifier = /(?:^|\n)\s*(?:import|export)\b[^'"]*?\sfrom\s+['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g
   for (const file of files) {
     const source = readFileSync(file, 'utf8')

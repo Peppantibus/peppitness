@@ -7,3 +7,10 @@ export function authErrorMessage(error: unknown): string {
   if (code === 'user_banned') return 'Questo account non può accedere. Contatta l’amministratore.'
   return 'Accesso non riuscito. Controlla la connessione e riprova.'
 }
+
+export function mfaErrorMessage(error: unknown): string {
+  const code = error && typeof error === 'object' && 'code' in error ? error.code : undefined
+  if (code === 'mfa_verification_failed' || code === 'mfa_challenge_expired') return 'Codice non corretto o scaduto. Riprova con il codice attuale.'
+  if (code === 'over_request_rate_limit') return 'Troppi tentativi. Attendi qualche minuto e riprova.'
+  return 'Verifica non riuscita. Controlla la connessione e riprova.'
+}
