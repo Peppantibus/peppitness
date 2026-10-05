@@ -40,10 +40,11 @@ export function MfaSettings({ client, userId }: { client: SupabaseClient; userId
     } catch { setError(mfaErrorMessage(null)) }
     finally { setCode(''); setPending(false) }
   }
-  return <>
-    <h3 className="mfa-title">Verifica in due passaggi</h3>
-    {enabled ? <p role="status">Attiva: all’accesso serve anche il codice dell’app di autenticazione. Per rimuoverla o recuperarla contatta l’amministratore.</p>
-      : <><p>Aggiunge un codice a 6 cifre all’accesso. Conserva l’app di autenticazione: senza di essa il recupero passa dall’amministratore.</p>
+  return <div className="mfa-section">
+    {enabled ? <>
+      <div className="mfa-row"><h3 className="mfa-title">Verifica in due passaggi</h3><span className="mfa-badge" role="status">✓ Attiva</span></div>
+      <p className="mfa-hint">Per rimuoverla o recuperarla contatta l’amministratore.</p></>
+      : <><h3 className="mfa-title">Verifica in due passaggi</h3><p>Aggiunge un codice a 6 cifre all’accesso. Conserva l’app di autenticazione: senza di essa il recupero passa dall’amministratore.</p>
         <button className="button secondary" disabled={pending} onClick={() => void start()}>{pending ? 'Attendi…' : 'Attiva'}</button></>}
     {!enrollment && error && <p className="form-error" role="alert">{error}</p>}
     {enrollment && <Modal label="Attiva la verifica in due passaggi" onClose={() => { if (!pending) { setEnrollment(null); setError('') } }}>
@@ -57,5 +58,5 @@ export function MfaSettings({ client, userId }: { client: SupabaseClient; userId
         <div className="account-actions"><button className="button secondary" type="button" disabled={pending} onClick={() => { setEnrollment(null); setError('') }}>Annulla</button><button className="button primary" type="submit" disabled={pending || code.length !== 6}>{pending ? 'Verifica in corso…' : 'Verifica'}</button></div>
       </form>
     </Modal>}
-  </>
+  </div>
 }

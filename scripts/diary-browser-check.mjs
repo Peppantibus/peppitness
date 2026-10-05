@@ -75,8 +75,8 @@ try {
   checks.push('stati vuoti Scheda e Dieta')
 
   // 2. Editor del piano alimentare: creazione, validazione, salvataggio, piano seguito.
-  await route('/dieta/piani'); await until('Boolean(document.querySelector(".meal-plan-new"))')
-  await click('.meal-plan-new'); await until('Boolean(document.querySelector("#meal-plan-name"))')
+  await route('/dieta/piani'); await until('Boolean(document.querySelector(".meal-plan-wizard-new"))')
+  await click('.meal-plan-wizard-new'); await until('Boolean(document.querySelector(".wizard-advanced"))'); await click('.wizard-advanced'); await until('Boolean(document.querySelector("#meal-plan-name"))')
   await input('#meal-plan-name', 'Piano sintetico')
   await click('.meal-add-day'); await until('Boolean(document.querySelector(".meal-day-name"))')
   await click('.meal-add'); await until('Boolean(document.querySelector(".meal-name"))')
@@ -94,7 +94,7 @@ try {
   assert.deepEqual(mock.diary.meal_plans[0].document.days[0].meals[0].alternatives, ['Pane e ricotta'], 'Righe vuote rimosse, testo invariato')
   await clickText('.program-actions button', 'Torna ai piani'); await until('Boolean(document.querySelector(".meal-plan-card"))')
   await clickText('.meal-plan-card button', 'Segui questo piano')
-  await until('document.querySelector(".meal-plan-card")?.textContent.includes("Piano seguito")')
+  await until('document.querySelector(".meal-plan-card .badge-followed")?.textContent === "Seguito"')
   await route('/dieta'); await until('document.querySelectorAll(".meal-card").length === 1')
   assert.ok(await evaluate('document.querySelector(".meal-card").textContent.includes("Colazione")'))
   checks.push('editor piano alimentare e piano seguito')

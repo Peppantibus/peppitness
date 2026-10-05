@@ -1,8 +1,8 @@
 import { BrandLogo } from '../components/BrandLogo'
 import { Icon } from '../components/Icon'
 import type { IconName } from '../components/Icon'
-import breakfast from '../assets/meals/breakfast.webp'
-import lunch from '../assets/meals/lunch.webp'
+import breakfast from '../assets/meals/breakfast.svg'
+import lunch from '../assets/meals/lunch.svg'
 import legs from '../assets/muscle-groups/legs.webp'
 import './landing.css'
 

@@ -25,6 +25,7 @@ import type { ImportReceipt } from './import/contracts/index.ts'
 import { MealDetail } from './features/Diet'
 import { History } from './features/History'
 import { Progress } from './features/Progress'
+import { SessionSummaryDialog } from './features/SessionSummary'
 import { Settings } from './features/Settings'
 import { ExerciseDetail, SessionView } from './features/Workout'
 import { useDiary } from './persistence/use-diary'
@@ -81,6 +82,7 @@ export function App() {
   const [toast, setToast] = useState<ToastMessage | null>(null)
   const toastId = useRef(0)
   const [discardingSessionId, setDiscardingSessionId] = useState<string | null>(null)
+  const [summarySessionId, setSummarySessionId] = useState<string | null>(null)
 
   // Gruppi muscolari letti online conservati nella copia offline della scheda.
   useEffect(() => {
@@ -91,6 +93,7 @@ export function App() {
   const menu = useDietToday({ configured, mealPlans: plans.state.mealPlans, mealPlanId: plans.state.selection?.mealPlanId, view, date, programDayType: schedule.programDayType })
   const { activeSession } = schedule
 
+  const summarySession = summarySessionId ? view.sessions.find(session => session.id === summarySessionId && session.completedAt) : undefined
   const historySession = page.historySessionId ? view.sessions.find(session => session.id === page.historySessionId && session.completedAt) : undefined
   const meal = page.mealId ? menu.meals.find(item => item.id === page.mealId) ?? view.mealLogs[mealLogKey(date, page.mealId)]?.snapshot : undefined
   const exercise = page.exerciseId ? schedule.workoutDays.flatMap(item => item.exercises).find(item => item.id === page.exerciseId) : undefined
@@ -167,20 +170,17 @@ export function App() {
     followedName: importKind === 'workout' ? workout?.plan.name ?? null : menu.mealPlan?.name ?? null,
     onSelectionStale: () => void plans.store?.load(), onCatalogStale: () => void catalog.store?.load(),
   }
-  const sectionExtras = section === 'scheda'
-    ? [...(configured && workout ? [{ href: '#/scheda/programmi/modifica', icon: 'edit' as const, title: 'Modifica programma', detail: `Esercizi e giorni di «${workout.plan.name}»` }] : []), { href: '#/scheda/importa', icon: 'plus' as const, title: 'Importa una scheda', detail: 'Da un modello Word strutturato' }]
-    : [{ href: '#/dieta/importa', icon: 'plus' as const, title: 'Importa un piano alimentare', detail: 'Da un modello Word strutturato' }]
   const deletionBlocked = diary.store.hasPending || diary.store.hasVolatileData
   const mealLog = meal ? view.mealLogs[mealLogKey(date, meal.id)] : undefined
 
-  return <Layout section={isSettings ? null : section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard} session={isSession || Boolean(historySession)} subpage={subpage}
+  return <Layout userName={settings.state.saved?.displayName} section={isSettings ? null : section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard} session={isSession || Boolean(historySession)} subpage={subpage}
     status={syncIndicator} sidebarStatus={<SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} withLabel />}>
     <div className="sr-only" role="status" aria-live="polite">{announcement}</div>
     {!online && <div className="network-notice" role="status"><Icon name="info" size={20} /><span>Rete assente. {configured ? 'Le registrazioni restano sul dispositivo e verranno inviate al ritorno della connessione.' : ''}</span></div>}
     {plans.state.message && showDaily && <p className="small muted plans-message" role="status">{plans.state.message}</p>}
     {configured && (showDaily || isSession) && <SyncStatus store={diary.store} state={diary.state} />}
     {showDaily && <>
-      <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} extra={sectionExtras} /></div>
+      <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} current={section === 'scheda' ? workout?.plan.name : menu.mealPlan?.name} /></div>
       <DatePicker date={date} onChange={setDate} today={today} planned={section === 'scheda' ? schedule.trainingDates : []} done={section === 'scheda' ? schedule.sessionDates : menu.mealDates} doneLabel={section === 'scheda' ? 'seduta completata' : 'pasti registrati'} />
       <DateContext date={date} today={today} onToday={() => setDate(today)} />
       {section === 'dieta'
@@ -198,7 +198,7 @@ export function App() {
       onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice(); void importReview.clearDevice() }} {...settings} />}
     {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} syncSlot={syncIndicator}
       onDiscard={() => { diary.store.discardSession(activeSession.id); navigate('/scheda'); setAnnouncement('Seduta eliminata.') }}
-      onComplete={() => { diary.store.completeSession(activeSession.id); navigate('/scheda/storico'); setAnnouncement('Allenamento completato.') }} />
+      onComplete={() => { diary.store.completeSession(activeSession.id); navigate('/scheda/storico'); setSummarySessionId(activeSession.id); setAnnouncement('Allenamento completato.') }} />
       : <section className="panel empty-state"><h1>Nessun allenamento in corso</h1><p>Seleziona una seduta dalla scheda per iniziare.</p><a href="#/scheda" className="button primary">Vai alla scheda</a></section>)}
     {historySession && <SessionView key={historySession.id} session={historySession} sessions={view.sessions} onChange={updateResult(historySession.id)} onComplete={() => undefined} onEndCorrection={() => diary.store.discardIncomplete(historySession.id)} syncSlot={syncIndicator} />}
     {!validRoute && <section className="panel empty-state"><h1>Questa pagina non è disponibile</h1><a className="button primary" href={`#/${section}`}>Torna al tuo spazio</a></section>}
@@ -214,6 +214,7 @@ export function App() {
       <div className="program-actions"><button type="button" className="button secondary workout-cancel-keep" onClick={() => setDiscardingSessionId(null)}>Continua l’allenamento</button>
         <button type="button" className="button danger workout-cancel-confirm" onClick={() => { diary.store.discardSession(activeSession.id); setDiscardingSessionId(null); setAnnouncement('Allenamento annullato.') }}>Annulla allenamento</button></div>
     </Modal>}
+    {summarySession && <SessionSummaryDialog session={summarySession} sessions={view.sessions} onClose={() => setSummarySessionId(null)} />}
     {diary.state.restTimer && <RestTimer timer={diary.state.restTimer} onChange={diary.store.setRestTimer} />}
     <div className="toast-stack">
       {toast && <Toast key={toast.id} toast={toast} onClose={() => setToast(current => current?.id === toast.id ? null : current)} />}

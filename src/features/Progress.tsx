@@ -4,6 +4,8 @@ import { formatDate, shiftDate } from '../domain/dates'
 import { formatDecimal } from '../domain/diary'
 import { adherence, cycleInfo, exerciseTrends, mondayOf, weeklyProgress } from '../domain/progress'
 import type { ExerciseTrend, PlannedSlot } from '../domain/progress'
+import { personalRecords } from '../domain/records'
+import { formatResult } from '../domain/workout'
 import type { SavedProgram } from '../domain/programs'
 import type { WorkoutDay, WorkoutSession } from '../domain/types'
 import { weekdays } from '../domain/weekly'
@@ -59,6 +61,7 @@ export function Progress({ workout, days, sessions, today }: { workout: SavedPro
   const trends = exerciseTrends(days, sessions, cycle.start, info.end)
   const setsDone = sessions.filter(session => session.completedAt && session.date >= cycle.start && session.date <= info.end).reduce((sum, session) => sum + Object.values(session.results).flat().filter(set => set.completed).length, 0)
   const improving = trends.filter(trend => trend.change === 'up').length
+  const records = personalRecords(days, sessions)
   const featuredWeek = weeks.find(week => week.current) ?? weeks[Math.min(Math.max(info.week, 1), weeks.length) - 1]
   const otherWeeks = weeks.filter(week => week !== featuredWeek)
   const weekRow = (week: typeof weeks[number]) => <li key={week.index} className={week.current ? 'is-current' : ''}>
@@ -84,6 +87,15 @@ export function Progress({ workout, days, sessions, today }: { workout: SavedPro
       {featuredWeek && <ol className="week-rows">{weekRow(featuredWeek)}</ol>}
       {otherWeeks.length > 0 && <details className="progress-week-history"><summary>Vedi tutte le settimane <Icon name="chevron" size={16} /></summary><ol className="week-rows">{otherWeeks.map(weekRow)}</ol></details>}
     </section>
+    {records.length > 0 && <section className="progress-section" aria-labelledby="records-title">
+      <div className="section-heading"><h2 id="records-title">Record personali</h2><span>miglior serie di sempre</span></div>
+      <ul className="record-list">{records.map(record => <li key={record.exercise.id}>
+        <span className="record-icon" aria-hidden="true"><Icon name="star" size={16} /></span>
+        <span className="record-name">{record.exercise.name}</span>
+        <strong>{formatResult({ load: record.score.load ? formatDecimal(record.score.load) : '', amount: formatDecimal(record.score.amount), completed: true }, record.exercise.mode, record.exercise.loadUnit)}</strong>
+        <small>{short(record.date)}</small>
+      </li>)}</ul>
+    </section>}
     <section className="progress-section" aria-labelledby="trends-title">
       <div className="section-heading"><h2 id="trends-title">Andamento degli esercizi</h2><span>{improving} in crescita</span></div>
       <div className="trend-list">{trends.map(trend => <TrendCard key={trend.exercise.id} trend={trend} />)}</div>

@@ -60,7 +60,8 @@ try {
   await until(`${cachedUrls}.then(urls => urls.some(url => new URL(url).pathname === '/index.html'))`)
   const cached = await evaluate(cachedUrls)
   assert.ok(cached.some(url => new URL(url).pathname === '/index.html'), 'Shell dell’app in precache')
-  assert.ok(cached.filter(url => new URL(url).pathname.endsWith('.webp')).length >= 18, 'Illustrazioni WebP in precache: visibili anche offline')
+  // Gruppi muscolari in WebP; i pasti sono SVG piccoli incorporati nel bundle JS.
+  assert.ok(cached.filter(url => new URL(url).pathname.endsWith('.webp')).length >= 12, 'Illustrazioni WebP in precache: visibili anche offline')
   assert.ok(cached.every(url => url.startsWith(baseUrl)), 'Nessuna risposta API o esterna nella cache')
 
   // Rete assente: l'app si riapre dal worker e usa la copia dei piani sul dispositivo.

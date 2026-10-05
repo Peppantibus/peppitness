@@ -3,6 +3,8 @@ import { Segmented } from '../components/Segmented'
 import { SubpageHeader } from '../components/SubpageHeader'
 import { readThemePreference, saveThemePreference } from '../theme'
 import type { ThemePreference } from '../theme'
+import { readAlertPreferences, saveAlertPreference } from '../workout-alerts'
+import type { AlertPreferences } from '../workout-alerts'
 import { Account } from '../auth/Account'
 import { weekdayLabels } from '../domain/settings'
 import type { SettingsState, SettingsStore } from '../persistence/settings-store'
@@ -17,6 +19,8 @@ export function Settings({ hasUnsavedData, catalogBusy = false, onSignedOut, sto
   const busy = ['loading', 'saving', 'checking'].includes(state.phase)
   const [theme, setTheme] = useState<ThemePreference>(readThemePreference)
   const chooseTheme = (value: ThemePreference) => { setTheme(value); saveThemePreference(value) }
+  const [alerts, setAlerts] = useState<AlertPreferences>(readAlertPreferences)
+  const chooseAlert = (name: keyof AlertPreferences) => (value: 'on' | 'off') => { saveAlertPreference(name, value === 'on'); setAlerts({ ...alerts, [name]: value === 'on' }) }
   return <><SubpageHeader back={`#/${backSection}`} backLabel={backSection === 'scheda' ? 'Torna alla scheda' : 'Torna alla dieta'} title="Impostazioni" />
     <div className="settings-stack">
       <section className="panel settings-panel preferences-panel" aria-labelledby="preferences-title">
@@ -53,13 +57,21 @@ export function Settings({ hasUnsavedData, catalogBusy = false, onSignedOut, sto
         <p className="field-help">Automatico segue il tema del telefono. La scelta resta solo su questo dispositivo.</p>
         <Segmented className="theme-choice" label="Tema" value={theme} onChange={chooseTheme} options={[{ value: 'system', label: 'Automatico' }, { value: 'light', label: 'Chiaro', icon: 'sun' }, { value: 'dark', label: 'Scuro', icon: 'moon' }]} />
       </section>
+      <section className="panel settings-panel workout-alerts-panel" aria-labelledby="workout-alerts-title">
+        <h2 id="workout-alerts-title">Allenamento</h2>
+        <p className="field-help">Valgono solo su questo dispositivo. Su iPhone la vibrazione non è disponibile e il suono non esce con il silenzioso attivo.</p>
+        <p className="field-label" id="rest-alert-label">Avviso a fine recupero</p>
+        <Segmented className="rest-alert-choice" labelledBy="rest-alert-label" value={alerts.restAlert ? 'on' : 'off'} onChange={chooseAlert('restAlert')} options={[{ value: 'on', label: 'Suono e vibrazione' }, { value: 'off', label: 'Spento' }]} />
+        <p className="field-label" id="wake-lock-label">Schermo acceso durante la seduta</p>
+        <Segmented className="wake-lock-choice" labelledBy="wake-lock-label" value={alerts.wakeLock ? 'on' : 'off'} onChange={chooseAlert('wakeLock')} options={[{ value: 'on', label: 'Sì' }, { value: 'off', label: 'No' }]} />
+      </section>
       {/* Valori fissi di questa versione: presentati come informazioni, non come righe da toccare. */}
       <section className="panel settings-panel" aria-labelledby="info-title">
         <h2 id="info-title">Informazioni</h2>
         <p className="field-help">Valori fissi in questa versione dell’app.</p>
         <dl className="info-list"><div><dt>Lingua</dt><dd>Italiano</dd></div><div><dt>Unità di carico</dt><dd>Chilogrammi (kg)</dd></div>{!store && <div><dt>Fuso orario del diario</dt><dd>Europe/Rome</dd></div>}</dl>
       </section>
-      <Account hasUnsavedData={hasUnsavedData} busy={catalogBusy || (busy && Boolean(store))} onSignedOut={onSignedOut} />
+      <Account name={state.saved?.displayName} hasUnsavedData={hasUnsavedData} busy={catalogBusy || (busy && Boolean(store))} onSignedOut={onSignedOut} />
     </div>
   </>
 }

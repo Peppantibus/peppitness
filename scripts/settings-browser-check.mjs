@@ -60,6 +60,7 @@ try {
   await a.send('Page.removeScriptToEvaluateOnNewDocument', { identifier: seed.identifier })
   assert.equal(mock.settings.size, 0)
   assert.equal(await a.evaluate('document.querySelector("#display-name").value'), '')
+  assert.equal(await a.evaluate('document.querySelector(".account-button .avatar").textContent'), 'A', 'senza nome: iniziale della mail')
   assert.equal(mock.requests.some(path => path.startsWith('POST /rest') && path !== 'POST /rest/v1/rpc/is_mfa_satisfied'), false)
   checks.push('account vuoto senza scrittura automatica')
   await a.input('#display-name', 'Preferenze fixture A')
@@ -68,6 +69,7 @@ try {
   await a.route('/scheda'); await a.until('Boolean(document.querySelector(".workout-overview"))')
   await a.route('/impostazioni'); await a.until(formReady)
   assert.equal(await a.evaluate('document.querySelector("#display-name").value'), 'Preferenze fixture A')
+  assert.equal(await a.evaluate('document.querySelector(".account-button .avatar").textContent'), 'A', 'la bozza non cambia l’avatar')
   checks.push('bozza conservata nella navigazione')
   for (const width of [320, 390, 768, 1440]) {
     await a.send('Emulation.setDeviceMetricsOverride', { width, height: 900, deviceScaleFactor: 1, mobile: width < 720 })
@@ -90,6 +92,7 @@ try {
   await b.send('Page.navigate', { url: `${baseUrl}/#/impostazioni` }); await b.until(formReady)
   assert.equal(await b.evaluate('document.querySelector("#display-name").value'), 'Preferenze fixture A')
   await a.input('#display-name', 'Prima scheda'); await a.click('.preferences-form .button-row > button'); await a.until(saved)
+  assert.equal(await a.evaluate('[...document.querySelectorAll(".account-button .avatar, .account-link .avatar, .account-header .avatar")].map(e => e.textContent).join()'), 'P,P,P', 'avatar con l’iniziale del nome salvato')
   await b.input('#display-name', 'Seconda scheda'); await b.click('.preferences-form .button-row > button'); await b.until(conflict)
   assert.ok(await b.evaluate('document.querySelector(".preferences-conflict").textContent.includes("Prima scheda")'))
   assert.equal(await b.evaluate('document.querySelector("#display-name").value'), 'Seconda scheda')

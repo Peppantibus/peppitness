@@ -1,10 +1,11 @@
 import { useState } from 'react'
+import { Avatar } from '../components/Avatar'
 import { Modal } from '../components/Modal'
 import { useAuth } from './AuthProvider'
 import { forgetMfaNotRequired } from './MfaGate'
 import { MfaSettings } from './MfaSettings'
 
-export function Account({ hasUnsavedData, busy = false, onSignedOut }: { hasUnsavedData: boolean; busy?: boolean; onSignedOut?: () => void }) {
+export function Account({ hasUnsavedData, busy = false, onSignedOut, name }: { hasUnsavedData: boolean; busy?: boolean; onSignedOut?: () => void; name?: string }) {
   const { client, state, reportLogoutFailure } = useAuth()
   const [pending, setPending] = useState(false)
   const [confirm, setConfirm] = useState(false)
@@ -24,8 +25,10 @@ export function Account({ hasUnsavedData, busy = false, onSignedOut }: { hasUnsa
     finally { setPending(false); setConfirm(false) }
   }
   return <section className="panel settings-panel account-panel" aria-labelledby="account-title">
-    <h2 id="account-title">Account</h2>
-    <p className="account-email">{state.session.user.email}</p>
+    <div className="account-header">
+      <Avatar name={name} size="lg" />
+      <div><h2 id="account-title">Account</h2><p className="account-email">{state.session.user.email}</p></div>
+    </div>
     <button className="button secondary" disabled={pending || busy} onClick={() => hasUnsavedData ? setConfirm(true) : void signOut()}>{pending ? 'Uscita in corso…' : 'Esci'}</button>
     {error && <p className="form-error" role="alert">{error}</p>}
     <MfaSettings client={client} userId={state.session.user.id} />

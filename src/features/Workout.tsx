@@ -12,6 +12,8 @@ import { formatDate } from '../domain/dates'
 import { isWorkoutWeekday } from '../domain/settings'
 import { validateSet } from '../domain/validation'
 import { findPreviousExercise, formatResult, reusePreviousLoads } from '../domain/workout'
+import { sessionRecords } from '../domain/records'
+import { installAudioUnlock, useScreenWakeLock } from '../workout-alerts'
 import type { PreviousExercise } from '../domain/workout'
 import type { WorkoutSession, ExercisePrescription, SetResult, WorkoutDay } from '../domain/types'
 
@@ -132,8 +134,10 @@ export function ExerciseDetail({ exercise, previous }: { exercise: ExercisePresc
   return <>{area && <span className="eyebrow">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><div className="prescription-stats"><div><strong>{exercise.sets}{exercise.optionalSets ? ` +${exercise.optionalSets}` : ''}</strong><span>{exercise.optionalSets ? 'serie (+ facoltative)' : 'serie'}</span></div><div><strong>{exercise.target}</strong><span>{exercise.mode === 'seconds' ? 'durata prevista' : 'ripetizioni previste'}</span></div><div><strong>{restLabel(exercise.restSeconds)}</strong><span>recupero</span></div></div>{(exercise.loadLabel || exercise.effortLabel) && <div className="detail-facts">{exercise.loadLabel && <p><strong>Carico:</strong> {exercise.loadLabel}</p>}{exercise.effortLabel && <p><strong>Intensità:</strong> {exercise.effortLabel}</p>}</div>}{exercise.note && <div className="detail-note"><strong>Da ricordare</strong><p>{exercise.note}</p></div>}<h3>Ultima volta</h3><PreviousResults previous={previous} mode={exercise.mode} unit={exercise.loadUnit} /></>
 }
 
-function ExerciseSetCard({ session, exercise, index, previous, onChange, locked, collapsible, onDone }: {
+function ExerciseSetCard({ session, exercise, index, previous, onChange, locked, collapsible, onDone, recordIndex }: {
   session: WorkoutSession; exercise: ExercisePrescription; index: number; previous?: PreviousExercise; locked: boolean
+  /** Serie che batte il miglior risultato precedente su questo esercizio. */
+  recordIndex?: number
   /** Seduta in corso: completato l'esercizio, la card si riduce a una riga di riepilogo. */
   collapsible: boolean
   onDone: (index: number) => void
@@ -169,7 +173,7 @@ function ExerciseSetCard({ session, exercise, index, previous, onChange, locked,
     return <article className="set-panel exercise-complete is-collapsed" id={`exercise-${session.id}-${index}`}>
       <button ref={summaryButton} type="button" className="set-summary" aria-expanded="false" aria-label={`${exercise.name}: completato, ${completed} di ${exercise.sets} serie. Apri per modificare`} onClick={() => setExpanded(true)}>
         <span className="exercise-number is-done"><Icon name="check" size={20} /></span>
-        <span className="set-summary-copy"><strong>{exercise.name}</strong><small>{summary}</small></span>
+        <span className="set-summary-copy"><strong>{exercise.name}{recordIndex !== undefined && <span className="record-badge"><Icon name="star" size={16} />Record</span>}</strong><small>{summary}</small></span>
         <span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span>
         <Icon name="chevronDown" size={20} />
       </button>
@@ -184,7 +188,7 @@ function ExerciseSetCard({ session, exercise, index, previous, onChange, locked,
         const validation = result.completed ? null : validateSet(result.load, result.amount, exercise.mode)
         if (validation) { setError({ index: setIndex, message: validation }); return }
         setError(null); onChange(exercise.id, setIndex, { ...result, completed: !result.completed })
-      }}><Icon name="check" size={20} /></button></div>{previous && <div className="previous-inline"><span>Ultima:</span><strong>{formatResult(previous.results[setIndex], exercise.mode, exercise.loadUnit)}</strong></div>}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>)}
+      }}><Icon name="check" size={20} /></button></div>{recordIndex === setIndex && <p className="set-record"><Icon name="star" size={16} />Nuovo record personale</p>}{previous && <div className="previous-inline"><span>Ultima:</span><strong>{formatResult(previous.results[setIndex], exercise.mode, exercise.loadUnit)}</strong></div>}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>)}
     </div>
     <div className="set-card-footer">
       {previous ? <button className="text-button reuse-loads" disabled={finished || !results.some((set, i) => !set.completed && set.load === '' && previous.results[i]?.completed && previous.results[i]?.load !== '')} onClick={copyLoads}>Riprendi i carichi<Icon name="back" size={16} /></button> : <span>Prima volta per questo esercizio</span>}
@@ -215,6 +219,10 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
   const [confirmEnd, setConfirmEnd] = useState(false)
   const endCorrection = useEffectEvent(() => onEndCorrection?.())
   useEffect(() => () => endCorrection(), [])
+  // Seduta in corso: schermo acceso e audio sbloccato dai tocchi per l'avviso di fine recupero.
+  useScreenWakeLock(!finished)
+  useEffect(() => finished ? undefined : installAudioUnlock(), [finished])
+  const records = sessionRecords(session, sessions)
   const required = session.day.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)
   const completedRequired = session.day.exercises.reduce((sum, exercise) => sum + Math.min(exercise.sets, (session.results[exercise.id] ?? []).filter(set => set.completed).length), 0)
   const exerciseCount = session.day.exercises.length
@@ -242,7 +250,7 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
       actions={<><span className={`session-status ${finished ? 'finished' : ''}`}><span />{finished ? 'Completato' : 'In corso'}</span>{syncSlot}{!finished && onDiscard && <button type="button" className="icon-button session-more" aria-haspopup="dialog" aria-label="Opzioni della seduta" onClick={() => setOptions(true)}><Icon name="more" size={24} strokeWidth={3} /></button>}</>} />
     <div className="session-progress"><div><span>{completedRequired} di {required} serie</span><strong>{required ? Math.round(completedRequired / required * 100) : 0}%</strong></div><progress max={required} value={completedRequired} aria-label="Serie completate" /></div>
     {finished && <div className="session-correction"><p className="small muted">{correcting ? 'Correzione attiva: le modifiche aggiornano solo lo storico di questa seduta.' : 'Seduta completata.'}</p><button className="button secondary session-correct" onClick={() => { if (correcting) onEndCorrection?.(); setCorrecting(!correcting) }}>{correcting ? 'Fine correzione' : 'Correggi valori'}</button></div>}
-    <div className="session-cards">{session.day.exercises.map((exercise, index) => <ExerciseSetCard key={exercise.id} session={session} exercise={exercise} index={index} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} />)}</div>
+    <div className="session-cards">{session.day.exercises.map((exercise, index) => <ExerciseSetCard key={exercise.id} session={session} exercise={exercise} index={index} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)} />)}</div>
     {!finished && <div className="session-actions"><span>{completedRequired === required ? 'Tutte le serie previste sono fatte' : `${exerciseCount} ${exerciseCount === 1 ? 'esercizio' : 'esercizi'} · ${required - completedRequired} serie da fare`}</span><button className="button primary session-finish" onClick={requestComplete}>Termina allenamento<Icon name="check" size={20} /></button></div>}
     {options && onDiscard && <Modal label="Opzioni della seduta" variant="sheet" onClose={() => setOptions(false)}>
       <div className="session-options">

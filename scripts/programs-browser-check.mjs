@@ -48,7 +48,7 @@ async function page() {
   return result
 }
 
-const listReady = 'Boolean(document.querySelector(".program-new"))'
+const listReady = 'Boolean(document.querySelector(".program-wizard-new"))'
 const formReady = 'Boolean(document.querySelector("#program-title")) && !document.querySelector(".program-form > fieldset").disabled'
 const saved = 'document.querySelector(".program-message")?.textContent.includes("Bozza salvata online")'
 const published = 'Boolean(document.querySelector(".program-fork"))'
@@ -70,7 +70,7 @@ try {
   await a.click('.section-menu-button'); await a.until('Boolean(document.querySelector(".section-menu a"))')
   await a.click('.section-menu a[href="#/scheda/programmi"]'); await a.until(listReady)
   assert.equal(mock.programWrites.length, 0)
-  await a.click('.program-new'); await a.until(formReady)
+  await a.click('.program-wizard-new'); await a.until('Boolean(document.querySelector(".wizard-advanced"))'); await a.click('.wizard-advanced'); await a.until(formReady)
   await a.input('#program-title', 'Programma sintetico'); await a.input('#program-guidance', 'Istruzioni generali <b>testo</b>')
   await a.click('.program-save'); await a.until(saved)
   assert.equal(mock.programTables.workout_plans.length, 1)
@@ -214,7 +214,7 @@ try {
   checks.push('bozza nel logout: annullamento, scarto esplicito e account B senza programmi di A')
 
   mock.failProgramReads = true; await a.send('Page.reload'); await a.until('document.querySelector("[role=alert]")?.textContent.includes("caricare i programmi")')
-  assert.equal(await a.evaluate('Boolean(document.querySelector(".program-new"))'), false)
+  assert.equal(await a.evaluate('Boolean(document.querySelector(".program-wizard-new"))'), false)
   mock.failProgramReads = false; await a.click('.empty-state .primary'); await a.until(listReady)
   checks.push('errore iniziale distinto da archivio vuoto, riprova senza creazione automatica')
   assert.deepEqual(mock.failures, []); assert.deepEqual(errors, [])

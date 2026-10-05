@@ -28,6 +28,8 @@ const paths = {
   trend: 'M3 17l6-6 4 4 8-8M15 7h6v6',
   pause: 'M8 5v14M16 5v14',
   play: 'm8 4 12 8-12 8V4Z',
+  // Record personale: stella a cinque punte nell'area 2–22.
+  star: 'm12 2.5 2.9 6 6.6.8-4.9 4.5 1.3 6.5L12 17l-5.9 3.3 1.3-6.5-4.9-4.5 6.6-.8Z',
   edit: 'M4 20h4L19 9l-4-4L4 16v4Zm10-14 4 4',
   skip: 'M8 12h8M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z',
   swap: 'M4 8h15l-4-4M20 16H5l4 4',
