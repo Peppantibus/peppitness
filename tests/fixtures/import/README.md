@@ -1,6 +1,6 @@
 # Corpus sintetico dei contratti import
 
-Dati **inventati** per i contratti V1 di `src/import/contracts/`, i reader di `src/import/readers/` e la valutazione. Nessun documento personale, nessun file di `docs/` o `private-imports/`; nulla di questa cartella entra nel bundle pubblico. Li leggono i test import e il runner offline (`npm test`, `node scripts/import-evaluate.mjs --offline`).
+Dati **inventati** per i contratti V1 di `src/import/contracts/`, e i reader di `src/import/readers/`. Nessun documento personale e nessun file di `docs/`; nulla di questa cartella entra nel bundle pubblico. Li leggono i test import (`npm test`).
 
 ## Struttura
 
@@ -56,25 +56,3 @@ Gli esiti sono stati rivisti a mano caso per caso rispetto alla costruzione dell
 - I casi ostili (zip bomb, DTD anche nelle parti laterali, percorsi esterni, docm, CFB, parti danneggiate, metadati personali…) sono costruiti in memoria nei test.
 
 Se una modifica del reader cambia blocchi, ID o problemi per lo stesso file, alzare `DOCX_READER_VERSION` (`src/import/readers/docx-version.ts`) e aggiornare i golden rivedendoli.
-
-## PDF del reader (task 05)
-
-`pdf/` contiene PDF **binari veri** e i golden del reader `peppitness.pdf-reader.v1`, letti da `tests/import-pdf.test.ts` e da `scripts/import-pdf-reader-browser-check.mjs`:
-
-- `pdf/manifest.json` (formato 1, come quello DOCX): per caso `sourceFile`, `sha256`, `expected` (golden = `DocumentReadResult` completo, con pagine, bbox e inventario per pagina) oppure `expectedError`, `summary`, `tags`. Il test rifiuta file non referenziati.
-- I binari sono prodotti in modo deterministico da `node scripts/generate-pdf-fixtures.mjs` (costruttori in `scripts/lib/pdf-fixtures.mjs`: oggetti, xref e flussi scritti a mano, font standard Helvetica/Symbol, un font CID senza mappa Unicode, immagini in scala di grigi o CCITT che simulano scansioni); il test verifica che i byte versionati coincidano con il generatore.
-- I golden sono rivisti a mano rispetto alla costruzione (ordine, testo, coordinate, problemi per pagina); il test aggiunge asserzioni indipendenti dai golden. Blocchi ed evidence sono golden della fonte, distinti dai valori interpretati (task 06 e successivi).
-- Casi: `pdf-simple`, `pdf-two-columns` (numeri simili, stesso valore in due colonne), `pdf-table` (numero fuori riga, colonne senza spazio), `pdf-rotated`, `pdf-scan-only`, `pdf-mixed`, `pdf-last-page-scan`, `pdf-unreadable-text` (font senza mappa Unicode, testo invisibile), `pdf-ccitt-scan`, `pdf-damaged-page`, `pdf-password`, `pdf-corrupt`. Il PDF oltre il limite di pagine e la fixture limite di quasi 10 MiB sono costruiti in memoria dai test e dalla prova browser.
-
-Se una modifica del reader o di PDF.js cambia blocchi, ID o problemi per lo stesso file, alzare `PDF_READER_VERSION` (`src/import/readers/pdf-version.ts`) e aggiornare i golden rivedendoli.
-
-## Valutazione del corpus (task 25)
-
-`evaluation/manifest.json`: 42 casi annotati rispetto alla fonte, split sviluppo
-31 / held-out 11 isolato per famiglia/hash; 22 fonti normalizzate distinte.
-`evaluation/{documents,goldens}/`: input e verità; `provider/evaluation/`: risposte
-HTTP sintetiche con errori intenzionali, rifiuti, retry e usage mancante.
-Nessuna risposta E2E del 24 viene usata per qualità. Dettagli delle labels,
-limiti del campione e riproducibilità in [evaluation/README.md](evaluation/README.md).
-Il report offline prova il runner/pipeline e mantiene aperti i gate del modello
-reale. Runbook di spesa e rilascio: [supabase/IMPORT_EVALUATION.md](../../../supabase/IMPORT_EVALUATION.md).
