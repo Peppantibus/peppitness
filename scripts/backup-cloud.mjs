@@ -11,11 +11,21 @@ const root = resolve(import.meta.dirname, '..')
 const expectedRef = 'sngaiyaumgnnjbefnnwl'
 // Connessione: se c'è SUPABASE_DB_URL (GitHub Actions, Session pooler) si usa quella; altrimenti il
 // link locale della CLI, come sempre. L'URL non viene mai stampato.
-const dbUrl = (process.env.SUPABASE_DB_URL ?? '').trim()
+const rawUrl = (process.env.SUPABASE_DB_URL ?? '').trim()
+// La CLI rifiuta password con `%` non seguito da due cifre esadecimali o con `\`: la password viene
+// ricodificata (prima decodificata, se già codificata in modo valido).
+const parts = /^(postgres(?:ql)?:\/\/)([^:@/]+):(.*)@([^@]+)$/.exec(rawUrl)
+let password = ''
+let plainPassword = ''
+if (parts) {
+  password = parts[3]
+  try { plainPassword = decodeURIComponent(password) } catch { plainPassword = password }
+}
+const dbUrl = parts ? `${parts[1]}${parts[2]}:${encodeURIComponent(plainPassword)}@${parts[4]}` : rawUrl
 let linkedRef
-if (dbUrl) {
+if (rawUrl) {
   // Il pooler usa l'utente `<ruolo>.<ref-progetto>`: verifica che sia il progetto atteso.
-  try { linkedRef = decodeURIComponent(new URL(dbUrl).username).split('.').slice(1).join('.') } catch { linkedRef = '' }
+  linkedRef = parts ? decodeURIComponent(parts[2]).split('.').slice(1).join('.') : ''
 } else {
   linkedRef = readFileSync(join(root, 'supabase', '.temp', 'project-ref'), 'utf8').trim()
 }
@@ -23,18 +33,10 @@ if (linkedRef !== expectedRef) {
   console.error('Progetto collegato diverso da quello atteso: backup interrotto.')
   process.exit(1)
 }
-const connection = dbUrl ? ['--db-url', dbUrl] : ['--linked']
-// Oscura l'URL intero e la password, sia codificata sia in chiaro, se la CLI la stampasse da sola.
-const secrets = []
-if (dbUrl) {
-  secrets.push(dbUrl)
-  try {
-    const raw = new URL(dbUrl).password
-    secrets.push(raw)
-    try { secrets.push(decodeURIComponent(raw)) } catch { /* password non decodificabile */ }
-  } catch { /* URL non valido: già scartato dal controllo del ref */ }
-}
-const redact = (text) => secrets.filter((x) => x.length >= 4).sort((a, b) => b.length - a.length)
+const connection = rawUrl ? ['--db-url', dbUrl] : ['--linked']
+// Oscura gli URL e la password in ogni forma, se la CLI la stampasse da sola.
+const secrets = [rawUrl, dbUrl, password, plainPassword, encodeURIComponent(plainPassword)]
+const redact = (text) => [...new Set(secrets)].filter((x) => x.length >= 4).sort((a, b) => b.length - a.length)
   .reduce((acc, x) => acc.split(x).join('[segreto]'), text)
 
 const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-')
@@ -58,7 +60,7 @@ for (const dump of dumps) {
     { cwd: root, encoding: 'utf8', shell: process.platform === 'win32' },
   )
   if (run.status !== 0) {
-    console.error(`Dump fallito (${dump.file}):`, redact(run.stderr || '').split('\n').slice(-5).join('\n'))
+    console.error(`Dump fallito (${dump.file}):`, redact(`${run.stderr || ''}\n${run.stdout || ''}`).split('\n').filter(Boolean).slice(-8).join('\n'))
     // Niente cartelle parziali: restore-check prenderebbe questa come ultimo backup.
     rmSync(outDir, { recursive: true, force: true })
     process.exit(1)
