@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { beats, personalRecords, sessionRecords, sessionSummary, setScore } from '../src/domain/records.ts'
+import { beats, formatImprovement, personalRecords, sessionRecords, sessionSummary, setImprovement, setScore } from '../src/domain/records.ts'
 import type { ExercisePrescription, SetResult, WorkoutDay, WorkoutSession } from '../src/domain/types.ts'
 
 const bench: ExercisePrescription = { id: 'p-bench', exerciseId: 'bench', name: 'Panca', area: '', sets: 3, target: '8', mode: 'reps', restSeconds: 90, note: '', loadUnit: 'kg', comparison: { variant: '', equipment: '', loadConvention: 'total', perSide: false } }
@@ -57,4 +57,20 @@ test('riepilogo: durata, serie, volume in kg, record e confronto con l’ultima 
   assert.deepEqual(summary.previous, { date: '2026-09-28', volume: 960, sets: 2 })
   assert.equal(sessionSummary(session('x', '2026-10-05', {}, true, 400), []).minutes, null, 'seduta rimasta aperta: durata non affidabile')
   assert.equal(sessionSummary(previous, [previous]).previous, null)
+})
+
+test('miglioramento sulla serie dell’ultima volta: solo se la supera, con la regola dei record', () => {
+  assert.deepEqual(setImprovement(set('60', '10'), set('60', '8')), { load: 0, amount: 2 })
+  assert.deepEqual(setImprovement(set('62,5', '6'), set('60', '8')), { load: 2.5, amount: 0 }, 'più carico con meno ripetizioni: si segnala solo il carico')
+  assert.deepEqual(setImprovement(set('62,5', '9'), set('60', '8')), { load: 2.5, amount: 1 })
+  assert.deepEqual(setImprovement(set('20,2', '8'), set('20,1', '8')), { load: 0.1, amount: 0 }, 'niente resti in virgola mobile')
+  assert.equal(setImprovement(set('60', '8'), set('60', '8')), null, 'pareggio')
+  assert.equal(setImprovement(set('57,5', '12'), set('60', '8')), null, 'un calo di carico non si segnala')
+  assert.equal(setImprovement(set('60', '10', false), set('60', '8')), null, 'serie non ancora spuntata')
+  assert.equal(setImprovement(set('60', '10'), undefined), null, 'nessuna serie corrispondente')
+  assert.equal(setImprovement(set('60', '10'), set('60', '8', false)), null, 'l’ultima volta non era completata')
+  assert.equal(formatImprovement({ load: 2.5, amount: 0 }, 'reps'), '+2,5 kg')
+  assert.equal(formatImprovement({ load: 0, amount: 2 }, 'reps', 'lb'), '+2 rip.')
+  assert.equal(formatImprovement({ load: 5, amount: 1 }, 'reps', 'lb'), '+5 lb · +1 rip.')
+  assert.equal(formatImprovement({ load: 0, amount: 10 }, 'seconds'), '+10 s')
 })

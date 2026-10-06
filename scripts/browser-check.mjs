@@ -248,8 +248,15 @@ try {
 
   // Timer, incremento, pausa, ripresa e scadenza dopo un salto dell'orologio.
   await setInput('.set-grid input:nth-of-type(2)', '11')
+  assert.equal(await evaluate(`Boolean(document.querySelector('.set-delta'))`), false, 'Nessun miglioramento prima della spunta')
   await click('.set-check')
   await until(`Boolean(document.querySelector('.rest-timer'))`)
+  // 12,5 × 11 contro 12,5 × 10 dell'ultima volta; le serie senza precedente non mostrano nulla.
+  assert.equal(await evaluate(`document.querySelectorAll('.set-delta').length`), 1, 'Miglioramento solo sulla serie spuntata')
+  assert.equal(await evaluate(`document.querySelector('.set-row').querySelector('.set-delta')?.textContent`), '+1 rip. rispetto all’ultima volta')
+  // Il record sta in coda alla stessa riga, non su una riga a parte.
+  assert.equal(await evaluate(`document.querySelector('.set-row').querySelector('.previous-inline .record-badge')?.textContent`), 'Nuovo Record personale')
+  assert.equal(await evaluate(`document.querySelectorAll('.set-rows .record-badge').length`), 1, 'Un solo record per esercizio')
   await screenshot('mobile-recupero')
   assert.ok(await evaluate(`document.querySelector('.timer-count').textContent.startsWith('01:')`))
   await click('[aria-label="Pausa recupero"]')

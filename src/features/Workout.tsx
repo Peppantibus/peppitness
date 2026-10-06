@@ -12,7 +12,7 @@ import { formatDate } from '../domain/dates'
 import { isWorkoutWeekday } from '../domain/settings'
 import { validateSet } from '../domain/validation'
 import { findPreviousExercise, formatResult, reusePreviousLoads } from '../domain/workout'
-import { sessionRecords } from '../domain/records'
+import { formatImprovement, sessionRecords, setImprovement } from '../domain/records'
 import { installAudioUnlock, useScreenWakeLock } from '../workout-alerts'
 import type { PreviousExercise } from '../domain/workout'
 import type { WorkoutSession, ExercisePrescription, SetResult, WorkoutDay } from '../domain/types'
@@ -134,6 +134,17 @@ export function ExerciseDetail({ exercise, previous }: { exercise: ExercisePresc
   return <>{area && <span className="eyebrow">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><div className="prescription-stats"><div><strong>{exercise.sets}{exercise.optionalSets ? ` +${exercise.optionalSets}` : ''}</strong><span>{exercise.optionalSets ? 'serie (+ facoltative)' : 'serie'}</span></div><div><strong>{exercise.target}</strong><span>{exercise.mode === 'seconds' ? 'durata prevista' : 'ripetizioni previste'}</span></div><div><strong>{restLabel(exercise.restSeconds)}</strong><span>recupero</span></div></div>{(exercise.loadLabel || exercise.effortLabel) && <div className="detail-facts">{exercise.loadLabel && <p><strong>Carico:</strong> {exercise.loadLabel}</p>}{exercise.effortLabel && <p><strong>Intensità:</strong> {exercise.effortLabel}</p>}</div>}{exercise.note && <div className="detail-note"><strong>Da ricordare</strong><p>{exercise.note}</p></div>}<h3>Ultima volta</h3><PreviousResults previous={previous} mode={exercise.mode} unit={exercise.loadUnit} /></>
 }
 
+/**
+ * Serie corrispondente dell'ultima volta e, a serie spuntata, di quanto è stata superata e l'eventuale record.
+ * Un record presuppone una seduta precedente confrontabile, quindi questa riga c'è sempre quando serve.
+ */
+function PreviousInline({ result, previous, mode, unit, record }: { result: SetResult; previous?: SetResult; mode: ExercisePrescription['mode']; unit?: 'kg' | 'lb'; record: boolean }) {
+  const improvement = setImprovement(result, previous)
+  return <div className="previous-inline"><span>Ultima:</span><strong>{formatResult(previous, mode, unit)}</strong>
+    {improvement && <span className="set-delta">{formatImprovement(improvement, mode, unit)}<span className="sr-only"> rispetto all’ultima volta</span></span>}
+    {record && <span className="record-badge"><Icon name="star" size={16} /><span className="sr-only">Nuovo </span>Record<span className="sr-only"> personale</span></span>}</div>
+}
+
 function ExerciseSetCard({ session, exercise, index, previous, onChange, locked, collapsible, onDone, recordIndex }: {
   session: WorkoutSession; exercise: ExercisePrescription; index: number; previous?: PreviousExercise; locked: boolean
   /** Serie che batte il miglior risultato precedente su questo esercizio. */
@@ -188,7 +199,7 @@ function ExerciseSetCard({ session, exercise, index, previous, onChange, locked,
         const validation = result.completed ? null : validateSet(result.load, result.amount, exercise.mode)
         if (validation) { setError({ index: setIndex, message: validation }); return }
         setError(null); onChange(exercise.id, setIndex, { ...result, completed: !result.completed })
-      }}><Icon name="check" size={20} /></button></div>{recordIndex === setIndex && <p className="set-record"><Icon name="star" size={16} />Nuovo record personale</p>}{previous && <div className="previous-inline"><span>Ultima:</span><strong>{formatResult(previous.results[setIndex], exercise.mode, exercise.loadUnit)}</strong></div>}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>)}
+      }}><Icon name="check" size={20} /></button></div>{previous && <PreviousInline result={result} previous={previous.results[setIndex]} mode={exercise.mode} unit={exercise.loadUnit} record={recordIndex === setIndex} />}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>)}
     </div>
     <div className="set-card-footer">
       {previous ? <button className="text-button reuse-loads" disabled={finished || !results.some((set, i) => !set.completed && set.load === '' && previous.results[i]?.completed && previous.results[i]?.load !== '')} onClick={copyLoads}>Riprendi i carichi<Icon name="back" size={16} /></button> : <span>Prima volta per questo esercizio</span>}

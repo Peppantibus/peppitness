@@ -23,6 +23,31 @@ export function beats(a: SetScore, b: SetScore): boolean {
   return a.load > b.load || (a.load === b.load && a.amount > b.amount)
 }
 
+/** Di quanto una serie completata supera la stessa serie dell'ultima volta (differenze mai negative). */
+export interface SetImprovement { load: number; amount: number }
+
+const delta = (a: number, b: number) => Math.max(0, Math.round((a - b) * 100) / 100)
+
+/**
+ * Miglioramento rispetto alla serie corrispondente dell'ultima volta, con la regola dei record:
+ * più carico, oppure stesso carico e più ripetizioni (o secondi). Altrimenti null: un calo non si segnala.
+ */
+export function setImprovement(current: SetResult | undefined, previous: SetResult | undefined): SetImprovement | null {
+  const now = setScore(current), then = setScore(previous)
+  if (!now || !then || !beats(now, then)) return null
+  return { load: delta(now.load, then.load), amount: delta(now.amount, then.amount) }
+}
+
+const italian = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 })
+
+/** «+2,5 kg», «+1 rip.», «+10 s» oppure «+2,5 kg · +1 rip.». */
+export function formatImprovement(improvement: SetImprovement, mode: ExercisePrescription['mode'], unit: 'kg' | 'lb' = 'kg'): string {
+  const parts: string[] = []
+  if (improvement.load > 0) parts.push(`+${italian.format(improvement.load)} ${unit}`)
+  if (improvement.amount > 0) parts.push(`+${italian.format(improvement.amount)}${mode === 'seconds' ? ' s' : ' rip.'}`)
+  return parts.join(' · ')
+}
+
 const before = (session: WorkoutSession, ref: Pick<WorkoutSession, 'id' | 'date' | 'startedAt'>) => session.id !== ref.id && Boolean(session.completedAt)
   && (session.date < ref.date || (session.date === ref.date && session.startedAt < ref.startedAt))
 
