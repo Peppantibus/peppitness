@@ -1,19 +1,41 @@
 // Backup amministrativo del database Supabase collegato (SA-02).
 // Solo lettura sul cloud: tre dump separati (schema, dati app, dati Auth) in
 // backups/<timestamp>/ (cartella ignorata da Git) + manifest con hash e conteggi.
-// Richiede Docker attivo e `supabase login`/link già eseguiti. Nessun segreto in output.
+// Richiede Docker attivo e `supabase login`/link già eseguiti, oppure SUPABASE_DB_URL. Nessun segreto in output.
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 
 const root = resolve(import.meta.dirname, '..')
 const expectedRef = 'sngaiyaumgnnjbefnnwl'
-const linkedRef = readFileSync(join(root, 'supabase', '.temp', 'project-ref'), 'utf8').trim()
+// Connessione: se c'è SUPABASE_DB_URL (GitHub Actions, Session pooler) si usa quella; altrimenti il
+// link locale della CLI, come sempre. L'URL non viene mai stampato.
+const dbUrl = (process.env.SUPABASE_DB_URL ?? '').trim()
+let linkedRef
+if (dbUrl) {
+  // Il pooler usa l'utente `<ruolo>.<ref-progetto>`: verifica che sia il progetto atteso.
+  try { linkedRef = decodeURIComponent(new URL(dbUrl).username).split('.').slice(1).join('.') } catch { linkedRef = '' }
+} else {
+  linkedRef = readFileSync(join(root, 'supabase', '.temp', 'project-ref'), 'utf8').trim()
+}
 if (linkedRef !== expectedRef) {
   console.error('Progetto collegato diverso da quello atteso: backup interrotto.')
   process.exit(1)
 }
+const connection = dbUrl ? ['--db-url', dbUrl] : ['--linked']
+// Oscura l'URL intero e la password, sia codificata sia in chiaro, se la CLI la stampasse da sola.
+const secrets = []
+if (dbUrl) {
+  secrets.push(dbUrl)
+  try {
+    const raw = new URL(dbUrl).password
+    secrets.push(raw)
+    try { secrets.push(decodeURIComponent(raw)) } catch { /* password non decodificabile */ }
+  } catch { /* URL non valido: già scartato dal controllo del ref */ }
+}
+const redact = (text) => secrets.filter((x) => x.length >= 4).sort((a, b) => b.length - a.length)
+  .reduce((acc, x) => acc.split(x).join('[segreto]'), text)
 
 const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..+/, '').replace('T', '-')
 const outDir = join(root, 'backups', stamp)
@@ -32,11 +54,13 @@ for (const dump of dumps) {
   const target = join(outDir, dump.file)
   const run = spawnSync(
     npx,
-    ['supabase', 'db', 'dump', '--linked', '--file', target, ...dump.args],
+    ['supabase', 'db', 'dump', ...connection, '--file', target, ...dump.args],
     { cwd: root, encoding: 'utf8', shell: process.platform === 'win32' },
   )
   if (run.status !== 0) {
-    console.error(`Dump fallito (${dump.file}):`, (run.stderr || '').split('\n').slice(-5).join('\n'))
+    console.error(`Dump fallito (${dump.file}):`, redact(run.stderr || '').split('\n').slice(-5).join('\n'))
+    // Niente cartelle parziali: restore-check prenderebbe questa come ultimo backup.
+    rmSync(outDir, { recursive: true, force: true })
     process.exit(1)
   }
   const content = readFileSync(target)

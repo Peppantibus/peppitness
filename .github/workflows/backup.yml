@@ -1,0 +1,101 @@
+name: Backup notturno
+
+on:
+  schedule:
+    - cron: '17 2 * * *' # 02:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-notturno
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    # Secret e chiave pubblica passati solo agli step che li usano, mai alle action di terze parti.
+    steps:
+      - name: Controllo configurazione
+        shell: bash
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_DB_URL}" ]; then echo "::error::Manca il secret SUPABASE_DB_URL"; exit 1; fi
+          case "${BACKUP_AGE_RECIPIENT}" in
+            age1*) ;;
+            *) echo "::error::La variabile BACKUP_AGE_RECIPIENT manca o non è una chiave pubblica age (age1...)"; exit 1 ;;
+          esac
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+
+      - name: Installazione dipendenze
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm ci --no-audit --no-fund
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+
+      - name: Dump del database (solo lettura)
+        shell: bash
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          node scripts/backup-cloud.mjs
+
+      # Se la prova fallisce il dump va comunque caricato: il job fallisce solo alla fine.
+      - name: Prova di ripristino
+        id: restore
+        continue-on-error: true
+        shell: bash
+        run: |
+          set -euo pipefail
+          node scripts/restore-check.mjs
+
+      - name: Archivio cifrato
+        shell: bash
+        env:
+          BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          dir="$(ls backups | sort | tail -n 1)"
+          mkdir -p out
+          tar -czf - -C backups "$dir" | age -r "${BACKUP_AGE_RECIPIENT}" -o "out/peppitness-backup-${dir}.tar.gz.age"
+          test -s "out/peppitness-backup-${dir}.tar.gz.age"
+          ls -l out
+
+      - name: Carica il file cifrato
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: peppitness-backup-${{ github.run_id }}
+          path: out/*.age
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: Esito prova di ripristino
+        if: steps.restore.outcome == 'failure'
+        shell: bash
+        run: |
+          echo "::error::Prova di ripristino fallita: il backup cifrato è stato caricato, controlla restore-check.json dopo la decifratura"
+          exit 1
+
+      - name: Elimina i file in chiaro
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf backups

@@ -67,5 +67,8 @@ result.seconds = Math.round((Date.now() - started) / 1000)
 const ok = !result.fatal && result.hashes === 'ok' && result.mismatches.length === 0
 result.outcome = ok ? 'PASS' : 'FAIL'
 writeFileSync(join(dir, 'restore-check.json'), JSON.stringify(result, null, 2))
-console.log(JSON.stringify({ outcome: result.outcome, hashes: result.hashes, errors: result.errors, mismatches: result.mismatches, checks: result.checks, seconds: result.seconds, fatal: result.fatal }, null, 2))
+// A console solo i conteggi degli errori: le righe di errore possono contenere dati e i log
+// di GitHub Actions sono pubblici. Il dettaglio resta in restore-check.json.
+const errorCounts = Object.fromEntries(Object.entries(result.errors).filter(([k]) => !k.endsWith(':first')))
+console.log(JSON.stringify({ outcome: result.outcome, hashes: result.hashes, errors: errorCounts, mismatches: result.mismatches, checks: result.checks, seconds: result.seconds, fatal: result.fatal }, null, 2))
 process.exit(ok ? 0 : 1)
