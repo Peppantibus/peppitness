@@ -2,7 +2,9 @@ name: Backup notturno
 
 on:
   schedule:
+    # GitHub può ritardare di ore o saltare una run programmata senza avvisare: la seconda copre la giornata.
     - cron: '17 2 * * *' # 02:17 UTC
+    - cron: '17 14 * * *' # 14:17 UTC
   workflow_dispatch:
 
 permissions:
@@ -49,6 +51,7 @@ jobs:
           sudo apt-get install -y -qq age
 
       - name: Dump del database (solo lettura)
+        id: dump
         shell: bash
         env:
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
@@ -56,16 +59,16 @@ jobs:
           set -euo pipefail
           node scripts/backup-cloud.mjs
 
-      # Se la prova fallisce il dump va comunque caricato: il job fallisce solo alla fine.
+      # Se la prova fallisce lo step resta rosso, ma il dump va comunque cifrato e caricato.
       - name: Prova di ripristino
         id: restore
-        continue-on-error: true
         shell: bash
         run: |
           set -euo pipefail
           node scripts/restore-check.mjs
 
       - name: Archivio cifrato
+        if: ${{ !cancelled() && steps.dump.outcome == 'success' }}
         shell: bash
         env:
           BACKUP_AGE_RECIPIENT: ${{ vars.BACKUP_AGE_RECIPIENT }}
@@ -78,6 +81,7 @@ jobs:
           ls -l out
 
       - name: Carica il file cifrato
+        if: ${{ !cancelled() && steps.dump.outcome == 'success' }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: peppitness-backup-${{ github.run_id }}
@@ -87,7 +91,7 @@ jobs:
           compression-level: 0
 
       - name: Esito prova di ripristino
-        if: steps.restore.outcome == 'failure'
+        if: ${{ !cancelled() && steps.restore.outcome == 'failure' }}
         shell: bash
         run: |
           echo "::error::Prova di ripristino fallita: il backup cifrato è stato caricato, controlla restore-check.json dopo la decifratura"

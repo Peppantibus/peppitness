@@ -12,11 +12,27 @@ const dirName = process.argv[2] ?? readdirSync(base).filter((n) => /^\d{8}-\d{6}
 if (!dirName) { console.error('Nessun backup trovato.'); process.exit(1) }
 const dir = join(base, dirName)
 const manifest = JSON.parse(readFileSync(join(dir, 'manifest.json'), 'utf8'))
-const image = 'public.ecr.aws/supabase/postgres:17.6.1.166'
+// Stessa immagine su due registri: il registro AWS limita i download anonimi (i runner GitHub condividono
+// gli IP, «toomanyrequests» nella notte del 07/10), quindi più tentativi e poi Docker Hub.
+const images = ['public.ecr.aws/supabase/postgres:17.6.1.166', 'supabase/postgres:17.6.1.166']
 const name = `peppitness-restore-${Date.now()}`
 const docker = (args, opts = {}) => spawnSync('docker', args, { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024, ...opts })
-const result = { backup: dirName, startedAt: new Date().toISOString(), hashes: 'ok', errors: {}, tables: {}, mismatches: [] }
+const pause = (seconds) => spawnSync(process.platform === 'win32' ? 'ping' : 'sleep', process.platform === 'win32' ? ['-n', String(seconds + 1), '127.0.0.1'] : [String(seconds)])
+const result = { backup: dirName, startedAt: new Date().toISOString(), hashes: 'ok', errors: {}, tables: {}, mismatches: [], pullErrors: [] }
 const started = Date.now()
+
+function pullImage() {
+  for (const candidate of images) {
+    if (docker(['image', 'inspect', candidate]).status === 0) return candidate
+    for (let attempt = 1; attempt <= 3; attempt += 1) {
+      const pull = docker(['pull', '-q', candidate])
+      if (pull.status === 0) return candidate
+      result.pullErrors.push(`${candidate} (tentativo ${attempt}): ${(pull.stderr || '').trim().split('\n').at(-1)}`)
+      if (attempt < 3) pause(15 * attempt)
+    }
+  }
+  throw new Error(`download immagine non riuscito da nessun registro: ${result.pullErrors.at(-1)}`)
+}
 
 for (const f of manifest.files) {
   const hash = createHash('sha256').update(readFileSync(join(dir, f.file))).digest('hex')
@@ -24,7 +40,8 @@ for (const f of manifest.files) {
 }
 
 try {
-  const run = docker(['run', '-d', '--name', name, '-e', 'POSTGRES_PASSWORD=restore-test-only', image])
+  result.image = pullImage()
+  const run = docker(['run', '-d', '--name', name, '-e', 'POSTGRES_PASSWORD=restore-test-only', result.image])
   if (run.status !== 0) throw new Error(`avvio container: ${run.stderr}`)
   let ready = false
   for (let i = 0; i < 60 && !ready; i += 1) {
@@ -70,5 +87,5 @@ writeFileSync(join(dir, 'restore-check.json'), JSON.stringify(result, null, 2))
 // A console solo i conteggi degli errori: le righe di errore possono contenere dati e i log
 // di GitHub Actions sono pubblici. Il dettaglio resta in restore-check.json.
 const errorCounts = Object.fromEntries(Object.entries(result.errors).filter(([k]) => !k.endsWith(':first')))
-console.log(JSON.stringify({ outcome: result.outcome, hashes: result.hashes, errors: errorCounts, mismatches: result.mismatches, checks: result.checks, seconds: result.seconds, fatal: result.fatal }, null, 2))
+console.log(JSON.stringify({ outcome: result.outcome, image: result.image, pullErrors: result.pullErrors, hashes: result.hashes, errors: errorCounts, mismatches: result.mismatches, checks: result.checks, seconds: result.seconds, fatal: result.fatal }, null, 2))
 process.exit(ok ? 0 : 1)
