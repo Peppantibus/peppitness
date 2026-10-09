@@ -90,8 +90,9 @@ export function sessionFromRow(value: unknown): { session: WorkoutSession; revis
     version_number: nullableNumber(snapshot.version_number) ?? 0, exercises: Array.isArray(snapshot.exercises) ? snapshot.exercises.map(snapshotExercise) : bad() }
   const day = dayFromSnapshot(id(row.day_id), parsed)
   const results = Object.fromEntries(day.exercises.map(exercise => [exercise.id, Array.from({ length: totalSets(exercise) }, (): SetResult => ({ load: '', amount: '', completed: false }))]))
+  const note = string(row.note ?? '')
   const session: WorkoutSession = { id: id(row.id), planId: id(row.plan_id), date: date(row.diary_date), day, startedAt: timestamp(row.started_at), results,
-    ...(row.status === 'completed' ? { completedAt: timestamp(row.completed_at) } : {}) }
+    ...(row.status === 'completed' ? { completedAt: timestamp(row.completed_at) } : {}), ...(note ? { note } : {}) }
   return { session, revision: revision(row.revision) }
 }
 
@@ -200,7 +201,7 @@ export function buildDiary(sessions: unknown[], sets: unknown[], meals: unknown[
 }
 
 const columns: Record<DiaryTable, string> = {
-  workout_sessions: 'id,owner_id,plan_id,version_id,day_id,diary_date,time_zone,day_snapshot,status,started_at,completed_at,revision,updated_at',
+  workout_sessions: 'id,owner_id,plan_id,version_id,day_id,diary_date,time_zone,day_snapshot,status,started_at,completed_at,note,revision,updated_at',
   workout_set_logs: 'id,owner_id,session_id,prescription_id,set_index,load,amount,completed,revision,updated_at',
   meal_logs: 'id,owner_id,diary_date,meal_id,meal_plan_id,status,note,day_type,meal_snapshot,revision,updated_at',
   diary_days: 'owner_id,diary_date,day_type,revision,updated_at',

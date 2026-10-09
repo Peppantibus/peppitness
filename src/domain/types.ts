@@ -80,6 +80,8 @@ export interface WorkoutSession {
   startedAt: string
   completedAt?: string
   results: Record<string, SetResult[]>
+  /** Nota libera sull'intera seduta (colonna `note` di workout_sessions); assente = vuota. */
+  note?: string
 }
 
 export interface RestTimerState {

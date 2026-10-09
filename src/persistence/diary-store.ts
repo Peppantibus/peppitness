@@ -70,6 +70,7 @@ const describe = (op: DiaryOp, data: DiaryData): { label: string; value: string 
     }
     case 'complete': return { label: `Seduta ${session?.day.title ?? ''}`.trim(), value: 'Completata' }
     case 'discard': return { label: `Seduta ${session?.day.title ?? ''}`.trim(), value: 'Annullata' }
+    case 'note': return { label: `Nota · seduta ${session?.day.title ?? ''}`.trim(), value: op.note || '(vuota)' }
     case 'meal': return { label: `${op.meal.name} · ${op.date}`, value: `${op.status}${op.note ? ` · ${op.note}` : ''}` }
     case 'day': return { label: `Giornata ${op.date}`, value: op.dayType === 'rest' ? 'Riposo' : 'Palestra' }
   }
@@ -330,10 +331,11 @@ export class DiaryStore {
   // ------------------------------------------------------------------ scritture locali
   private enqueue(op: DiaryOp) {
     const key = opKey(op)
-    const replaceable = op.type === 'set' || op.type === 'meal' || op.type === 'day'
+    const replaceable = op.type === 'set' || op.type === 'meal' || op.type === 'day' || op.type === 'note'
     // Si uniscono solo operazioni mai inviate: una già tentata potrebbe essere stata
     // applicata dal server con risposta persa e deve essere verificata così com'è.
-    const index = replaceable ? this.data.queue.findIndex(item => opKey(item) === key && item.opId !== this.inFlight && !this.data.attempted.includes(item.opId)) : -1
+    // Stesso tipo: la nota condivide la chiave della seduta con avvio e completamento.
+    const index = replaceable ? this.data.queue.findIndex(item => opKey(item) === key && item.type === op.type && item.opId !== this.inFlight && !this.data.attempted.includes(item.opId)) : -1
     if (index >= 0 && this.data.queue.slice(index + 1).every(item => opKey(item) !== key)) {
       const previous = this.data.queue[index]!
       this.removed.add(previous.opId)
@@ -393,6 +395,12 @@ export class DiaryStore {
     if (this.view.dayTypes[date] !== dayType) this.enqueue({ type: 'day', opId: crypto.randomUUID(), date, dayType })
   }
   setRestTimer = (timer: RestTimerState | null) => { this.data.restTimer = timer; this.emit() }
+  /** Nota sull'intera seduta, in corso o già nello storico. */
+  setSessionNote = (sessionId: string, note: string) => {
+    const session = this.view.sessions.find(item => item.id === sessionId)
+    if (!session || (session.note ?? '') === note) return
+    this.enqueue({ type: 'note', opId: crypto.randomUUID(), sessionId, note })
+  }
 
   // ------------------------------------------------------------------ conflitti
   private closeConflict(conflict: DiaryConflict) {
@@ -557,6 +565,15 @@ export class DiaryStore {
         this.data.server = applyOp(this.data.server, { ...op, at: String(remote.completed_at) })
         return
       }
+      case 'note': {
+        // Seduta mai letta né avviata da qui: nessuna revisione attesa, si riprova dopo la prossima lettura.
+        if (known === undefined) throw new DiaryFailure('unavailable')
+        const remote = await this.write('workout_sessions', { id: op.sessionId }, { note: op.note }, null, known, signal,
+          row => row.note === op.note, row => typeof row.note === 'string' && row.note ? row.note : '(vuota)')
+        this.data.revisions[key] = Number(remote.revision)
+        this.data.server = applyOp(this.data.server, op)
+        return
+      }
       case 'set': {
         const values = this.setValuesFor(op)!
         const remote = await this.write('workout_set_logs', { session_id: op.sessionId, prescription_id: op.prescriptionId, set_index: op.index }, values, null, known, signal,
@@ -625,6 +642,7 @@ export class DiaryStore {
         const { session, revision } = sessionFromRow(row)
         this.data.revisions[`session:${session.id}`] = revision
         if (session.completedAt) this.data.server = applyOp(this.data.server, { type: 'complete', opId: '', sessionId: session.id, at: session.completedAt })
+        this.data.server = applyOp(this.data.server, { type: 'note', opId: '', sessionId: session.id, note: session.note ?? '' })
       }
     } catch { /* riga non interpretabile: resta il conflitto, la prossima lettura completa riallinea */ }
   }

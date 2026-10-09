@@ -179,6 +179,13 @@ try {
   await setInput('.set-grid input:nth-of-type(2)', '10')
   await click('.set-check')
   assert.equal(await evaluate(`document.querySelector('.set-check').getAttribute('aria-pressed')`), 'true')
+  // Il carico passa alla serie 2 ancora vuota: solo il carico, nessuna spunta.
+  assert.equal(await evaluate(`document.querySelectorAll('.set-rows')[0].querySelectorAll('.set-row')[1].querySelector('input').value`), '12,5', 'Carico riportato alla serie successiva')
+  assert.equal(await evaluate(`document.querySelectorAll('.set-rows')[0].querySelectorAll('.set-row')[1].querySelectorAll('input')[1].value`), '', 'Ripetizioni non copiate')
+  assert.equal(await evaluate(`document.querySelectorAll('.set-rows')[0].querySelectorAll('.set-check')[1].getAttribute('aria-pressed')`), 'false')
+  // Nota della seduta: si salva con le serie e resta nello storico.
+  await click('.session-note-add')
+  await setInput('.session-note textarea', 'Presa larga', 'HTMLTextAreaElement')
   await route('/scheda')
   // Stessa seduta e stessa data: la card è «in corso», senza banner doppione.
   assert.equal(await evaluate(`Boolean(document.querySelector('.resume-banner'))`), false, 'Nessun banner se la seduta in corso è quella mostrata')
@@ -218,6 +225,7 @@ try {
   await click('.history-card')
   assert.equal(await evaluate(`document.querySelector('.set-grid input').readOnly`), true)
   assert.ok(await evaluate(`document.querySelector('.session-progress').textContent.includes('1 di 11 serie')`))
+  assert.equal(await evaluate(`document.querySelector('.session-note p')?.textContent`), 'Presa larga', 'Nota della seduta nello storico')
 
   // La settimana seguente deve mostrare il carico effettivamente registrato.
   await route('/scheda')
@@ -233,6 +241,24 @@ try {
   await until(`document.querySelector('.previous-inline')?.textContent.includes('12,5 kg')`)
   assert.equal(await evaluate(`document.querySelector('.set-grid input').value`), '')
   assert.equal(await evaluate(`document.querySelector('.set-grid input:nth-of-type(2)').value`), '')
+  // Ultima volta in grigio nei campi vuoti; un tocco sul carico lo riprende, le ripetizioni restano da scrivere.
+  assert.equal(await evaluate(`document.querySelector('.set-grid input').placeholder`), '12,5', 'Carico dell’ultima volta in grigio')
+  assert.equal(await evaluate(`document.querySelector('.set-grid input:nth-of-type(2)').placeholder`), '10', 'Ripetizioni dell’ultima volta in grigio')
+  await click('.set-grid input')
+  assert.equal(await evaluate(`document.querySelector('.set-grid input').value`), '12,5', 'Tocco sul carico')
+  // Il primo tasto dopo il riempimento sostituisce il carico invece di aggiungersi in coda.
+  await send('Input.insertText', { text: '1' })
+  await send('Input.insertText', { text: '5' })
+  await pause(100)
+  assert.equal(await evaluate(`document.querySelector('.set-grid input').value`), '15', 'Scrivendo si sostituisce il carico ripreso')
+  await setInput('.set-grid input', '')
+  await click('.set-grid input')
+  assert.equal(await evaluate(`document.querySelector('.set-grid input').value`), '12,5')
+  await click('.set-grid input:nth-of-type(2)')
+  assert.equal(await evaluate(`document.querySelector('.set-grid input:nth-of-type(2)').value`), '', 'Ripetizioni mai riempite in automatico')
+  assert.equal(await evaluate(`document.querySelector('.set-check').getAttribute('aria-pressed')`), 'false')
+  assert.equal(await evaluate(`Boolean(document.querySelector('.set-stepper'))`), false, 'Niente pulsanti − / +')
+  await setInput('.set-grid input', '')
   await click('.reuse-loads')
   assert.equal(await evaluate(`document.querySelector('.set-grid input').value`), '12,5')
   assert.equal(await evaluate(`document.querySelector('.set-grid input:nth-of-type(2)').value`), '')
@@ -265,6 +291,8 @@ try {
   assert.equal(await evaluate(`document.querySelector('.timer-count').textContent`), pausedCount)
   await click('.timer-extra')
   assert.notEqual(await evaluate(`document.querySelector('.timer-count').textContent`), pausedCount)
+  await click('.timer-less')
+  assert.equal(await evaluate(`document.querySelector('.timer-count').textContent`), pausedCount, '−15 s annulla +15 s')
   await click('[aria-label="Riprendi recupero"]')
   for (const width of [320, 390, 768, 1440]) {
     await viewport(width, 844, width < 720)
@@ -282,13 +310,37 @@ try {
   assert.ok(await evaluate(`document.querySelector('.timer-label').textContent.includes('terminato')`))
   await click('[aria-label="Chiudi recupero"]')
   await evaluate(`Date.now = window.originalNow`)
+  // Seduta dimenticata: riaprendo l'app ore dopo l'inizio si chiede se è finita; «Non ora» la lascia aperta.
+  await evaluate(`Date.now = () => window.originalNow() + 5 * 3600 * 1000; window.dispatchEvent(new Event('focus'))`)
+  await until(`Boolean(document.querySelector('dialog[open] .stale-later'))`)
+  assert.ok(await evaluate(`document.querySelector('dialog[open]').textContent.includes('Hai finito l’allenamento')`))
+  await click('dialog[open] .stale-later')
+  await until(`!document.querySelector('dialog[open]')`)
+  await evaluate(`Date.now = window.originalNow`)
+  // «Fallo dopo»: il secondo esercizio passa in fondo ridotto, poi torna al suo posto.
+  const secondName = await evaluate(`document.querySelectorAll('.session-cards > .set-panel')[1].querySelector('h2').textContent`)
+  await click('.session-cards > .set-panel:nth-child(2) .defer-exercise')
+  await until(`document.querySelector('.session-cards > .set-panel:last-child').classList.contains('exercise-later')`)
+  assert.ok(await evaluate(`document.querySelector('.session-cards > .set-panel:last-child .set-summary').textContent.includes(${JSON.stringify(secondName)})`))
+  await click('.session-cards > .set-panel:last-child .set-summary')
+  await click('.session-cards > .set-panel:last-child .defer-exercise')
+  await until(`document.querySelectorAll('.session-cards > .set-panel')[1].querySelector('h2')?.textContent === ${JSON.stringify(secondName)}`)
   assert.equal(await evaluate(`document.querySelector('.set-check').getAttribute('aria-pressed')`), 'true')
-  for (const row of [3, 4]) {
-    const base = `.session-cards > .set-panel:first-child .set-row:nth-child(${row})`
-    await setInput(`${base} input:nth-of-type(1)`, '12,5')
-    await setInput(`${base} input:nth-of-type(2)`, '10')
-    await click(`${base} .set-check`)
-  }
+  // Entrando nella serie sotto, quella sopra già compilata si segna fatta e parte il recupero.
+  const firstRow = row => `.session-cards > .set-panel:first-child .set-row:nth-child(${row})`
+  await setInput(`${firstRow(3)} input:nth-of-type(1)`, '12,5')
+  await setInput(`${firstRow(3)} input:nth-of-type(2)`, '10')
+  await click(`${firstRow(4)} input:nth-of-type(2)`)
+  await until(`document.querySelector(${JSON.stringify(`${firstRow(3)} .set-check`)}).getAttribute('aria-pressed') === 'true'`)
+  await until(`document.querySelector('.timer-context')?.textContent.includes('serie 2')`)
+  assert.equal(await evaluate(`document.querySelector(${JSON.stringify(`${firstRow(4)} input:nth-of-type(1)`)}).value`), '12,5', 'Carico riportato alla serie in cui si entra')
+  await setInput(`${firstRow(4)} input:nth-of-type(2)`, '10')
+  await click(`${firstRow(4)} .set-check`)
+  // Esercizi a tempo: solo i secondi, nessun campo del carico.
+  const plank = [...await evaluate(`[...document.querySelectorAll('.session-cards > .set-panel')].map(p => p.querySelector('h2')?.textContent ?? '')`)].indexOf('Plank') + 1
+  assert.ok(plank > 0, 'Card del plank presente')
+  assert.equal(await evaluate(`document.querySelector('.session-cards > .set-panel:nth-child(${plank}) .set-row').querySelectorAll('input').length`), 1, 'Plank: solo i secondi')
+  assert.equal(await evaluate(`document.querySelector('.session-cards > .set-panel:nth-child(${plank}) .set-header').textContent`), 'SerieSecondiFatto')
   await until(`document.querySelector('.session-cards > .set-panel:first-child').classList.contains('is-collapsed')`)
   assert.ok(await evaluate(`document.querySelector('.set-summary').textContent.includes('12,5 kg')`), 'Riepilogo dell\'esercizio completato')
   await screenshot('mobile-seduta-ridotta')
@@ -297,8 +349,18 @@ try {
   await click('.set-collapse')
   await until(`document.querySelector('.session-cards > .set-panel:first-child').classList.contains('is-collapsed')`)
   if (await evaluate(`Boolean(document.querySelector('.rest-timer'))`)) await click('.timer-dismiss')
-  // Serie compilata ma senza spunta: la fine seduta propone di segnarla; una serie senza risultato resta vuota.
+  // Fra una card e l'altra: entrando nella prima serie dell'esercizio successivo si segna l'ultima compilata del precedente.
   const secondExercise = '.session-cards > .set-panel:nth-child(2)'
+  await setInput(`${secondExercise} .set-row:nth-child(2) input:nth-of-type(1)`, '20')
+  await setInput(`${secondExercise} .set-row:nth-child(2) input:nth-of-type(2)`, '10')
+  await click('.session-cards > .set-panel:nth-child(3) .set-row:nth-child(2) input:nth-of-type(2)')
+  await until(`document.querySelector(${JSON.stringify(`${secondExercise} .set-row:nth-child(2) .set-check`)}).getAttribute('aria-pressed') === 'true'`)
+  assert.equal(await evaluate(`document.activeElement === document.querySelector('.session-cards > .set-panel:nth-child(3) .set-row:nth-child(2) input:nth-of-type(2)')`), true, 'Il campo toccato resta attivo')
+  await click(`${secondExercise} .set-row:nth-child(2) .set-check`)
+  await setInput(`${secondExercise} .set-row:nth-child(2) input:nth-of-type(1)`, '')
+  await setInput(`${secondExercise} .set-row:nth-child(2) input:nth-of-type(2)`, '')
+  if (await evaluate(`Boolean(document.querySelector('.rest-timer'))`)) await click('.timer-dismiss')
+  // Serie compilata ma senza spunta: la fine seduta propone di segnarla; una serie senza risultato resta vuota.
   await setInput(`${secondExercise} .set-row:nth-child(2) input:nth-of-type(1)`, '20')
   await setInput(`${secondExercise} .set-row:nth-child(2) input:nth-of-type(2)`, '8')
   await setInput(`${secondExercise} .set-row:nth-child(3) input:nth-of-type(1)`, '20')

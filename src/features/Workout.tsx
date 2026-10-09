@@ -1,6 +1,6 @@
 import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
 import { MuscleGroupImage } from '../components/MuscleGroupImage'
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
@@ -11,7 +11,7 @@ import { isTimedCardio } from '../domain/muscle-groups'
 import { formatDate } from '../domain/dates'
 import { isWorkoutWeekday } from '../domain/settings'
 import { validateSet } from '../domain/validation'
-import { findPreviousExercise, formatResult, reusePreviousLoads } from '../domain/workout'
+import { completeSetChanges, filledUnchecked, findPreviousExercise, formatResult, nextExercise, pendingFilledSet, reusePreviousLoads, sessionOrder, sessionProgress } from '../domain/workout'
 import { formatImprovement, sessionRecords, setImprovement } from '../domain/records'
 import { installAudioUnlock, useScreenWakeLock } from '../workout-alerts'
 import type { PreviousExercise } from '../domain/workout'
@@ -145,66 +145,148 @@ function PreviousInline({ result, previous, mode, unit, record }: { result: SetR
     {record && <span className="record-badge"><Icon name="star" size={16} /><span className="sr-only">Nuovo </span>Record<span className="sr-only"> personale</span></span>}</div>
 }
 
-function ExerciseSetCard({ session, exercise, index, previous, onChange, locked, collapsible, onDone, recordIndex }: {
-  session: WorkoutSession; exercise: ExercisePrescription; index: number; previous?: PreviousExercise; locked: boolean
+/** «Fallo dopo»: esercizi rimandati della seduta in corso, solo su questo dispositivo (il database non cambia). */
+const LATER_KEY = 'peppitness:workout-later:v1'
+function readLater(sessionId: string): string[] {
+  try {
+    const value = JSON.parse(window.localStorage.getItem(LATER_KEY) ?? 'null') as { sessionId?: unknown; ids?: unknown } | null
+    return value?.sessionId === sessionId && Array.isArray(value.ids) ? value.ids.filter((id): id is string => typeof id === 'string') : []
+  } catch { return [] }
+}
+function writeLater(sessionId: string, ids: string[]) {
+  try { if (ids.length) window.localStorage.setItem(LATER_KEY, JSON.stringify({ sessionId, ids })); else window.localStorage.removeItem(LATER_KEY) } catch { /* resta solo in memoria */ }
+}
+/** All'uscita dall'account: niente ordine della seduta rimasto sul dispositivo. */
+export function forgetDeferredExercises() { try { window.localStorage.removeItem(LATER_KEY) } catch { /* archivio non disponibile */ } }
+
+function ExerciseSetCard({ session, exercise, previous, onChange, locked, collapsible, onDone, recordIndex, deferred = false, canDefer = false, onDefer, onEnterFirstSet }: {
+  session: WorkoutSession; exercise: ExercisePrescription; previous?: PreviousExercise; locked: boolean
   /** Serie che batte il miglior risultato precedente su questo esercizio. */
   recordIndex?: number
   /** Seduta in corso: completato l'esercizio, la card si riduce a una riga di riepilogo. */
   collapsible: boolean
-  onDone: (index: number) => void
+  onDone: (exerciseId: string) => void
   onChange: (exerciseId: string, index: number, result: SetResult) => void
+  /** Rimandato con «Fallo dopo»: ridotto in fondo alla lista finché non lo si riapre. */
+  deferred?: boolean
+  /** C'è almeno un altro esercizio da fare prima di questo. */
+  canDefer?: boolean
+  /** Rimanda l'esercizio o lo rimette al suo posto; solo nella seduta in corso. */
+  onDefer?: (exerciseId: string) => void
+  /** Entrando nella prima serie: la seduta segna l'ultima serie compilata dell'esercizio precedente. */
+  onEnterFirstSet?: (exerciseId: string) => void
 }) {
   const [error, setError] = useState<{ index: number; message: string } | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [showPrevious, setShowPrevious] = useState(false)
   const summaryButton = useRef<HTMLButtonElement>(null)
+  // Esercizio completato entrando in una sua serie facoltativa: la card resta aperta sotto il dito.
+  const keepOpen = useRef(false)
+  // Carico appena ripreso con un tocco: il primo tasto lo sostituisce, come se fosse selezionato (senza evidenziarlo).
+  const freshLoad = useRef<number | null>(null)
   // Una seduta completata è in sola lettura finché non si sceglie di correggerla.
   const finished = locked
   const results = session.results[exercise.id] ?? []
   const completed = results.filter(set => set.completed).length
   const complete = exercise.sets > 0 && completed >= exercise.sets
-  const collapsed = collapsible && complete && !expanded
+  const collapsed = collapsible && (complete || deferred) && !expanded
   const wasComplete = useRef(complete)
   useEffect(() => {
     // Solo nel passaggio a «completato»: la card si chiude e la pagina va all'esercizio successivo.
     if (complete && !wasComplete.current && collapsible) {
-      setExpanded(false)
-      window.requestAnimationFrame(() => { summaryButton.current?.focus({ preventScroll: true }); onDone(index) })
+      if (keepOpen.current) keepOpen.current = false
+      else {
+        setExpanded(false)
+        // Se si sta già scrivendo in un'altra serie l'utente è andato avanti: niente focus né scorrimento.
+        if (!(document.activeElement instanceof HTMLInputElement)) window.requestAnimationFrame(() => { summaryButton.current?.focus({ preventScroll: true }); onDone(exercise.id) })
+      }
     }
     wasComplete.current = complete
-  }, [complete, collapsible, index, onDone])
+  }, [complete, collapsible, exercise.id, onDone])
   const prefix = `${session.id}-${exercise.id}`
   const area = exerciseArea(exercise)
   const copyLoads = () => {
     if (!previous) return
     reusePreviousLoads(results, previous.results).forEach((set, i) => { if (set !== results[i]) onChange(exercise.id, i, set) })
   }
+  // Esercizi a tempo (plank, cardio): niente carico, si registra solo il tempo fatto.
+  const timed = exercise.mode === 'seconds'
+  // Un tocco sul carico vuoto lo riempie con quello della serie corrispondente dell'ultima volta. Solo il carico:
+  // le ripetizioni si scrivono sempre a mano (AGENT.md §6.1).
+  const fillLoadFromLast = (setIndex: number) => {
+    const result = results[setIndex], last = previous?.results[setIndex]
+    if (finished || !result || result.load !== '' || !last?.completed || last.load.trim() === '') return
+    setError(null)
+    freshLoad.current = setIndex
+    onChange(exercise.id, setIndex, { ...result, load: last.load, completed: false })
+  }
+  /** Carico scritto: dopo un riempimento automatico il primo inserimento sostituisce, la prima cancellazione svuota. */
+  const typeLoad = (setIndex: number, value: string, input: Event) => {
+    let load = value
+    if (freshLoad.current === setIndex && input instanceof InputEvent) {
+      if (input.inputType.startsWith('insert') && input.data) load = input.data
+      else if (input.inputType.startsWith('delete')) load = ''
+    }
+    freshLoad.current = null
+    setError(null)
+    const result = results[setIndex]
+    if (result) onChange(exercise.id, setIndex, { ...result, load, completed: false })
+  }
+  const toggleSet = (setIndex: number, result: SetResult) => {
+    const validation = result.completed ? null : validateSet(result.load, result.amount, exercise.mode)
+    if (validation) { setError({ index: setIndex, message: validation }); return }
+    setError(null)
+    // Riaprire toglie solo la spunta; spuntare porta anche lo stesso carico alla serie successiva ancora vuota.
+    if (result.completed) onChange(exercise.id, setIndex, { ...result, completed: false })
+    else completeSetChanges(results, setIndex, exercise.sets).forEach(change => onChange(exercise.id, change.index, change.result))
+  }
+  // Passando alla serie successiva, quella sopra già compilata si segna fatta e parte il recupero.
+  // Solo nella seduta in corso e solo con valori che la spunta manuale accetterebbe.
+  // Nella prima serie vale per l'ultima serie compilata dell'esercizio precedente (lo decide la seduta).
+  const enterSet = (setIndex: number) => {
+    if (!collapsible || finished) return
+    if (setIndex === 0) { onEnterFirstSet?.(exercise.id); return }
+    const above = results[setIndex - 1]
+    if (!above || above.completed || validateSet(above.load, above.amount, exercise.mode)) return
+    if (!complete && completed + 1 >= exercise.sets) { keepOpen.current = true; setExpanded(true) }
+    toggleSet(setIndex - 1, above)
+  }
+  /** Ultima volta, in grigio nel campo vuoto: il carico si riprende con un tocco, le ripetizioni sono solo un riferimento. */
+  const last = (setIndex: number) => { const set = previous?.results[setIndex]; return !finished && set?.completed ? set : undefined }
+  const defer = onDefer && !complete && (deferred || canDefer)
+    ? <button type="button" className="text-button defer-exercise" onClick={() => { setExpanded(false); onDefer(exercise.id) }}>{deferred ? 'Rimetti al suo posto' : 'Fallo dopo'}</button> : null
   if (collapsed) {
     const summary = results.filter(set => set.completed).map(set => formatResult(set, exercise.mode, exercise.loadUnit)).join(' · ')
-    return <article className="set-panel exercise-complete is-collapsed" id={`exercise-${session.id}-${index}`}>
-      <button ref={summaryButton} type="button" className="set-summary" aria-expanded="false" aria-label={`${exercise.name}: completato, ${completed} di ${exercise.sets} serie. Apri per modificare`} onClick={() => setExpanded(true)}>
-        <span className="exercise-number is-done"><Icon name="check" size={20} /></span>
-        <span className="set-summary-copy"><strong>{exercise.name}{recordIndex !== undefined && <span className="record-badge"><Icon name="star" size={16} />Record</span>}</strong><small>{summary}</small></span>
+    return <article className={`set-panel is-collapsed ${complete ? 'exercise-complete' : 'exercise-later'}`} id={`exercise-${prefix}`}>
+      <button ref={summaryButton} type="button" className="set-summary" aria-expanded="false" aria-label={complete ? `${exercise.name}: completato, ${completed} di ${exercise.sets} serie. Apri per modificare` : `${exercise.name}: rimandato, ${completed} di ${exercise.sets} serie. Apri per farlo ora`} onClick={() => setExpanded(true)}>
+        <span className={`exercise-number ${complete ? 'is-done' : 'is-later'}`}><Icon name={complete ? 'check' : 'clock'} size={20} /></span>
+        <span className="set-summary-copy"><strong>{exercise.name}{recordIndex !== undefined && <span className="record-badge"><Icon name="star" size={16} />Record</span>}</strong><small>{complete ? summary : `Rimandato${summary ? ` · ${summary}` : ''}`}</small></span>
         <span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span>
         <Icon name="chevronDown" size={20} />
       </button>
     </article>
   }
-  return <article className={`set-panel ${complete ? 'exercise-complete' : ''}`} id={`exercise-${session.id}-${index}`}>
+  return <article className={`set-panel ${complete ? 'exercise-complete' : ''}`} id={`exercise-${prefix}`}>
     <div className="set-card-heading"><MuscleGroupImage exercise={exercise} /><div>{area && <span className="mini-label">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} illustrated={false} /></div><span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span></div>
-    <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` · +${exercise.optionalSets} facoltative` : ''}</span><span><Icon name="clock" size={16} />{restLabel(exercise.restSeconds)} recupero</span></div>
+    <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` · +${exercise.optionalSets} facoltative` : ''}</span><span><Icon name="clock" size={16} />{restLabel(exercise.restSeconds)} recupero</span>{defer}</div>
     <div className="set-rows">
-      <div className="set-grid set-header"><span>Serie</span><span>{exercise.loadUnit?.toUpperCase() ?? 'Carico'}</span><span>{exercise.mode === 'seconds' ? 'Secondi' : 'Ripetizioni'}</span><span>Fatto</span></div>
-      {results.map((result, setIndex) => <div className={`set-row ${result.completed ? 'row-complete' : ''} ${setIndex >= exercise.sets ? 'optional-set' : ''}`} key={setIndex}><div className="set-grid"><strong title={setIndex >= exercise.sets ? 'Serie facoltativa' : undefined}>{setIndex + 1}{setIndex >= exercise.sets && <small aria-label="facoltativa">F</small>}</strong><input aria-label={`${exercise.name}, serie ${setIndex + 1}, carico${exercise.loadUnit ? ` in ${exercise.loadUnit}` : ''}`} inputMode="decimal" maxLength={12} placeholder="—" value={result.load} readOnly={finished} onChange={event => { setError(null); onChange(exercise.id, setIndex, { ...result, load: event.target.value, completed: false }) }} /><input aria-label={`${exercise.name}, serie ${setIndex + 1}, ${exercise.mode === 'seconds' ? 'secondi' : 'ripetizioni'}`} aria-invalid={error?.index === setIndex || undefined} aria-describedby={error?.index === setIndex ? `${prefix}-error` : undefined} inputMode={exercise.mode === 'seconds' ? 'decimal' : 'numeric'} maxLength={8} placeholder="—" value={result.amount} readOnly={finished} onChange={event => { setError(null); onChange(exercise.id, setIndex, { ...result, amount: event.target.value, completed: false }) }} /><button className={`set-check ${result.completed ? 'is-complete' : ''}`} disabled={finished} aria-label={`${result.completed ? 'Riapri' : 'Completa'} ${exercise.name}, serie ${setIndex + 1}`} aria-pressed={result.completed} onClick={() => {
-        const validation = result.completed ? null : validateSet(result.load, result.amount, exercise.mode)
-        if (validation) { setError({ index: setIndex, message: validation }); return }
-        setError(null); onChange(exercise.id, setIndex, { ...result, completed: !result.completed })
-      }}><Icon name="check" size={20} /></button></div>{previous && <PreviousInline result={result} previous={previous.results[setIndex]} mode={exercise.mode} unit={exercise.loadUnit} record={recordIndex === setIndex} />}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>)}
+      <div className={`set-grid set-header ${timed ? 'is-timed' : ''}`}><span>Serie</span>{!timed && <span>{exercise.loadUnit?.toUpperCase() ?? 'Carico'}</span>}<span>{timed ? 'Secondi' : 'Ripetizioni'}</span><span>Fatto</span></div>
+      {results.map((result, setIndex) => {
+        const name = `${exercise.name}, serie ${setIndex + 1}`
+        const lastLoad = last(setIndex)?.load.trim() || undefined, lastAmount = last(setIndex)?.amount.trim() || undefined
+        return <div className={`set-row ${result.completed ? 'row-complete' : ''} ${setIndex >= exercise.sets ? 'optional-set' : ''}`} key={setIndex}><div className={`set-grid ${timed ? 'is-timed' : ''}`}><strong title={setIndex >= exercise.sets ? 'Serie facoltativa' : undefined}>{setIndex + 1}{setIndex >= exercise.sets && <small aria-label="facoltativa">F</small>}</strong>
+          {!timed && <input className={lastLoad ? 'has-last' : undefined} aria-label={`${name}, carico${exercise.loadUnit ? ` in ${exercise.loadUnit}` : ''}${lastLoad ? `, ultima volta ${lastLoad}` : ''}`} inputMode="decimal" maxLength={12} placeholder={lastLoad ?? '—'} value={result.load} readOnly={finished}
+            onFocus={() => enterSet(setIndex)} onClick={() => fillLoadFromLast(setIndex)} onBlur={() => { if (freshLoad.current === setIndex) freshLoad.current = null }} onChange={event => typeLoad(setIndex, event.target.value, event.nativeEvent)} />}
+          <input className={lastAmount ? 'has-last' : undefined} aria-label={`${name}, ${timed ? 'secondi' : 'ripetizioni'}${lastAmount ? `, ultima volta ${lastAmount}` : ''}`} aria-invalid={error?.index === setIndex || undefined} aria-describedby={error?.index === setIndex ? `${prefix}-error` : undefined} inputMode={timed ? 'decimal' : 'numeric'} maxLength={8} placeholder={lastAmount ?? '—'} value={result.amount} readOnly={finished}
+            onFocus={() => enterSet(setIndex)} onChange={event => { setError(null); onChange(exercise.id, setIndex, { ...result, amount: event.target.value, completed: false }) }} />
+          <button className={`set-check ${result.completed ? 'is-complete' : ''}`} disabled={finished} aria-label={`${result.completed ? 'Riapri' : 'Completa'} ${name}`} aria-pressed={result.completed} onClick={() => toggleSet(setIndex, result)}><Icon name="check" size={20} /></button></div>
+          {previous && <PreviousInline result={result} previous={previous.results[setIndex]} mode={exercise.mode} unit={exercise.loadUnit} record={recordIndex === setIndex} />}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>
+      })}
     </div>
     <div className="set-card-footer">
-      {previous ? <button className="text-button reuse-loads" disabled={finished || !results.some((set, i) => !set.completed && set.load === '' && previous.results[i]?.completed && previous.results[i]?.load !== '')} onClick={copyLoads}>Riprendi i carichi<Icon name="back" size={16} /></button> : <span>Prima volta per questo esercizio</span>}
+      {previous ? timed ? <span /> : <button className="text-button reuse-loads" disabled={finished || !results.some((set, i) => !set.completed && set.load === '' && previous.results[i]?.completed && previous.results[i]?.load !== '')} onClick={copyLoads}>Riprendi i carichi<Icon name="back" size={16} /></button> : <span>Prima volta per questo esercizio</span>}
       <span className="set-card-footer-end">
-        {collapsible && complete && <button type="button" className="text-button set-collapse" aria-expanded="true" onClick={() => setExpanded(false)}>Riduci</button>}
+        {collapsible && (complete || deferred) && <button type="button" className="text-button set-collapse" aria-expanded="true" onClick={() => setExpanded(false)}>Riduci</button>}
         {previous && <button type="button" className="text-button history-peek" aria-haspopup="dialog" onClick={() => setShowPrevious(true)}>Storico<Icon name="chevron" size={16} /></button>}
       </span>
     </div>
@@ -214,13 +296,26 @@ function ExerciseSetCard({ session, exercise, index, previous, onChange, locked,
   </article>
 }
 
-export function SessionView({ session, sessions, onChange, onComplete, onDiscard, onEndCorrection, syncSlot }: {
+/** Nota libera sull'intera seduta: modificabile in corso o in correzione, altrimenti solo letta. */
+function SessionNote({ sessionId, note, editable, onChange }: { sessionId: string; note: string; editable: boolean; onChange?: (note: string) => void }) {
+  const [open, setOpen] = useState(false)
+  if (!editable || !onChange) return note ? <section className="session-note"><h2>Nota della seduta</h2><p>{note}</p></section> : null
+  if (!note && !open) return <button type="button" className="text-button session-note-add" onClick={() => setOpen(true)}><Icon name="edit" size={16} />Aggiungi una nota alla seduta</button>
+  return <section className="session-note">
+    <label htmlFor={`session-note-${sessionId}`}>Nota della seduta</label>
+    <textarea id={`session-note-${sessionId}`} rows={3} maxLength={4000} value={note} autoFocus={open && !note} placeholder="Es. presa larga sulla panca, fastidio alla spalla" onChange={event => onChange(event.target.value)} />
+  </section>
+}
+
+export function SessionView({ session, sessions, onChange, onComplete, onDiscard, onEndCorrection, onNote, syncSlot }: {
   session: WorkoutSession; sessions: WorkoutSession[]
   onChange: (exerciseId: string, index: number, result: SetResult) => void; onComplete: () => void
   /** Elimina la seduta in corso (conferma nel menu «⋯»). */
   onDiscard?: () => void
   /** Fine correzione dello storico: i valori incompleti rimasti non vengono conservati. */
   onEndCorrection?: () => void
+  /** Nota della seduta; senza, la nota è solo mostrata. */
+  onNote?: (note: string) => void
   /** Indicatore compatto dello stato del salvataggio (in seduta la barra superiore è nascosta su mobile). */
   syncSlot?: ReactNode
 }) {
@@ -228,25 +323,58 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
   const [correcting, setCorrecting] = useState(false)
   const [options, setOptions] = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
+  // «Fallo dopo» vale solo per la seduta in corso; lo storico mostra sempre l'ordine prescritto.
+  const [later, setLater] = useState(() => finished ? [] : readLater(session.id))
   const endCorrection = useEffectEvent(() => onEndCorrection?.())
   useEffect(() => () => endCorrection(), [])
   // Seduta in corso: schermo acceso e audio sbloccato dai tocchi per l'avviso di fine recupero.
   useScreenWakeLock(!finished)
   useEffect(() => finished ? undefined : installAudioUnlock(), [finished])
   const records = sessionRecords(session, sessions)
-  const required = session.day.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)
-  const completedRequired = session.day.exercises.reduce((sum, exercise) => sum + Math.min(exercise.sets, (session.results[exercise.id] ?? []).filter(set => set.completed).length), 0)
+  const { required, completedRequired } = sessionProgress(session)
   const exerciseCount = session.day.exercises.length
-  // Esercizio completato: si passa al successivo ancora da fare, se esiste.
-  const goToNext = useCallback((index: number) => {
-    const next = session.day.exercises.findIndex((exercise, i) => i > index && (session.results[exercise.id] ?? []).filter(set => set.completed).length < exercise.sets)
-    if (next < 0) return
+  const deferred = finished ? [] : later.filter(id => session.day.exercises.some(exercise => exercise.id === id))
+  const ordered = sessionOrder(session.day.exercises, deferred)
+  const isPending = (exercise: ExercisePrescription) => (session.results[exercise.id] ?? []).filter(set => set.completed).length < exercise.sets
+  const pendingCount = session.day.exercises.filter(isPending).length
+  const scrollTo = (exerciseId: string) => {
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    document.getElementById(`exercise-${session.id}-${next}`)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
-  }, [session])
-  // Serie compilate ma senza spunta: solo quelle che la spunta manuale accetterebbe (mai valori vuoti).
-  const filled = session.day.exercises.flatMap(exercise => (session.results[exercise.id] ?? []).flatMap((result, index) =>
-    !result.completed && validateSet(result.load, result.amount, exercise.mode) === null ? [{ exerciseId: exercise.id, index, result, required: index < exercise.sets }] : []))
+    document.getElementById(`exercise-${session.id}-${exerciseId}`)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
+  }
+  // Esercizio completato: si passa al successivo ancora da fare, se esiste; i rimandati per ultimi.
+  const goToNext = (exerciseId: string) => {
+    const next = nextExercise(session, deferred, exerciseId)
+    if (next) scrollTo(next)
+  }
+  const toggleLater = (exerciseId: string) => {
+    const deferring = !deferred.includes(exerciseId)
+    const next = deferring ? [...deferred, exerciseId] : deferred.filter(id => id !== exerciseId)
+    setLater(next); writeLater(session.id, next)
+    // Rimandato: la pagina va all'esercizio che ora viene dopo nel suo posto originale.
+    const target = deferring ? nextExercise(session, deferred, exerciseId) : exerciseId
+    if (target) window.requestAnimationFrame(() => scrollTo(target))
+  }
+  // Entrando nella prima serie di un esercizio si segna l'ultima serie compilata del precedente (nell'ordine mostrato).
+  // La card sopra si riduce: lo scorrimento viene compensato perché il campo toccato resti sotto il dito.
+  const anchor = useRef<{ element: Element; top: number } | null>(null)
+  useLayoutEffect(() => {
+    const kept = anchor.current
+    if (!kept) return
+    anchor.current = null
+    const shift = kept.element.getBoundingClientRect().top - kept.top
+    if (kept.element.isConnected && Math.abs(shift) > 1) window.scrollBy(0, shift)
+  })
+  const enterFirstSet = (exerciseId: string) => {
+    const before = ordered[ordered.findIndex(exercise => exercise.id === exerciseId) - 1]
+    if (finished || !before) return
+    const results = session.results[before.id] ?? []
+    const index = pendingFilledSet(results, before.mode)
+    if (index === undefined) return
+    const active = document.activeElement
+    anchor.current = active ? { element: active, top: active.getBoundingClientRect().top } : null
+    completeSetChanges(results, index, before.sets).forEach(change => onChange(before.id, change.index, change.result))
+  }
+  const filled = filledUnchecked(session)
   const emptyRequired = required - completedRequired - filled.filter(item => item.required).length
   const requestComplete = () => { if (completedRequired < required || filled.length > 0) setConfirmEnd(true); else onComplete() }
   // Le spunte in blocco precedono la chiusura: il completamento della seduta azzera il timer di recupero.
@@ -261,7 +389,9 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
       actions={<><span className={`session-status ${finished ? 'finished' : ''}`}><span />{finished ? 'Completato' : 'In corso'}</span>{syncSlot}{!finished && onDiscard && <button type="button" className="icon-button session-more" aria-haspopup="dialog" aria-label="Opzioni della seduta" onClick={() => setOptions(true)}><Icon name="more" size={24} strokeWidth={3} /></button>}</>} />
     <div className="session-progress"><div><span>{completedRequired} di {required} serie</span><strong>{required ? Math.round(completedRequired / required * 100) : 0}%</strong></div><progress max={required} value={completedRequired} aria-label="Serie completate" /></div>
     {finished && <div className="session-correction"><p className="small muted">{correcting ? 'Correzione attiva: le modifiche aggiornano solo lo storico di questa seduta.' : 'Seduta completata.'}</p><button className="button secondary session-correct" onClick={() => { if (correcting) onEndCorrection?.(); setCorrecting(!correcting) }}>{correcting ? 'Fine correzione' : 'Correggi valori'}</button></div>}
-    <div className="session-cards">{session.day.exercises.map((exercise, index) => <ExerciseSetCard key={exercise.id} session={session} exercise={exercise} index={index} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)} />)}</div>
+    <div className="session-cards">{ordered.map(exercise => <ExerciseSetCard key={exercise.id} session={session} exercise={exercise} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)}
+      deferred={deferred.includes(exercise.id)} canDefer={pendingCount > 1} onDefer={finished ? undefined : toggleLater} onEnterFirstSet={enterFirstSet} />)}</div>
+    <SessionNote sessionId={session.id} note={session.note ?? ''} editable={!finished || correcting} onChange={onNote} />
     {!finished && <div className="session-actions"><span>{completedRequired === required ? 'Tutte le serie previste sono fatte' : `${exerciseCount} ${exerciseCount === 1 ? 'esercizio' : 'esercizi'} · ${required - completedRequired} serie da fare`}</span><button className="button primary session-finish" onClick={requestComplete}>Termina allenamento<Icon name="check" size={20} /></button></div>}
     {options && onDiscard && <Modal label="Opzioni della seduta" variant="sheet" onClose={() => setOptions(false)}>
       <div className="session-options">
@@ -274,9 +404,9 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
     {confirmEnd && <Modal label={filled.length ? 'Segnare le serie compilate?' : 'Terminare l’allenamento?'} onClose={() => setConfirmEnd(false)}>
       {filled.length > 0 ? <>
         <h2>{emptyRequired === 0 ? 'Segnare le serie compilate?' : 'Terminare l’allenamento?'}</h2>
-        <p>Hai fatto {completedRequired} di {required} serie previste. {filled.length === 1 ? '1 serie è compilata' : `${filled.length} serie sono compilate`} ma senza spunta{emptyRequired > 0 ? `, ${emptyRequired === 1 ? '1 è vuota e resterà non completata' : `${emptyRequired} sono vuote e resteranno non completate`}` : ''}.</p>
+        <p>Hai fatto {completedRequired} di {required} serie previste. {filledSentence(filled.length, emptyRequired)}.</p>
         <div className="button-row session-end-actions">
-          <button className="button primary session-mark-complete" onClick={markFilledAndComplete}>{filled.length === 1 ? 'Segna la serie compilata e termina' : `Segna le ${filled.length} compilate e termina`}</button>
+          <button className="button primary session-mark-complete" onClick={markFilledAndComplete}>{markFilledLabel(filled.length)}</button>
           <button className="button secondary session-finish-confirm" onClick={() => { setConfirmEnd(false); onComplete() }}>{filled.length === 1 ? 'Termina senza segnarla' : 'Termina senza segnarle'}</button>
           <button type="button" className="text-button" onClick={() => setConfirmEnd(false)}>Continua l’allenamento</button>
         </div>
@@ -287,4 +417,12 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
       </>}
     </Modal>}
   </section>
+}
+
+/** «2 serie sono compilate ma senza spunta, 1 è vuota e resterà non completata» (stesse parole in seduta e alla riapertura). */
+export function filledSentence(filled: number, emptyRequired: number): string {
+  return `${filled === 1 ? '1 serie è compilata' : `${filled} serie sono compilate`} ma senza spunta${emptyRequired > 0 ? `, ${emptyRequired === 1 ? '1 è vuota e resterà non completata' : `${emptyRequired} sono vuote e resteranno non completate`}` : ''}`
+}
+export function markFilledLabel(filled: number): string {
+  return filled === 1 ? 'Segna la serie compilata e termina' : `Segna le ${filled} compilate e termina`
 }

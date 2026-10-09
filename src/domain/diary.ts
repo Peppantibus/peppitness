@@ -87,13 +87,15 @@ export type DiaryOp =
   | { type: 'set'; opId: string; sessionId: string; prescriptionId: string; index: number; result: SetResult }
   | { type: 'complete'; opId: string; sessionId: string; at: string }
   | { type: 'discard'; opId: string; sessionId: string }
+  | { type: 'note'; opId: string; sessionId: string; note: string }
   | { type: 'meal'; opId: string; date: LocalDate; planId: string; meal: Meal; status: MealStatus; note: string; dayType: DayType }
   | { type: 'day'; opId: string; date: LocalDate; dayType: DayType }
 
 /** Chiave della riga server interessata: operazioni con la stessa chiave si uniscono. */
 export function opKey(op: DiaryOp): string {
   switch (op.type) {
-    case 'start': case 'complete': case 'discard': return `session:${op.type === 'start' ? op.session.id : op.sessionId}`
+    // La nota sta sulla riga della seduta: stessa revisione di avvio e completamento.
+    case 'start': case 'complete': case 'discard': case 'note': return `session:${op.type === 'start' ? op.session.id : op.sessionId}`
     case 'set': return `set:${op.sessionId}:${op.prescriptionId}:${op.index}`
     case 'meal': return `meal:${op.date}:${op.meal.id}`
     case 'day': return `day:${op.date}`
@@ -116,6 +118,8 @@ export function applyOp(data: DiaryData, op: DiaryOp): DiaryData {
       return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId && !session.completedAt ? { ...session, completedAt: op.at } : session) }
     case 'discard':
       return { ...data, sessions: data.sessions.filter(session => session.id !== op.sessionId || Boolean(session.completedAt)) }
+    case 'note':
+      return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId ? { ...session, note: op.note } : session) }
     case 'meal': {
       const key = mealLogKey(op.date, op.meal.id), existing = data.mealLogs[key]
       // Il contesto della prima registrazione non segue modifiche successive del piano o della giornata.

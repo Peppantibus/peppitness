@@ -3,6 +3,7 @@ import { DietToday } from './app/DietToday'
 import { navigate, useRoute } from './app/route'
 import { useDietToday } from './app/use-diet-today'
 import { useEditors } from './app/use-editors'
+import { StaleSessionPrompt } from './app/StaleSession'
 import { useWorkoutToday } from './app/use-workout-today'
 import { WorkoutToday } from './app/WorkoutToday'
 import { DateContext, DatePicker } from './components/DatePicker'
@@ -19,15 +20,15 @@ import { formatDate, localDate } from './domain/dates'
 import { mealLogKey } from './domain/diary'
 import { fitsMealWizard } from './domain/meal-plans'
 import { fitsWizard } from './domain/weekly'
-import { findPreviousExercise } from './domain/workout'
-import type { Meal, SetResult } from './domain/types'
+import { filledUnchecked, findPreviousExercise } from './domain/workout'
+import type { Meal, SetResult, WorkoutSession } from './domain/types'
 import type { ImportReceipt } from './import/contracts/index.ts'
 import { MealDetail } from './features/Diet'
 import { History } from './features/History'
 import { Progress } from './features/Progress'
 import { SessionSummaryDialog } from './features/SessionSummary'
 import { Settings } from './features/Settings'
-import { ExerciseDetail, SessionView } from './features/Workout'
+import { ExerciseDetail, forgetDeferredExercises, SessionView } from './features/Workout'
 import { useDiary } from './persistence/use-diary'
 import { useExercises } from './persistence/use-exercises'
 import { useImports } from './persistence/use-imports'
@@ -145,6 +146,12 @@ export function App() {
     return plans.store.getSnapshot().selection?.workoutPlanId === planId && plans.store.getSnapshot().workout?.plan.id === planId
   }
   const updateResult = (session: string) => (exerciseId: string, index: number, result: SetResult) => diary.store.updateSet(session, exerciseId, index, result)
+  const updateNote = (session: string) => (note: string) => diary.store.setSessionNote(session, note)
+  // Seduta rimasta aperta: stessa chiusura di «Termina», con le serie compilate segnate solo su richiesta.
+  const finishSession = (session: WorkoutSession, markFilled: boolean) => {
+    if (markFilled) filledUnchecked(session).forEach(item => diary.store.updateSet(session.id, item.exerciseId, item.index, { ...item.result, completed: true }))
+    diary.store.completeSession(session.id); navigate('/scheda/storico'); setSummarySessionId(session.id); setAnnouncement('Allenamento completato.')
+  }
   const start = () => {
     if (activeSession) { navigate('/scheda/seduta'); return }
     const day = schedule.day
@@ -195,12 +202,12 @@ export function App() {
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={editors.mealMode} setMode={editors.setMealMode} step={editors.mealStep} setStep={editors.setMealStep} deletionBlocked={deletionBlocked} /></Suspense>}
     {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} engine={importReview.engine} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}
     {isSettings && <Settings backSection={page.lastSection} weeklyProgram={schedule.weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy}
-      onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice(); void importReview.clearDevice() }} {...settings} />}
-    {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} syncSlot={syncIndicator}
+      onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice(); forgetDeferredExercises(); void importReview.clearDevice() }} {...settings} />}
+    {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} onNote={updateNote(activeSession.id)} syncSlot={syncIndicator}
       onDiscard={() => { diary.store.discardSession(activeSession.id); navigate('/scheda'); setAnnouncement('Seduta eliminata.') }}
       onComplete={() => { diary.store.completeSession(activeSession.id); navigate('/scheda/storico'); setSummarySessionId(activeSession.id); setAnnouncement('Allenamento completato.') }} />
       : <section className="panel empty-state"><h1>Nessun allenamento in corso</h1><p>Seleziona una seduta dalla scheda per iniziare.</p><a href="#/scheda" className="button primary">Vai alla scheda</a></section>)}
-    {historySession && <SessionView key={historySession.id} session={historySession} sessions={view.sessions} onChange={updateResult(historySession.id)} onComplete={() => undefined} onEndCorrection={() => diary.store.discardIncomplete(historySession.id)} syncSlot={syncIndicator} />}
+    {historySession && <SessionView key={historySession.id} session={historySession} sessions={view.sessions} onChange={updateResult(historySession.id)} onComplete={() => undefined} onEndCorrection={() => diary.store.discardIncomplete(historySession.id)} onNote={updateNote(historySession.id)} syncSlot={syncIndicator} />}
     {!validRoute && <section className="panel empty-state"><h1>Questa pagina non è disponibile</h1><a className="button primary" href={`#/${section}`}>Torna al tuo spazio</a></section>}
     {meal && <Modal label={`${meal.name}, ${formatDate(date)}`} onClose={() => navigate('/dieta')}>
       <MealDetail key={`${date}:${meal.id}`} meal={mealLog?.snapshot ?? meal} log={mealLog} onClose={() => navigate('/dieta')}
@@ -214,6 +221,7 @@ export function App() {
       <div className="program-actions"><button type="button" className="button secondary workout-cancel-keep" onClick={() => setDiscardingSessionId(null)}>Continua l’allenamento</button>
         <button type="button" className="button danger workout-cancel-confirm" onClick={() => { diary.store.discardSession(activeSession.id); setDiscardingSessionId(null); setAnnouncement('Allenamento annullato.') }}>Annulla allenamento</button></div>
     </Modal>}
+    {activeSession && diary.state.phase === 'ready' && !discardingSessionId && <StaleSessionPrompt session={activeSession} today={today} onFinish={markFilled => finishSession(activeSession, markFilled)} onResume={() => navigate('/scheda/seduta')} />}
     {summarySession && <SessionSummaryDialog session={summarySession} sessions={view.sessions} onClose={() => setSummarySessionId(null)} />}
     {diary.state.restTimer && <RestTimer timer={diary.state.restTimer} onChange={diary.store.setRestTimer} />}
     <div className="toast-stack">

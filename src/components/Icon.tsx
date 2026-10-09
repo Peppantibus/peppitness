@@ -39,6 +39,10 @@ const paths = {
   alert: 'M12 3.5 2.5 20h19L12 3.5ZM12 10v4.5m0 3v.1',
   sliders: 'M4 7h9m4 0h3M4 17h3m4 0h9M15 5v4M9 15v4',
   more: 'M5 12h.5M11.75 12h.5M18.5 12h.5',
+  copy: 'M9 9h11v11H9zM5 15V4h11',
+  trash: 'M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3',
+  arrowUp: 'M12 19V5m-6 6 6-6 6 6',
+  arrowDown: 'M12 5v14m-6-6 6 6 6-6',
 } satisfies Record<string, string>
 
 export type IconName = keyof typeof paths

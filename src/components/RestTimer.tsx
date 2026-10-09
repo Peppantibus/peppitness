@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { RestTimerState } from '../domain/types'
-import { formatRest, remainingRest } from '../domain/workout'
+import { adjustRest, formatRest, remainingRest } from '../domain/workout'
 import { playRestEnd } from '../workout-alerts'
 import { Icon } from './Icon'
 
@@ -28,7 +28,7 @@ export function RestTimer({ timer, onChange }: { timer: RestTimerState; onChange
     <div className="timer-copy"><span className="timer-label" role="status">{ended ? 'Recupero terminato' : paused ? 'Recupero in pausa' : 'Recupero'}</span><span className="timer-context">{timer.exerciseName} · serie {timer.setIndex + 1}</span></div>
     <div className="timer-main">
       {ended ? <span className="timer-done"><Icon name="check" size={24} strokeWidth={2.5} />Pronto per la serie</span> : <strong className="timer-count" role="timer" aria-label={`${seconds} secondi di recupero`}>{formatRest(seconds)}</strong>}
-      <div className="timer-controls">{!ended && <><button className="timer-extra" onClick={() => { const remaining = remainingRest(timer); onChange({ ...timer, durationSeconds: timer.durationSeconds + 15, deadline: timer.deadline + 15000, pausedSeconds: paused ? remaining + 15 : null }) }}>+15 s</button><button className="timer-pause" aria-label={paused ? 'Riprendi recupero' : 'Pausa recupero'} onClick={() => onChange(paused ? { ...timer, deadline: Date.now() + seconds * 1000, pausedSeconds: null } : { ...timer, pausedSeconds: remainingRest(timer) })}><Icon name={paused ? 'play' : 'pause'} size={24} strokeWidth={2.25} /></button></>}<button className="timer-dismiss" aria-label={ended ? 'Chiudi recupero' : 'Salta recupero'} onClick={() => onChange(null)}>{ended ? 'Chiudi' : 'Salta'}<Icon name={ended ? 'check' : 'close'} size={20} /></button></div>
+      <div className="timer-controls">{!ended && <><span className="timer-adjust"><button className="timer-less" aria-label="Togli 15 secondi" onClick={() => onChange(adjustRest(timer, -15))}>−15<span className="timer-unit"> s</span></button><button className="timer-extra" aria-label="Aggiungi 15 secondi" onClick={() => onChange(adjustRest(timer, 15))}>+15<span className="timer-unit"> s</span></button></span><button className="timer-pause" aria-label={paused ? 'Riprendi recupero' : 'Pausa recupero'} onClick={() => onChange(paused ? { ...timer, deadline: Date.now() + seconds * 1000, pausedSeconds: null } : { ...timer, pausedSeconds: remainingRest(timer) })}><Icon name={paused ? 'play' : 'pause'} size={24} strokeWidth={2.25} /></button></>}<button className="timer-dismiss" aria-label={ended ? 'Chiudi recupero' : 'Salta recupero'} onClick={() => onChange(null)}><span className="timer-dismiss-label">{ended ? 'Chiudi' : 'Salta'}</span><Icon name={ended ? 'check' : 'close'} size={20} /></button></div>
     </div>
     <div className="timer-progress" aria-hidden="true"><span style={{ transform: `scaleX(${ratio})` }} /></div>
   </aside>

@@ -353,3 +353,33 @@ test('Riprova ora: un invio rimasto appeso viene interrotto e ripetuto senza dup
   assert.equal(server.tables.diary_days!.length, 1)
   store.stop()
 })
+
+test('nota della seduta: modifiche unite, inviata sulla riga della seduta, conservata dopo il completamento e riletta', async () => {
+  const server = fakeServer(), storage = memoryStorage()
+  const store = new DiaryStore(server.transport, storage, OWNER)
+  await store.refresh()
+  const id = store.startSession({ date: '2026-09-28', day, planId: 'plan', versionId: 'version', timeZone: 'Europe/Rome' })!
+  for (const note of ['P', 'Presa', 'Presa larga']) store.setSessionNote(id, note)
+  assert.equal(store.getSnapshot().pending, 2, 'avvio + una sola nota')
+  assert.equal(store.getSnapshot().view.sessions[0]!.note, 'Presa larga')
+  store.completeSession(id)
+  await settle(store)
+  assert.deepEqual(server.calls, ['start', 'update:workout_sessions', 'update:workout_sessions'])
+  assert.equal(server.tables.workout_sessions![0]!.note, 'Presa larga')
+  assert.equal(server.tables.workout_sessions![0]!.status, 'completed')
+  // Nota corretta nello storico; stesso valore = nessun invio.
+  store.setSessionNote(id, 'Presa larga')
+  assert.equal(store.getSnapshot().pending, 0)
+  store.setSessionNote(id, 'Presa larga, spalla ok')
+  await settle(store)
+  assert.equal(server.tables.workout_sessions![0]!.note, 'Presa larga, spalla ok')
+  await store.refresh()
+  assert.equal(store.getSnapshot().view.sessions[0]!.note, 'Presa larga, spalla ok')
+  // Nota cambiata da un altro dispositivo: nessuna sovrascrittura senza una scelta.
+  Object.assign(server.tables.workout_sessions![0]!, { note: 'Dall’altro telefono', revision: (server.tables.workout_sessions![0]!.revision as number) + 1 })
+  store.setSessionNote(id, 'Da qui')
+  await settle(store)
+  assert.equal(server.tables.workout_sessions![0]!.note, 'Dall’altro telefono')
+  assert.equal(store.getSnapshot().conflicts[0]?.remote, 'Dall’altro telefono')
+  store.stop()
+})
