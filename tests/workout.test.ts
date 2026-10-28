@@ -1,12 +1,13 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { adjustRest, carryLoadForward, comparable, completeSetChanges, pendingFilledSet, filledUnchecked, findPreviousExercise, formatResult, isStaleSession, nextExercise, remainingRest, reusePreviousLoads, sessionOrder, sessionProgress } from '../src/domain/workout.ts'
+import { adjustRest, carryLoadForward, comparable, completeSetChanges, displaySetAmount, pendingFilledSet, filledUnchecked, findPreviousExercise, formatResult, isStaleSession, nextExercise, remainingRest, reusePreviousLoads, sessionOrder, sessionProgress, storedSetAmount } from '../src/domain/workout.ts'
 import { applyOp, emptyResults, nextRestTimer } from '../src/domain/diary.ts'
 import type { WorkoutSession, ExercisePrescription, RestTimerState, SetResult } from '../src/domain/types.ts'
 
 const exercise: ExercisePrescription = { id: 'p1', exerciseId: 'stable-row', name: 'Rematore', area: 'Schiena', sets: 2, target: '10', mode: 'reps', restSeconds: 90, note: '', comparison: { variant: 'unilaterale', equipment: 'manubrio', loadConvention: 'single-dumbbell', perSide: true } }
 const completed: SetResult = { load: '12,5', amount: '10', completed: true }
 const empty: SetResult = { load: '', amount: '', completed: false }
+const cardio: ExercisePrescription = { ...exercise, name: 'Cyclette', muscleGroup: 'Cardio', mode: 'seconds', sets: 1, target: '900 secondi' }
 function session(id: string, date: string, prescription = exercise, done = true): WorkoutSession {
   return { id, date, startedAt: `${date}T10:00:00Z`, completedAt: done ? `${date}T11:00:00Z` : undefined, day: { id: id + '-day', label: id, title: 'Seduta ' + id, subtitle: '', exercises: [prescription] }, results: { [prescription.id]: [{ ...completed }, { ...empty }] } }
 }
@@ -55,6 +56,34 @@ test('zero, corpo libero, durata e serie non eseguite hanno una resa distinta', 
   assert.equal(formatResult({ load: '10', amount: '30', completed: true }, 'seconds'), '30 s', 'a tempo: il carico non si mostra')
   assert.equal(formatResult({ ...completed, completed: false }, 'reps'), '—')
   assert.equal(formatResult(completed, 'reps', 'lb'), '12,5 lb × 10 rip.')
+})
+
+test('cardio: minuti in ingresso e secondi canonici, con virgola, zero e input incompleto', () => {
+  assert.equal(storedSetAmount('15', cardio), '900')
+  assert.equal(storedSetAmount('15,5', cardio), '930')
+  assert.equal(storedSetAmount('1.25', cardio), '75')
+  assert.equal(storedSetAmount('0', cardio), '0')
+  for (const value of ['', '15,', '1..2', '-2']) assert.equal(storedSetAmount(value, cardio), '')
+  assert.equal(displaySetAmount('900', cardio), '15')
+  assert.equal(displaySetAmount('930', cardio), '15,5')
+  assert.equal(displaySetAmount('0', cardio), '0')
+  assert.equal(displaySetAmount('', cardio), '')
+  assert.equal(storedSetAmount(displaySetAmount('930', cardio), cardio), '930')
+})
+
+test('minuti del solo cardio: storico letto senza mutazioni e altri esercizi ancora in secondi o ripetizioni', () => {
+  const old = { load: '', amount: '900', completed: true }
+  assert.equal(formatResult(old, cardio), '15 min')
+  assert.equal(old.amount, '900', 'il risultato storico resta in secondi')
+  assert.equal(formatResult({ ...old, completed: false }, cardio), '—')
+  const plank = { ...cardio, name: 'Plank', muscleGroup: 'Addome' as const }
+  assert.equal(displaySetAmount('30', plank), '30')
+  assert.equal(storedSetAmount('30', plank), '30')
+  assert.equal(formatResult({ ...old, amount: '30' }, plank), '30 s')
+  assert.equal(displaySetAmount('10', exercise), '10')
+  assert.equal(storedSetAmount('10', exercise), '10')
+  assert.equal(formatResult(completed, exercise), '12,5 kg × 10 rip.')
+  assert.equal(displaySetAmount('900', { ...cardio, muscleGroup: undefined }), '15', 'snapshot precedenti: inferenza esistente dal nome')
 })
 
 test('il recupero parte una sola volta su Fatto e si annulla riaprendo la stessa serie', () => {

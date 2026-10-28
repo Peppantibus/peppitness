@@ -31,7 +31,7 @@ export function SessionSummaryDialog({ session, sessions, onClose }: { session: 
       </dl>
       {records > 0 && <section className="session-summary-records" aria-labelledby="summary-records">
         <h3 id="summary-records"><Icon name="star" size={20} />{records === 1 ? 'Nuovo record personale' : `${records} nuovi record personali`}</h3>
-        <ul>{summary.records.map(record => <li key={record.exercise.id}><span>{record.exercise.name}</span><strong>{formatResult(session.results[record.exercise.id]?.[record.index], record.exercise.mode, record.exercise.loadUnit)}</strong></li>)}</ul>
+        <ul>{summary.records.map(record => <li key={record.exercise.id}><span>{record.exercise.name}</span><strong>{formatResult(session.results[record.exercise.id]?.[record.index], record.exercise)}</strong></li>)}</ul>
       </section>}
       <p className={`session-summary-compare ${change !== null && change > 0 ? 'is-up' : ''}`}>{change !== null && change > 0 && <Icon name="trend" size={20} />}{compare}</p>
       <div className="program-actions">

@@ -1,4 +1,5 @@
-import { validateSet } from './validation.ts'
+import { parseNonNegativeNumber, validateSet } from './validation.ts'
+import { isTimedCardio } from './muscle-groups.ts'
 import type { WorkoutSession, ExercisePrescription, RestTimerState, SetResult } from './types.ts'
 
 export interface PreviousExercise {
@@ -30,11 +31,34 @@ export function findPreviousExercise(
   }
 }
 
-export function formatResult(result: SetResult | undefined, mode: ExercisePrescription['mode'], unit: 'kg' | 'lb' = 'kg'): string {
+const minuteNumber = new Intl.NumberFormat('it-IT', { useGrouping: false, maximumFractionDigits: 6 })
+
+/** Il cardio si legge in minuti; risultati, confronti e persistenza restano in secondi. */
+export function displaySetAmount(value: string, exercise: ExercisePrescription): string {
+  if (!isTimedCardio(exercise)) return value
+  try {
+    const seconds = parseNonNegativeNumber(value)
+    return seconds === null ? '' : minuteNumber.format(seconds / 60)
+  } catch { return value }
+}
+
+/** Un input incompleto non deve far registrare come secondi un valore scritto in minuti. */
+export function storedSetAmount(value: string, exercise: ExercisePrescription): string {
+  if (!isTimedCardio(exercise)) return value
+  try {
+    const minutes = parseNonNegativeNumber(value)
+    return minutes === null ? '' : String(Number((minutes * 60).toFixed(6)))
+  } catch { return '' }
+}
+
+export function formatResult(result: SetResult | undefined, context: ExercisePrescription['mode'] | ExercisePrescription, unit: 'kg' | 'lb' = 'kg'): string {
   if (!result?.completed) return '—'
-  const amount = `${result.amount}${mode === 'seconds' ? ' s' : ' rip.'}`
+  const exercise = typeof context === 'string' ? null : context
+  const mode = typeof context === 'string' ? context : context.mode
+  const minutes = exercise && isTimedCardio(exercise)
+  const amount = `${exercise ? displaySetAmount(result.amount, exercise) : result.amount}${minutes ? ' min' : mode === 'seconds' ? ' s' : ' rip.'}`
   // Esercizi a tempo: solo il tempo, anche se uno storico vecchio avesse un carico.
-  return result.load.trim() === '' || mode === 'seconds' ? amount : `${result.load} ${unit} × ${amount}`
+  return result.load.trim() === '' || mode === 'seconds' ? amount : `${result.load} ${exercise?.loadUnit ?? unit} × ${amount}`
 }
 
 /** Copia solo i carichi nelle righe ancora vuote, senza segnare risultati eseguiti. */

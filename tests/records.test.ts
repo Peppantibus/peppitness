@@ -13,6 +13,14 @@ function session(id: string, date: string, results: Record<string, SetResult[]>,
   return { id, date, day, startedAt: start, ...(done ? { completedAt: new Date(Date.parse(start) + minutes * 60_000).toISOString() } : {}), results }
 }
 
+test('miglioramento cardio in minuti; plank ancora in secondi e confronti invariati', () => {
+  const cardio = { ...plank, name: 'Cyclette', muscleGroup: 'Cardio' as const }
+  const improvement = setImprovement(set('', '990'), set('', '900'))!
+  assert.deepEqual(improvement, { load: 0, amount: 90 })
+  assert.equal(formatImprovement(improvement, cardio), '+1,5 min')
+  assert.equal(formatImprovement(improvement, plank), '+90 s')
+})
+
 test('regola del record: più carico, oppure stesso carico e più ripetizioni', () => {
   assert.equal(beats({ load: 62.5, amount: 5 }, { load: 60, amount: 10 }), true)
   assert.equal(beats({ load: 60, amount: 9 }, { load: 60, amount: 8 }), true)

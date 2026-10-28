@@ -1,6 +1,7 @@
 import type { ExercisePrescription, LocalDate, SetResult, WorkoutDay, WorkoutSession } from './types.ts'
 import { parseNonNegativeNumber } from './validation.ts'
 import { comparable } from './workout.ts'
+import { isTimedCardio } from './muscle-groups.ts'
 
 /**
  * Record personali e riepilogo della seduta, dalle sole serie completate.
@@ -41,10 +42,13 @@ export function setImprovement(current: SetResult | undefined, previous: SetResu
 const italian = new Intl.NumberFormat('it-IT', { maximumFractionDigits: 2 })
 
 /** «+2,5 kg», «+1 rip.», «+10 s» oppure «+2,5 kg · +1 rip.». */
-export function formatImprovement(improvement: SetImprovement, mode: ExercisePrescription['mode'], unit: 'kg' | 'lb' = 'kg'): string {
+export function formatImprovement(improvement: SetImprovement, context: ExercisePrescription['mode'] | ExercisePrescription, unit: 'kg' | 'lb' = 'kg'): string {
+  const exercise = typeof context === 'string' ? null : context
+  const mode = typeof context === 'string' ? context : context.mode
+  const minutes = exercise && isTimedCardio(exercise)
   const parts: string[] = []
-  if (improvement.load > 0) parts.push(`+${italian.format(improvement.load)} ${unit}`)
-  if (improvement.amount > 0) parts.push(`+${italian.format(improvement.amount)}${mode === 'seconds' ? ' s' : ' rip.'}`)
+  if (improvement.load > 0) parts.push(`+${italian.format(improvement.load)} ${exercise?.loadUnit ?? unit}`)
+  if (improvement.amount > 0) parts.push(`+${italian.format(improvement.amount / (minutes ? 60 : 1))}${minutes ? ' min' : mode === 'seconds' ? ' s' : ' rip.'}`)
   return parts.join(' · ')
 }
 

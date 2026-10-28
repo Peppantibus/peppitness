@@ -11,7 +11,7 @@ import { isTimedCardio } from '../domain/muscle-groups'
 import { formatDate } from '../domain/dates'
 import { isWorkoutWeekday } from '../domain/settings'
 import { validateSet } from '../domain/validation'
-import { completeSetChanges, filledUnchecked, findPreviousExercise, formatResult, nextExercise, pendingFilledSet, reusePreviousLoads, sessionOrder, sessionProgress } from '../domain/workout'
+import { completeSetChanges, displaySetAmount, filledUnchecked, findPreviousExercise, formatResult, nextExercise, pendingFilledSet, reusePreviousLoads, sessionOrder, sessionProgress, storedSetAmount } from '../domain/workout'
 import { formatImprovement, sessionRecords, setImprovement } from '../domain/records'
 import { installAudioUnlock, useScreenWakeLock } from '../workout-alerts'
 import type { PreviousExercise } from '../domain/workout'
@@ -89,7 +89,7 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
       <div className="exercise-list">{day.exercises.map(exercise => {
         const previous = findPreviousExercise(sessions, exercise, { id: '', date, startedAt: new Date().toISOString() })
         const previousSet = previous?.results.find(set => set.completed)
-        return <a key={exercise.id} className="exercise-card" href={`#/scheda/esercizio/${exercise.id}`}><MuscleGroupImage exercise={exercise} /><div className="exercise-copy"><h3>{exercise.name}</h3><MuscleGroupBadge exercise={exercise} illustrated={false} /><p className="exercise-prescription"><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` (+${exercise.optionalSets} facoltative)` : ''} · {restLabel(exercise.restSeconds)} recupero</p>{exerciseArea(exercise) && <span className="mini-label">{exerciseArea(exercise)}</span>}{previousSet && <span className="overview-previous"><Icon name="history" size={16} />{formatResult(previousSet, exercise.mode, exercise.loadUnit)} <span>· {formatDate(previous!.session.date, { day: 'numeric', month: 'short' })}</span></span>}</div><Icon name="chevron" size={20} /></a>
+        return <a key={exercise.id} className="exercise-card" href={`#/scheda/esercizio/${exercise.id}`}><MuscleGroupImage exercise={exercise} /><div className="exercise-copy"><h3>{exercise.name}</h3><MuscleGroupBadge exercise={exercise} illustrated={false} /><p className="exercise-prescription"><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` (+${exercise.optionalSets} facoltative)` : ''} · {restLabel(exercise.restSeconds)} recupero</p>{exerciseArea(exercise) && <span className="mini-label">{exerciseArea(exercise)}</span>}{previousSet && <span className="overview-previous"><Icon name="history" size={16} />{formatResult(previousSet, exercise)} <span>· {formatDate(previous!.session.date, { day: 'numeric', month: 'short' })}</span></span>}</div><Icon name="chevron" size={20} /></a>
       })}</div>
       </div>
     </div>
@@ -122,26 +122,29 @@ function exerciseArea(exercise: ExercisePrescription): string | undefined {
   const area = exercise.area?.trim()
   return area && !exercise.name.toLowerCase().includes(area.toLowerCase()) ? area : undefined
 }
-const prescriptionText = (exercise: ExercisePrescription) => isTimedCardio(exercise) && exercise.sets === 1 ? `${Math.round(parseInt(exercise.target, 10) / 60 * 100) / 100} min` : `${exercise.sets} × ${exercise.target}${exercise.mode === 'reps' ? ' rip.' : ''}`
+const prescriptionText = (exercise: ExercisePrescription) => {
+  const target = isTimedCardio(exercise) ? `${displaySetAmount(exercise.target.split(' ')[0]!, exercise)} min` : exercise.target
+  return isTimedCardio(exercise) && exercise.sets === 1 ? target : `${exercise.sets} × ${target}${exercise.mode === 'reps' ? ' rip.' : ''}`
+}
 
-function PreviousResults({ previous, mode, unit }: { previous?: PreviousExercise; mode: ExercisePrescription['mode']; unit?: 'kg' | 'lb' }) {
+function PreviousResults({ previous, exercise }: { previous?: PreviousExercise; exercise: ExercisePrescription }) {
   if (!previous) return <div className="no-previous"><Icon name="history" size={24} /><h3>La prima volta parte da qui</h3><p>Non ci sono ancora serie confrontabili per questo esercizio.</p></div>
-  return <><div className="previous-heading"><span><Icon name="history" size={20} />{formatDate(previous.session.date, { day: 'numeric', month: 'long', year: 'numeric' })}</span><p>{previous.session.day.title}</p></div><div className="previous-results">{previous.results.map((set, index) => <div key={index}><span>Serie {index + 1}</span><strong>{set.completed ? formatResult(set, mode, unit) : 'Non completata'}</strong>{set.completed ? <Icon name="check" size={20} /> : <span>—</span>}</div>)}</div></>
+  return <><div className="previous-heading"><span><Icon name="history" size={20} />{formatDate(previous.session.date, { day: 'numeric', month: 'long', year: 'numeric' })}</span><p>{previous.session.day.title}</p></div><div className="previous-results">{previous.results.map((set, index) => <div key={index}><span>Serie {index + 1}</span><strong>{set.completed ? formatResult(set, exercise) : 'Non completata'}</strong>{set.completed ? <Icon name="check" size={20} /> : <span>—</span>}</div>)}</div></>
 }
 
 export function ExerciseDetail({ exercise, previous }: { exercise: ExercisePrescription; previous?: PreviousExercise }) {
   const area = exerciseArea(exercise)
-  return <>{area && <span className="eyebrow">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><div className="prescription-stats"><div><strong>{exercise.sets}{exercise.optionalSets ? ` +${exercise.optionalSets}` : ''}</strong><span>{exercise.optionalSets ? 'serie (+ facoltative)' : 'serie'}</span></div><div><strong>{exercise.target}</strong><span>{exercise.mode === 'seconds' ? 'durata prevista' : 'ripetizioni previste'}</span></div><div><strong>{restLabel(exercise.restSeconds)}</strong><span>recupero</span></div></div>{(exercise.loadLabel || exercise.effortLabel) && <div className="detail-facts">{exercise.loadLabel && <p><strong>Carico:</strong> {exercise.loadLabel}</p>}{exercise.effortLabel && <p><strong>Intensità:</strong> {exercise.effortLabel}</p>}</div>}{exercise.note && <div className="detail-note"><strong>Da ricordare</strong><p>{exercise.note}</p></div>}<h3>Ultima volta</h3><PreviousResults previous={previous} mode={exercise.mode} unit={exercise.loadUnit} /></>
+  return <>{area && <span className="eyebrow">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><div className="prescription-stats"><div><strong>{exercise.sets}{exercise.optionalSets ? ` +${exercise.optionalSets}` : ''}</strong><span>{exercise.optionalSets ? 'serie (+ facoltative)' : 'serie'}</span></div><div><strong>{isTimedCardio(exercise) ? `${displaySetAmount(exercise.target.split(' ')[0]!, exercise)} min` : exercise.target}</strong><span>{exercise.mode === 'seconds' ? 'durata prevista' : 'ripetizioni previste'}</span></div><div><strong>{restLabel(exercise.restSeconds)}</strong><span>recupero</span></div></div>{(exercise.loadLabel || exercise.effortLabel) && <div className="detail-facts">{exercise.loadLabel && <p><strong>Carico:</strong> {exercise.loadLabel}</p>}{exercise.effortLabel && <p><strong>Intensità:</strong> {exercise.effortLabel}</p>}</div>}{exercise.note && <div className="detail-note"><strong>Da ricordare</strong><p>{exercise.note}</p></div>}<h3>Ultima volta</h3><PreviousResults previous={previous} exercise={exercise} /></>
 }
 
 /**
  * Serie corrispondente dell'ultima volta e, a serie spuntata, di quanto è stata superata e l'eventuale record.
  * Un record presuppone una seduta precedente confrontabile, quindi questa riga c'è sempre quando serve.
  */
-function PreviousInline({ result, previous, mode, unit, record }: { result: SetResult; previous?: SetResult; mode: ExercisePrescription['mode']; unit?: 'kg' | 'lb'; record: boolean }) {
+function PreviousInline({ result, previous, exercise, record }: { result: SetResult; previous?: SetResult; exercise: ExercisePrescription; record: boolean }) {
   const improvement = setImprovement(result, previous)
-  return <div className="previous-inline"><span>Ultima:</span><strong>{formatResult(previous, mode, unit)}</strong>
-    {improvement && <span className="set-delta">{formatImprovement(improvement, mode, unit)}<span className="sr-only"> rispetto all’ultima volta</span></span>}
+  return <div className="previous-inline"><span>Ultima:</span><strong>{formatResult(previous, exercise)}</strong>
+    {improvement && <span className="set-delta">{formatImprovement(improvement, exercise)}<span className="sr-only"> rispetto all’ultima volta</span></span>}
     {record && <span className="record-badge"><Icon name="star" size={16} /><span className="sr-only">Nuovo </span>Record<span className="sr-only"> personale</span></span>}</div>
 }
 
@@ -179,6 +182,8 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
   const [error, setError] = useState<{ index: number; message: string } | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [showPrevious, setShowPrevious] = useState(false)
+  // Conserva virgola e decimali durante la digitazione, separati dal valore canonico in secondi.
+  const [minuteDrafts, setMinuteDrafts] = useState<Record<number, { text: string; stored: string }>>({})
   const summaryButton = useRef<HTMLButtonElement>(null)
   // Esercizio completato entrando in una sua serie facoltativa: la card resta aperta sotto il dito.
   const keepOpen = useRef(false)
@@ -211,6 +216,8 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
   }
   // Esercizi a tempo (plank, cardio): niente carico, si registra solo il tempo fatto.
   const timed = exercise.mode === 'seconds'
+  const minutes = isTimedCardio(exercise)
+  const amountLabel = minutes ? 'minuti' : timed ? 'secondi' : 'ripetizioni'
   // Un tocco sul carico vuoto lo riempie con quello della serie corrispondente dell'ultima volta. Solo il carico:
   // le ripetizioni si scrivono sempre a mano (AGENT.md §6.1).
   const fillLoadFromLast = (setIndex: number) => {
@@ -256,7 +263,7 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
   const defer = onDefer && !complete && (deferred || canDefer)
     ? <button type="button" className="text-button defer-exercise" onClick={() => { setExpanded(false); onDefer(exercise.id) }}>{deferred ? 'Rimetti al suo posto' : 'Fallo dopo'}</button> : null
   if (collapsed) {
-    const summary = results.filter(set => set.completed).map(set => formatResult(set, exercise.mode, exercise.loadUnit)).join(' · ')
+    const summary = results.filter(set => set.completed).map(set => formatResult(set, exercise)).join(' · ')
     return <article className={`set-panel is-collapsed ${complete ? 'exercise-complete' : 'exercise-later'}`} id={`exercise-${prefix}`}>
       <button ref={summaryButton} type="button" className="set-summary" aria-expanded="false" aria-label={complete ? `${exercise.name}: completato, ${completed} di ${exercise.sets} serie. Apri per modificare` : `${exercise.name}: rimandato, ${completed} di ${exercise.sets} serie. Apri per farlo ora`} onClick={() => setExpanded(true)}>
         <span className={`exercise-number ${complete ? 'is-done' : 'is-later'}`}><Icon name={complete ? 'check' : 'clock'} size={20} /></span>
@@ -270,17 +277,26 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
     <div className="set-card-heading"><MuscleGroupImage exercise={exercise} /><div>{area && <span className="mini-label">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} illustrated={false} /></div><span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span></div>
     <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` · +${exercise.optionalSets} facoltative` : ''}</span><span><Icon name="clock" size={16} />{restLabel(exercise.restSeconds)} recupero</span>{defer}</div>
     <div className="set-rows">
-      <div className={`set-grid set-header ${timed ? 'is-timed' : ''}`}><span>Serie</span>{!timed && <span>{exercise.loadUnit?.toUpperCase() ?? 'Carico'}</span>}<span>{timed ? 'Secondi' : 'Ripetizioni'}</span><span>Fatto</span></div>
+      <div className={`set-grid set-header ${timed ? 'is-timed' : ''}`}><span>Serie</span>{!timed && <span>{exercise.loadUnit?.toUpperCase() ?? 'Carico'}</span>}<span>{minutes ? 'Minuti' : timed ? 'Secondi' : 'Ripetizioni'}</span><span>Fatto</span></div>
       {results.map((result, setIndex) => {
         const name = `${exercise.name}, serie ${setIndex + 1}`
-        const lastLoad = last(setIndex)?.load.trim() || undefined, lastAmount = last(setIndex)?.amount.trim() || undefined
+        const lastLoad = last(setIndex)?.load.trim() || undefined
+        const lastAmount = displaySetAmount(last(setIndex)?.amount.trim() ?? '', exercise) || undefined
+        const draft = minuteDrafts[setIndex]
+        const amount = minutes && draft?.stored === result.amount ? draft.text : displaySetAmount(result.amount, exercise)
         return <div className={`set-row ${result.completed ? 'row-complete' : ''} ${setIndex >= exercise.sets ? 'optional-set' : ''}`} key={setIndex}><div className={`set-grid ${timed ? 'is-timed' : ''}`}><strong title={setIndex >= exercise.sets ? 'Serie facoltativa' : undefined}>{setIndex + 1}{setIndex >= exercise.sets && <small aria-label="facoltativa">F</small>}</strong>
           {!timed && <input className={lastLoad ? 'has-last' : undefined} aria-label={`${name}, carico${exercise.loadUnit ? ` in ${exercise.loadUnit}` : ''}${lastLoad ? `, ultima volta ${lastLoad}` : ''}`} inputMode="decimal" maxLength={12} placeholder={lastLoad ?? '—'} value={result.load} readOnly={finished}
             onFocus={() => enterSet(setIndex)} onClick={() => fillLoadFromLast(setIndex)} onBlur={() => { if (freshLoad.current === setIndex) freshLoad.current = null }} onChange={event => typeLoad(setIndex, event.target.value, event.nativeEvent)} />}
-          <input className={lastAmount ? 'has-last' : undefined} aria-label={`${name}, ${timed ? 'secondi' : 'ripetizioni'}${lastAmount ? `, ultima volta ${lastAmount}` : ''}`} aria-invalid={error?.index === setIndex || undefined} aria-describedby={error?.index === setIndex ? `${prefix}-error` : undefined} inputMode={timed ? 'decimal' : 'numeric'} maxLength={8} placeholder={lastAmount ?? '—'} value={result.amount} readOnly={finished}
-            onFocus={() => enterSet(setIndex)} onChange={event => { setError(null); onChange(exercise.id, setIndex, { ...result, amount: event.target.value, completed: false }) }} />
+          <input className={lastAmount ? 'has-last' : undefined} aria-label={`${name}, ${amountLabel}${lastAmount ? `, ultima volta ${lastAmount}` : ''}`} aria-invalid={error?.index === setIndex || undefined} aria-describedby={error?.index === setIndex ? `${prefix}-error` : undefined} inputMode={timed ? 'decimal' : 'numeric'} maxLength={8} placeholder={lastAmount ?? '—'} value={amount} readOnly={finished}
+            onFocus={() => enterSet(setIndex)} onBlur={() => { if (minutes) setMinuteDrafts(drafts => { const next = { ...drafts }; delete next[setIndex]; return next }) }}
+            onChange={event => {
+              setError(null)
+              const text = event.target.value, stored = storedSetAmount(text, exercise)
+              if (minutes) setMinuteDrafts(drafts => ({ ...drafts, [setIndex]: { text, stored } }))
+              onChange(exercise.id, setIndex, { ...result, amount: stored, completed: false })
+            }} />
           <button className={`set-check ${result.completed ? 'is-complete' : ''}`} disabled={finished} aria-label={`${result.completed ? 'Riapri' : 'Completa'} ${name}`} aria-pressed={result.completed} onClick={() => toggleSet(setIndex, result)}><Icon name="check" size={20} /></button></div>
-          {previous && <PreviousInline result={result} previous={previous.results[setIndex]} mode={exercise.mode} unit={exercise.loadUnit} record={recordIndex === setIndex} />}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>
+          {previous && <PreviousInline result={result} previous={previous.results[setIndex]} exercise={exercise} record={recordIndex === setIndex} />}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>
       })}
     </div>
     <div className="set-card-footer">
@@ -291,7 +307,7 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
       </span>
     </div>
     {showPrevious && <Modal label={`Ultima volta: ${exercise.name}`} variant="sheet" onClose={() => setShowPrevious(false)}>
-      <div className="previous-sheet"><span className="eyebrow">Ultima volta</span><h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><PreviousResults previous={previous} mode={exercise.mode} unit={exercise.loadUnit} /></div>
+      <div className="previous-sheet"><span className="eyebrow">Ultima volta</span><h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><PreviousResults previous={previous} exercise={exercise} /></div>
     </Modal>}
   </article>
 }

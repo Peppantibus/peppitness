@@ -9,6 +9,7 @@ import { formatResult } from '../domain/workout'
 import type { SavedProgram } from '../domain/programs'
 import type { WorkoutDay, WorkoutSession } from '../domain/types'
 import { weekdays } from '../domain/weekly'
+import { isTimedCardio } from '../domain/muscle-groups'
 
 const short = (date: string) => formatDate(date, { day: 'numeric', month: 'short' })
 const stateLabel: Record<PlannedSlot['state'], string> = { done: 'fatta', missed: 'saltata', planned: 'da fare' }
@@ -32,13 +33,16 @@ function Sparkline({ trend, unit }: { trend: ExerciseTrend; unit: string }) {
 }
 
 function TrendCard({ trend }: { trend: ExerciseTrend }) {
-  const unit = trend.metric === 'best' ? trend.exercise.loadUnit ?? 'kg' : trend.exercise.mode === 'seconds' ? 's' : trend.exercise.loadUnit ? `${trend.exercise.loadUnit}·rip` : 'rip.'
-  const caption = trend.metric === 'best' ? 'Carico massimo' : trend.exercise.mode === 'seconds' ? 'Secondi totali' : 'Volume (ripetizioni)'
+  const minutes = isTimedCardio(trend.exercise)
+  // Converti solo la vista: l'andamento e lo storico canonici restano in secondi.
+  if (minutes && trend.metric === 'volume') trend = { ...trend, first: trend.first === null ? null : trend.first / 60, last: trend.last === null ? null : trend.last / 60, points: trend.points.map(point => ({ ...point, volume: point.volume / 60 })) }
+  const unit = trend.metric === 'best' ? trend.exercise.loadUnit ?? 'kg' : minutes ? 'min' : trend.exercise.mode === 'seconds' ? 's' : trend.exercise.loadUnit ? `${trend.exercise.loadUnit}·rip` : 'rip.'
+  const caption = trend.metric === 'best' ? 'Carico massimo' : minutes ? 'Minuti totali' : trend.exercise.mode === 'seconds' ? 'Secondi totali' : 'Volume (ripetizioni)'
   const delta = trend.first !== null && trend.last !== null ? trend.last - trend.first : null
   const changeText = { up: 'In crescita', down: 'In calo', flat: 'Stabile', new: 'Prima seduta', none: 'Nessuna seduta' }[trend.change]
   const bestLoad = Math.max(0, ...trend.points.map(point => point.best ?? 0))
-  const volume = trend.points.reduce((total, point) => total + point.volume, 0)
-  const volumeUnit = trend.exercise.mode === 'seconds' ? 's' : bestLoad ? `${trend.exercise.loadUnit ?? 'kg'} · rip.` : 'rip.'
+  const volume = trend.points.reduce((total, point) => total + point.volume, 0) / (minutes && trend.metric === 'best' ? 60 : 1)
+  const volumeUnit = minutes ? 'min' : trend.exercise.mode === 'seconds' ? 's' : bestLoad ? `${trend.exercise.loadUnit ?? 'kg'} · rip.` : 'rip.'
   return <article className="trend-card">
     <div className="trend-head"><div><h3>{trend.exercise.name}</h3><small>{caption} · {trend.points.length} {trend.points.length === 1 ? 'seduta' : 'sedute'}</small></div>
       <span className={`trend-badge is-${trend.change}`}>{trend.change === 'up' ? <Icon name="arrow" size={16} style={{ transform: 'rotate(-45deg)' }} /> : trend.change === 'down' ? <Icon name="arrow" size={16} style={{ transform: 'rotate(45deg)' }} /> : null}{changeText}</span></div>
@@ -92,7 +96,7 @@ export function Progress({ workout, days, sessions, today }: { workout: SavedPro
       <ul className="record-list">{records.map(record => <li key={record.exercise.id}>
         <span className="record-icon" aria-hidden="true"><Icon name="star" size={16} /></span>
         <span className="record-name">{record.exercise.name}</span>
-        <strong>{formatResult({ load: record.score.load ? formatDecimal(record.score.load) : '', amount: formatDecimal(record.score.amount), completed: true }, record.exercise.mode, record.exercise.loadUnit)}</strong>
+        <strong>{formatResult({ load: record.score.load ? formatDecimal(record.score.load) : '', amount: formatDecimal(record.score.amount), completed: true }, record.exercise)}</strong>
         <small>{short(record.date)}</small>
       </li>)}</ul>
     </section>}
