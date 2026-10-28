@@ -30,6 +30,7 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
   onDiscard?: () => void
 }) {
   const [choosing, setChoosing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
   const totalSets = day.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)
   const optionalSets = day.exercises.reduce((sum, exercise) => sum + (exercise.optionalSets ?? 0), 0)
   const previousDay = sessions.filter(session => session.completedAt && (session.day.id === day.id || session.day.label === day.label) && session.date <= date)
@@ -58,8 +59,11 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
     return () => observer.disconnect()
   }, [activeElsewhere])
   const startLabel = activeElsewhere && activeSession ? `Riprendi «${activeSession.day.title}» (in corso)` : activeHere ? 'Riprendi allenamento' : 'Inizia allenamento'
+  const shortTitle = day.title.trim()
+  const title = /^[a-z]\d?$/i.test(shortTitle) || shortTitle.toLocaleLowerCase('it') === day.label.trim().toLocaleLowerCase('it') ? `Allenamento ${shortTitle}` : day.title
+  const showContext = activeHere || (weekly ? date !== today || day.id !== suggestedDayId : day.id === suggestedDayId)
   const cycleContent = <>
-    <span className="cycle-link-copy"><strong>{planTitle}</strong>{cycle && <small>{cycle.label}{cycle.detail && <> · {cycle.detail}</>}</small>}</span>
+    <span className="cycle-link-copy"><strong>{progressHref ? 'Progressi del programma' : planTitle}</strong>{cycle && <small>{cycle.label}{cycle.detail && <> · {cycle.detail}</>}</small>}</span>
     {cycle?.ratio != null && <span className="cycle-link-bar" aria-hidden="true"><span style={{ width: `${Math.round(Math.min(1, Math.max(0, cycle.ratio)) * 100)}%` }} /></span>}
   </>
   return <>
@@ -68,21 +72,27 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
       <div className="workout-aside">
       {workoutWeekdays.length > 0 && <p className="small muted">{isWorkoutWeekday(date, workoutWeekdays) ? 'È uno dei tuoi giorni abituali di allenamento.' : 'Giorno libero: puoi comunque iniziare una seduta.'}</p>}
       {!weekly && days.length > 1 && <Segmented className="session-switch" label="Scegli una seduta" value={day.id} onChange={onDay} options={days.map(item => ({ value: item.id, label: item.label, ariaLabel: `Seduta ${item.label}: ${item.title}${item.id === suggestedDayId ? ', suggerita' : ''}`, dot: item.id === suggestedDayId }))} />}
-      <section className="workout-summary" aria-labelledby="workout-title">
-        <div className="workout-summary-top"><span className={`workout-kicker ${activeHere ? 'is-active' : ''}`}>{activeHere ? <><span className="workout-live-dot" aria-hidden="true" />In corso · iniziata alle {startedAt}</> : kicker}</span>{weekly && days.length > 0 && !activeHere && <button type="button" className="text-button change-session" aria-haspopup="dialog" onClick={() => setChoosing(true)}><Icon name="swap" size={16} />Cambia seduta</button>}</div>
-        <h2 id="workout-title">{day.title}</h2>
+      <section className={`workout-summary ${expanded ? 'is-expanded' : ''}`} aria-labelledby="workout-title">
+        <button type="button" className="workout-summary-toggle" aria-expanded={expanded} aria-controls="workout-program-details" aria-label={`${expanded ? 'Riduci' : 'Espandi'} ${title}`} onClick={() => setExpanded(!expanded)} />
+        <div className="workout-summary-top"><div className="workout-summary-copy">
+        {showContext && <span className={`workout-kicker ${activeHere ? 'is-active' : ''}`}>{activeHere ? <><span className="workout-live-dot" aria-hidden="true" />In corso · iniziata alle {startedAt}</> : kicker}</span>}
+        <h2 id="workout-title">{title}<Icon name="chevronDown" size={16} /></h2>
         {activeHere
           ? <div className="workout-live-progress"><p className="workout-stats"><strong>{activeDone} di {activeRequired} serie</strong> · {day.exercises.length} {day.exercises.length === 1 ? 'esercizio' : 'esercizi'}</p><progress max={activeRequired || 1} value={activeDone} aria-label={`Serie completate: ${activeDone} di ${activeRequired}`} /></div>
           : <p className="workout-stats">{day.exercises.length} {day.exercises.length === 1 ? 'esercizio' : 'esercizi'} · {totalSets} serie{optionalSets > 0 && <> + {optionalSets} facoltative</>}</p>}
-        {progressHref ? <a className="cycle-link" href={progressHref} aria-label={`${planTitle}${cycle ? `, ${cycle.label}${cycle.detail ? `, ${cycle.detail}` : ''}` : ''}. Apri i tuoi progressi`}>{cycleContent}<Icon name="chevron" size={20} /></a>
-          : <div className="cycle-link is-static">{cycleContent}</div>}
-        {planGuidance && <details className="workout-guidance"><summary>Indicazioni del programma</summary><p>{planGuidance}</p></details>}
+        </div>{weekly && days.length > 0 && !activeHere && <button type="button" className="text-button change-session" aria-label="Cambia seduta" aria-haspopup="dialog" onClick={() => setChoosing(true)}>Cambia<Icon name="swap" size={16} /></button>}</div>
+        <div className="workout-program-content" id="workout-program-details" hidden={!expanded}>
+          <p className="workout-program-name"><strong>{planTitle}</strong>{cycle && <span className="workout-program-week"> · {cycle.label}</span>}</p>
+          {cycle && (progressHref ? <a className="cycle-link" href={progressHref} aria-label={`${planTitle}, ${cycle.label}. Apri i tuoi progressi`}>{cycleContent}<Icon name="chevron" size={20} /></a> : <div className="cycle-link is-static">{cycleContent}</div>)}
+          {!cycle && progressHref && <a className="text-link" href={progressHref}>Vedi i progressi<Icon name="arrow" size={16} /></a>}
+          {planGuidance && <section className="workout-guidance"><h3>Indicazioni del programma</h3><p>{planGuidance}</p></section>}
+          {day.notes && <section className="workout-guidance"><h3>Indicazioni della seduta</h3><p>{day.notes}</p></section>}
+        </div>
         {activeElsewhere && activeSession
           ? <><button ref={startButton} className="button secondary lg workout-start" onClick={onStart}>{startLabel}<Icon name="play" size={20} /></button><p className="workout-blocked">Termina l’allenamento in corso per iniziare questa seduta.</p></>
           : <button ref={startButton} className="button primary lg workout-start" onClick={onStart}>{startLabel}<Icon name="play" size={20} /></button>}
         {activeSession && onDiscard && <button type="button" className="button secondary danger workout-cancel" aria-haspopup="dialog" onClick={onDiscard}>Annulla allenamento<Icon name="close" size={16} /></button>}
       </section>
-      {day.notes && <section className="panel plan-guidance"><div><strong>Indicazioni della seduta</strong><p>{day.notes}</p></div></section>}
       </div>
       <div className="workout-exercises">
       <div className="section-heading"><h2>Gli esercizi</h2><span>{previousDay ? `Ultima seduta · ${formatDate(previousDay.date, { day: 'numeric', month: 'short' })}` : 'Nessuna seduta precedente'}</span></div>
