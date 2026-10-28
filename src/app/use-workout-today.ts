@@ -9,19 +9,23 @@ import { adherence, cycleInfo, weeklyProgress } from '../domain/progress'
 import type { WorkoutSession } from '../domain/types'
 import { dayForDate, isWeekly } from '../domain/weekly'
 import type { CycleSummary } from '../features/Workout'
+import { datedDay } from '../domain/exercise-changes'
+import type { ExerciseChange } from '../domain/exercise-changes'
 
 /**
  * Scheda della data mostrata: versione corrente del programma seguito (nessun programma inventato sotto
  * un account), seduta prevista o scelta, ciclo e date con sedute. Nel programma settimanale la seduta
  * segue il giorno e una scelta diversa vale solo per quella data.
  */
-export function useWorkoutToday({ configured, workout, programs, catalogRows, sessions, date, today }: {
+export function useWorkoutToday({ configured, workout, programs, catalogRows, sessions, date, today, changes = [] }: {
+  changes?: ExerciseChange[]
   configured: boolean; workout: SavedProgram | null; programs: ProgramIndex[]; catalogRows: readonly CatalogExercise[]
   sessions: WorkoutSession[]; date: string; today: string
 }) {
   const [dayId, setDayId] = useState<string | null>(null)
   const [dayChoice, setDayChoice] = useState<{ date: string; id: string } | null>(null)
-  const workoutDays = useMemo(() => configured ? workout ? workoutDaysFromProgram(withCatalogMuscleGroups(workout.document, catalogRows)) : [] : demoWorkoutDays, [configured, workout, catalogRows])
+  const baseDays = useMemo(() => configured ? workout ? workoutDaysFromProgram(withCatalogMuscleGroups(workout.document, catalogRows)) : [] : demoWorkoutDays, [configured, workout, catalogRows])
+  const workoutDays = baseDays.map(day => datedDay(day, date, workout?.version.id ?? 'local', changes))
   const weekly = isWeekly(workoutDays)
   const planned = weekly ? dayForDate(workoutDays, date) : undefined
   const suggestion = weekly ? planned : suggestedDay(workoutDays, sessions)
@@ -41,7 +45,7 @@ export function useWorkoutToday({ configured, workout, programs, catalogRows, se
 
   const shownWeek = weekDates(date)
   return {
-    workoutDays, weekly, planned, suggestion, day, selectDay,
+    workoutDays, baseDays, weekly, planned, suggestion, day, selectDay,
     /** Cambio di programma: la scelta manuale della seduta non vale più. */
     resetDay: () => setDayId(null),
     followable: programs.filter(item => item.plan.activeVersionId && !item.plan.archivedAt),

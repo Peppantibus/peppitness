@@ -24,6 +24,8 @@
     "test:exercises:browser": "node scripts/exercises-browser-check.mjs",
     "test:programs:browser": "node scripts/programs-browser-check.mjs",
     "test:diary:browser": "node scripts/diary-browser-check.mjs",
+    "test:workout-changes:local": "node --experimental-strip-types scripts/workout-changes-local-check.mjs",
+    "test:workout-changes:browser": "node --experimental-strip-types scripts/workout-changes-browser-check.mjs",
     "test:wizard:browser": "node scripts/wizard-browser-check.mjs",
     "test:pwa:browser": "node scripts/pwa-browser-check.mjs",
     "test:mfa:local": "node --experimental-strip-types scripts/mfa-api-local-check.mjs",

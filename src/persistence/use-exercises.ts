@@ -2,6 +2,7 @@ import { useEffect, useMemo, useSyncExternalStore } from 'react'
 import { useAuth } from '../auth/AuthProvider'
 import { createExercisesRepository } from './exercises-repository'
 import { ExercisesStore, initialExercisesState } from './exercises-store'
+import { browserStorage } from './diary-store'
 
 const unavailable = initialExercisesState()
 const subscribeUnavailable = () => () => undefined
@@ -10,7 +11,7 @@ const getUnavailable = () => unavailable
 export function useExercises(active: boolean) {
   const { client, state: auth } = useAuth()
   const owner = auth.session?.user.id
-  const store = useMemo(() => client && owner ? new ExercisesStore(createExercisesRepository(client, owner)) : null, [client, owner])
+  const store = useMemo(() => client && owner ? new ExercisesStore(createExercisesRepository(client, owner), { storage: browserStorage, owner }) : null, [client, owner])
   const state = useSyncExternalStore(store?.subscribe ?? subscribeUnavailable, store?.getSnapshot ?? getUnavailable)
   useEffect(() => {
     if (store && active && ['idle', 'loading'].includes(store.getSnapshot().phase)) void store.load()

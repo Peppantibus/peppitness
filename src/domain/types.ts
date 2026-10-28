@@ -1,5 +1,6 @@
 import type { MuscleGroup } from './muscle-groups.ts'
 import type { MealEnergy } from './food-energy.ts'
+import type { SnapshotExercise } from './diary.ts'
 
 /** Il dominio non dipende dalle risposte Supabase o dalla UI. */
 export type LocalDate = string
@@ -33,6 +34,8 @@ export interface MealLog {
 }
 
 export interface ExercisePrescription {
+  /** Prescrizione canonica completa: necessaria per variazioni e dosi senza parsing dei testi UI. */
+  snapshot?: SnapshotExercise
   muscleGroup?: MuscleGroup | null
   id: string
   exerciseId: string
@@ -74,6 +77,8 @@ export interface SetResult {
 export interface WorkoutSession {
   id: string
   planId?: string
+  versionId?: string
+  timeZone?: string
   date: LocalDate
   /** Snapshot della seduta: una nuova versione del programma non lo modifica. */
   day: WorkoutDay

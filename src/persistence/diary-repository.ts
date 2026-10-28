@@ -6,8 +6,10 @@ import { isExerciseId } from '../domain/exercises.ts'
 import { isMuscleGroup } from '../domain/muscle-groups.ts'
 import { isLocalDate } from '../domain/dates.ts'
 import type { DayType, Meal, MealStatus, SetResult, WorkoutSession } from '../domain/types.ts'
+import type { ExerciseChange } from '../domain/exercise-changes.ts'
+import type { DiaryOp } from '../domain/diary.ts'
 
-export type DiaryTable = 'workout_set_logs' | 'meal_logs' | 'diary_days' | 'workout_sessions'
+export type DiaryTable = 'workout_set_logs' | 'meal_logs' | 'diary_days' | 'workout_sessions' | 'workout_changes'
 export type RowKey = Record<string, string | number>
 export type Row = Record<string, unknown>
 
@@ -15,7 +17,7 @@ export type Row = Record<string, unknown>
 /** Righe cambiate dopo un istante, più gli ID delle sedute ancora attive (per riconoscere quelle annullate altrove). */
 /** Numero di righe per tabella sul server: rivela le cancellazioni, che le righe cambiate non mostrano. */
 export interface DiaryCounts { sessions: number; sets: number; meals: number; days: number }
-export interface DiaryChanges { sessions: unknown[]; sets: unknown[]; meals: unknown[]; days: unknown[]; activeSessionIds: string[]; cursor: string | null; counts?: DiaryCounts }
+export interface DiaryChanges { sessions: unknown[]; sets: unknown[]; meals: unknown[]; days: unknown[]; changes?: ExerciseChange[]; activeSessionIds: string[]; cursor: string | null; counts?: DiaryCounts }
 
 /** Righe conosciute dalla copia confermata: una revisione per riga del server. */
 export function countsOf(revisions: Record<string, number>): DiaryCounts {
@@ -30,6 +32,7 @@ export function countsOf(revisions: Record<string, number>): DiaryCounts {
 }
 
 export interface DiaryTransport {
+  change?(op: Extract<DiaryOp, { type: 'change' | 'undo-change' }>, signal: AbortSignal): Promise<ExerciseChange>
   /** Lettura completa; `cursor` è l'`updated_at` più recente letto (assente nei trasporti di prova). */
   loadAll(signal: AbortSignal): Promise<{ data: DiaryData; revisions: Record<string, number>; cursor?: string | null }>
   /** Lettura incrementale: righe con `updated_at` successivo a `since`. Facoltativa: senza, sempre lettura completa. */
@@ -91,9 +94,24 @@ export function sessionFromRow(value: unknown): { session: WorkoutSession; revis
   const day = dayFromSnapshot(id(row.day_id), parsed)
   const results = Object.fromEntries(day.exercises.map(exercise => [exercise.id, Array.from({ length: totalSets(exercise) }, (): SetResult => ({ load: '', amount: '', completed: false }))]))
   const note = string(row.note ?? '')
-  const session: WorkoutSession = { id: id(row.id), planId: id(row.plan_id), date: date(row.diary_date), day, startedAt: timestamp(row.started_at), results,
+  const session: WorkoutSession = { id: id(row.id), planId: id(row.plan_id), ...(row.version_id ? { versionId: id(row.version_id) } : {}), ...(row.time_zone ? { timeZone: string(row.time_zone) } : {}), date: date(row.diary_date), day, startedAt: timestamp(row.started_at), results,
     ...(row.status === 'completed' ? { completedAt: timestamp(row.completed_at) } : {}), ...(note ? { note } : {}) }
   return { session, revision: revision(row.revision) }
+}
+
+export function changeFromRow(value: unknown): ExerciseChange {
+  const row = record(value), change = record(row.change_doc)
+  const partner = change.partner === null ? null : record(change.partner)
+  if (typeof change.cancelled !== 'boolean') bad()
+  const result: ExerciseChange = {
+    id: id(change.id), sessionId: id(change.sessionId), planId: id(change.planId), versionId: id(change.versionId), sourceDate: date(change.sourceDate),
+    sourceDayId: id(change.sourceDayId), sourceId: id(change.sourceId), timeZone: string(change.timeZone), createdAt: timestamp(change.createdAt),
+    before: snapshotExercise(change.before), after: snapshotExercise(change.after), cancelled: change.cancelled as boolean,
+    partner: partner ? { date: date(partner.date), dayId: id(partner.dayId), prescriptionId: id(partner.prescriptionId), before: snapshotExercise(partner.before), after: snapshotExercise(partner.after) } : null,
+  }
+  if (result.id !== row.id || result.before.id !== result.sourceId || result.after.id !== result.sourceId
+    || (result.partner && (result.partner.before.id !== result.partner.prescriptionId || result.partner.after.id !== result.partner.prescriptionId))) bad()
+  return result
 }
 
 export function setFromRow(value: unknown) {
@@ -157,7 +175,8 @@ export function mergeDiary(base: DiaryData, baseRevisions: Record<string, number
   for (const raw of changes.sessions) {
     const { session, revision } = sessionFromRow(raw)
     const existing = sessions.get(session.id)
-    sessions.set(session.id, existing ? { ...session, results: existing.results } : session)
+    sessions.set(session.id, existing ? { ...session, results: Object.fromEntries(session.day.exercises.map(exercise => [exercise.id,
+      session.results[exercise.id]!.map((empty, index) => existing.results[exercise.id]?.[index] ?? empty)])) } : session)
     revisions[`session:${session.id}`] = revision
     changed.add(session.id)
   }
@@ -176,7 +195,7 @@ export function mergeDiary(base: DiaryData, baseRevisions: Record<string, number
     sessions.set(session.id, { ...session, results: { ...session.results, [set.prescriptionId]: results.map((value, index) => index === set.index ? set.result : value) } })
     revisions[`set:${set.sessionId}:${set.prescriptionId}:${set.index}`] = set.revision
   }
-  const data: DiaryData = { sessions: [...sessions.values()], mealLogs: { ...base.mealLogs }, dayTypes: { ...base.dayTypes } }
+  const data: DiaryData = { sessions: [...sessions.values()], mealLogs: { ...base.mealLogs }, dayTypes: { ...base.dayTypes }, changes: changes.changes ?? base.changes ?? [] }
   for (const raw of changes.meals) { const meal = mealLogFromRow(raw); data.mealLogs[mealLogKey(meal.date, meal.log.mealId)] = meal.log; revisions[`meal:${meal.date}:${meal.log.mealId}`] = meal.revision }
   for (const raw of changes.days) { const day = dayFromRow(raw); data.dayTypes[day.date] = day.dayType; revisions[`day:${day.date}`] = day.revision }
   data.sessions.sort((a, b) => a.date.localeCompare(b.date) || a.startedAt.localeCompare(b.startedAt))
@@ -201,8 +220,9 @@ export function buildDiary(sessions: unknown[], sets: unknown[], meals: unknown[
 }
 
 const columns: Record<DiaryTable, string> = {
+  workout_changes: 'id,owner_id,change_doc,updated_at',
   workout_sessions: 'id,owner_id,plan_id,version_id,day_id,diary_date,time_zone,day_snapshot,status,started_at,completed_at,note,revision,updated_at',
-  workout_set_logs: 'id,owner_id,session_id,prescription_id,set_index,load,amount,completed,revision,updated_at',
+  workout_set_logs: 'id,owner_id,session_id,prescription_id,exercise_id,change_id,set_index,load,amount,completed,revision,updated_at',
   meal_logs: 'id,owner_id,diary_date,meal_id,meal_plan_id,status,note,day_type,meal_snapshot,revision,updated_at',
   diary_days: 'owner_id,diary_date,day_type,revision,updated_at',
 }
@@ -246,6 +266,14 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
     }
   }
   return {
+    async change(op, signal) {
+      const auth = await token(signal)
+      const { data, error } = op.type === 'change'
+        ? await client.rpc('apply_workout_change', { p_request_id: op.opId, p_change: op.change, p_exercise_revision: op.exerciseRevision }).setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+        : await client.rpc('undo_workout_change', { p_request_id: op.opId, p_change_id: op.changeId }).setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+      if (error) throw failure(error)
+      return changeFromRow(owned(data))
+    },
     mfaSatisfied,
     async loadAll(signal) {
       // Con aal1 dove serve aal2 la RLS restituirebbe un diario vuoto: non deve sostituire quello confermato.
@@ -255,10 +283,13 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
       const sets = await pages('workout_set_logs', 'id', signal)
       const meals = await pages('meal_logs', 'id', signal)
       const days = await pages('diary_days', 'diary_date', signal)
+      const changes = (await pages('workout_changes', 'id', signal)).map(changeFromRow)
       // Una seduta creata fra le due letture può avere serie non ancora abbinate: si rilegge.
       const known = new Set(sessions.map(row => row.id))
       if (sets.some(row => !known.has(row.session_id))) throw new DiaryFailure('unavailable')
-      return { ...buildDiary(sessions, sets, meals, days), cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]) }
+      const full = buildDiary(sessions, sets, meals, days)
+      full.data.changes = changes
+      return { ...full, cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]) }
     },
     async loadChanges(since, signal) {
       if (!await mfaSatisfied(signal)) throw new DiaryFailure('session')
@@ -275,6 +306,8 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
       const sets = await pages('workout_set_logs', 'id', signal, since)
       const meals = await pages('meal_logs', 'id', signal, since)
       const days = await pages('diary_days', 'diary_date', signal, since)
+      // Lettura completa delle variazioni (tombstone inclusi): rileva anche cancellazioni/cascade.
+      const changes = (await pages('workout_changes', 'id', signal)).map(changeFromRow)
       // Conteggi dopo le modifiche: una riga cancellata (anche dall'amministratore) li rende diversi dalla copia.
       const count = async (table: DiaryTable) => {
         const { count: rows, error: countError } = await client.from(table).select('owner_id', { count: 'exact', head: true }).eq('owner_id', owner)
@@ -284,7 +317,7 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
         return typeof rows === 'number' ? rows : bad()
       }
       const counts = { sessions: await count('workout_sessions'), sets: await count('workout_set_logs'), meals: await count('meal_logs'), days: await count('diary_days') }
-      return { sessions, sets, meals, days, activeSessionIds, cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]), counts }
+      return { sessions, sets, meals, days, changes, activeSessionIds, cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]), counts }
     },
     async start(args, signal) {
       const auth = await token(signal)

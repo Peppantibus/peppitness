@@ -3,14 +3,17 @@ import type { MuscleGroup } from './muscle-groups.ts'
 import type { ProgramDocument } from './programs.ts'
 import { parseNonNegativeNumber, validateSet } from './validation.ts'
 import type { DayType, ExercisePrescription, LocalDate, Meal, MealLog, MealStatus, RestTimerState, SetResult, WorkoutDay, WorkoutSession } from './types.ts'
+import { applyExerciseChange, changeAt } from './exercise-changes.ts'
+import type { ExerciseChange } from './exercise-changes.ts'
 
 /** Stato del diario mostrato dalle schermate: sedute, pasti e tipo di giornata. */
 export interface DiaryData {
+  changes?: ExerciseChange[]
   sessions: WorkoutSession[]
   mealLogs: Record<string, MealLog>
   dayTypes: Record<LocalDate, DayType>
 }
-export const emptyDiary = (): DiaryData => ({ sessions: [], mealLogs: {}, dayTypes: {} })
+export const emptyDiary = (): DiaryData => ({ sessions: [], mealLogs: {}, dayTypes: {}, changes: [] })
 export function mealLogKey(date: LocalDate, mealId: string): string { return `${date}:${mealId}` }
 
 /** Prescrizione salvata nello snapshot server della seduta. */
@@ -27,13 +30,14 @@ export function formatDecimal(value: number | null): string {
   return value === null ? '' : String(value).replace('.', ',')
 }
 
-function prescription(value: SnapshotExercise): ExercisePrescription {
+export function prescription(value: SnapshotExercise): ExercisePrescription {
   const target = value.mode === 'reps'
     ? value.reps_min === value.reps_max ? String(value.reps_min) : `${value.reps_min}–${value.reps_max}`
     : `${value.duration_seconds} secondi`
   const effort = [value.rir !== null ? `RIR ${formatDecimal(value.rir)}` : '', value.rpe !== null ? `RPE ${formatDecimal(value.rpe)}` : ''].filter(Boolean).join(' · ')
   const perSide = value.per_side ? 'per lato' : ''
   return {
+    snapshot: structuredClone(value),
     ...(value.muscle_group === undefined ? {} : { muscleGroup: value.muscle_group }),
     id: value.id, exerciseId: value.exercise_id, name: value.name,
     area: [value.variant, value.equipment, perSide].filter(Boolean).join(' · ') || loadLabels[value.load_convention],
@@ -83,8 +87,10 @@ export function setValues(result: SetResult, mode: ExercisePrescription['mode'])
 
 /** Operazioni del diario: applicate subito alla vista locale e poi inviate in ordine. */
 export type DiaryOp =
+  | { type: 'change'; opId: string; sessionId: string; change: ExerciseChange; exerciseRevision: number }
+  | { type: 'undo-change'; opId: string; sessionId: string; changeId: string }
   | { type: 'start'; opId: string; session: WorkoutSession; planId: string; versionId: string; timeZone: string }
-  | { type: 'set'; opId: string; sessionId: string; prescriptionId: string; index: number; result: SetResult }
+  | { type: 'set'; opId: string; sessionId: string; prescriptionId: string; index: number; result: SetResult; exerciseId?: string; changeId?: string | null }
   | { type: 'complete'; opId: string; sessionId: string; at: string }
   | { type: 'discard'; opId: string; sessionId: string }
   | { type: 'note'; opId: string; sessionId: string; note: string }
@@ -94,6 +100,8 @@ export type DiaryOp =
 /** Chiave della riga server interessata: operazioni con la stessa chiave si uniscono. */
 export function opKey(op: DiaryOp): string {
   switch (op.type) {
+    case 'change': return `change:${op.change.id}`
+    case 'undo-change': return `change:${op.changeId}`
     // La nota sta sulla riga della seduta: stessa revisione di avvio e completamento.
     case 'start': case 'complete': case 'discard': case 'note': return `session:${op.type === 'start' ? op.session.id : op.sessionId}`
     case 'set': return `set:${op.sessionId}:${op.prescriptionId}:${op.index}`
@@ -104,20 +112,27 @@ export function opKey(op: DiaryOp): string {
 
 export function applyOp(data: DiaryData, op: DiaryOp): DiaryData {
   switch (op.type) {
+    case 'change': return applyExerciseChange(data, op.change)
+    case 'undo-change': {
+      const change = data.changes?.find(item => item.id === op.changeId)
+      return change ? applyExerciseChange(data, { ...change, cancelled: true }) : data
+    }
     case 'start':
       return data.sessions.some(session => session.id === op.session.id) ? data : { ...data, sessions: [...data.sessions, structuredClone(op.session)] }
     case 'set':
       return { ...data, sessions: data.sessions.map(session => {
         if (session.id !== op.sessionId) return session
         const exercise = session.day.exercises.find(item => item.id === op.prescriptionId)
-        if (!exercise || op.index < 0 || op.index >= totalSets(exercise)) return session
+        if (!exercise || (op.exerciseId && op.exerciseId !== exercise.exerciseId) || op.index < 0 || op.index >= totalSets(exercise)) return session
+        const change = session.versionId ? changeAt(data.changes ?? [], session.versionId, session.date, session.day.id, op.prescriptionId) : undefined
+        if (op.exerciseId && (op.changeId ?? null) !== (change?.id ?? null)) return session
         const current = session.results[op.prescriptionId] ?? emptyResults(session.day)[op.prescriptionId]!
         return { ...session, results: { ...session.results, [op.prescriptionId]: current.map((set, i) => i === op.index ? { ...op.result } : set) } }
       }) }
     case 'complete':
       return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId && !session.completedAt ? { ...session, completedAt: op.at } : session) }
     case 'discard':
-      return { ...data, sessions: data.sessions.filter(session => session.id !== op.sessionId || Boolean(session.completedAt)) }
+      return { ...data, changes: data.changes?.filter(change => change.sessionId !== op.sessionId), sessions: data.sessions.filter(session => session.id !== op.sessionId || Boolean(session.completedAt)) }
     case 'note':
       return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId ? { ...session, note: op.note } : session) }
     case 'meal': {

@@ -280,6 +280,8 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .icon-button.is-outlined:hover:not(:disabled) { background: var(--color-surface-muted); border-color: var(--color-control); }
 .icon-button.is-outlined[aria-current] { border-color: var(--color-primary); color: var(--color-primary); }
 .button-row, .program-actions, .catalog-actions, .preferences-actions, .account-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-4) 0; }
+.workout-cancel-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.workout-cancel-actions .button { min-width: 0; padding: var(--space-2) var(--space-3); white-space: normal; line-height: var(--leading-snug); }
 .account-actions { justify-content: flex-end; margin-top: var(--space-6); }
 
 /* Scelta singola (componente Segmented). */
@@ -789,6 +791,7 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .exercise-counter > span { font-size: var(--text-sm); font-weight: 400; color: var(--color-text-muted); }
 .prescription-line { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-1) var(--space-4); padding: 0 var(--space-5) var(--space-3); font-size: var(--text-sm); color: var(--color-text-muted); }
 .prescription-line > span { display: flex; align-items: center; gap: var(--space-1); }
+.prescription-line > .prescription-rest { margin-left: auto; }
 .prescription-line strong { color: var(--color-text); }
 .set-rows { padding: var(--space-3) var(--space-5) var(--space-1); border-top: 1px solid var(--color-border); }
 .set-grid { display: grid; grid-template-columns: 2rem 1fr 1fr var(--touch); align-items: center; gap: var(--space-2); }
@@ -813,7 +816,10 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 /* Esercizi a tempo (plank, cardio): niente colonna del carico. */
 .set-grid.is-timed { grid-template-columns: 2rem 1fr var(--touch); }
 /* «Fallo dopo»: in coda alla riga della prescrizione, l'esercizio rimandato ridotto in fondo. */
-.prescription-line .defer-exercise { margin-left: auto; font-size: var(--text-sm); }
+.set-card-tools { display: flex; flex: 1 0 100%; flex-wrap: wrap; align-items: center; gap: 0 var(--space-4); }
+.set-card-tools:empty { display: none; }
+.set-card-tools .text-button { min-height: 44px; padding: var(--space-2) 0; font-size: var(--text-sm); }
+.set-card-tools .detail-dialog { font-size: var(--text-base); }
 .exercise-number.is-later { background: var(--color-surface-muted); color: var(--color-text-muted); }
 .session-note { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
 .session-note h2, .session-note label { font-size: var(--text-md); font-weight: var(--weight-bold); }
@@ -1390,3 +1396,14 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 }
 .program-import { margin-top: var(--space-3); }
 .program-import-hint { margin: var(--space-2) 0 var(--space-3); }
+/* La ricerca riusa wz-search e conserva la dissolvenza senza traslazione su iOS. */
+.replacement-actions { display: contents; }
+.replacement-actions > .small { order: -1; flex: 1 0 100%; margin: 0; overflow-wrap: anywhere; }
+.replacement-actions > .text-button { margin-left: auto; }
+.replacement-proposal { min-width: 0; }
+.replacement-proposal section { margin-top: 1rem; }
+.replacement-proposal .button { margin-top: .75rem; white-space: normal; }
+.replacement-swap { padding-bottom: .75rem; border-bottom: 1px solid var(--color-border); }
+.replacement-dose { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: .75rem 0; }
+.replacement-dose label { min-width: 0; font-size: .85rem; }
+.replacement-dose input { width: 100%; min-width: 0; min-height: 44px; margin-top: .3rem; }

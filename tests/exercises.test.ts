@@ -7,10 +7,29 @@ import type { CatalogExercise, ExerciseValues } from '../src/domain/exercises.ts
 import { createExercisesRepository, ExercisesFailure } from '../src/persistence/exercises-repository.ts'
 import type { ExercisesRepository } from '../src/persistence/exercises-repository.ts'
 import { ExercisesStore } from '../src/persistence/exercises-store.ts'
+import { memoryStorage } from '../src/persistence/diary-store.ts'
 
 const owner = '11111111-1111-4111-8111-111111111111'
 const id = '22222222-2222-4222-8222-222222222222'
 const original: CatalogExercise = { ...emptyExercise(), id, revision: 1, name: 'Esercizio sintetico', variant: 'Seduto', equipment: 'Macchina A' }
+
+test('catalogo offline: cache per account, ripresa senza rete e pulizia definitiva al logout', async () => {
+  const server = fixture(), storage = memoryStorage()
+  server.rows.set(original.id, original)
+  const store = new ExercisesStore(server.repository, { storage, owner })
+  await store.load()
+  const offline = { ...server.repository, list: async (): Promise<CatalogExercise[]> => { throw new ExercisesFailure('unavailable') } }
+  const reopened = new ExercisesStore(offline, { storage, owner })
+  assert.equal(reopened.getSnapshot().rows[0]!.id, original.id)
+  await reopened.load()
+  assert.equal(reopened.getSnapshot().rows[0]!.id, original.id, 'i dati già scaricati restano selezionabili')
+  assert.equal(new ExercisesStore(offline, { storage, owner: 'other' }).getSnapshot().rows.length, 0)
+  const late = deferred<CatalogExercise[]>()
+  const loading = new ExercisesStore({ ...server.repository, list: () => late.promise }, { storage, owner })
+  const request = loading.load()
+  loading.clearDevice(); late.resolve([original]); await request
+  assert.equal(new ExercisesStore(offline, { storage, owner }).getSnapshot().rows.length, 0, 'una risposta tardiva non ricrea la cache')
+})
 const signal = () => new AbortController().signal
 function deferred<T>() {
   let resolve!: (value: T) => void

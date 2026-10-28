@@ -162,7 +162,8 @@ function writeLater(sessionId: string, ids: string[]) {
 /** All'uscita dall'account: niente ordine della seduta rimasto sul dispositivo. */
 export function forgetDeferredExercises() { try { window.localStorage.removeItem(LATER_KEY) } catch { /* archivio non disponibile */ } }
 
-function ExerciseSetCard({ session, exercise, previous, onChange, locked, collapsible, onDone, recordIndex, deferred = false, canDefer = false, onDefer, onEnterFirstSet }: {
+function ExerciseSetCard({ session, exercise, previous, onChange, locked, collapsible, onDone, recordIndex, deferred = false, canDefer = false, onDefer, onEnterFirstSet, actions }: {
+  actions?: ReactNode
   session: WorkoutSession; exercise: ExercisePrescription; previous?: PreviousExercise; locked: boolean
   /** Serie che batte il miglior risultato precedente su questo esercizio. */
   recordIndex?: number
@@ -275,7 +276,9 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
   }
   return <article className={`set-panel ${complete ? 'exercise-complete' : ''}`} id={`exercise-${prefix}`}>
     <div className="set-card-heading"><MuscleGroupImage exercise={exercise} /><div>{area && <span className="mini-label">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} illustrated={false} /></div><span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span></div>
-    <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` · +${exercise.optionalSets} facoltative` : ''}</span><span><Icon name="clock" size={16} />{restLabel(exercise.restSeconds)} recupero</span>{defer}</div>
+    <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` · +${exercise.optionalSets} facoltative` : ''}</span><span className="prescription-rest"><Icon name="clock" size={16} />{restLabel(exercise.restSeconds)} recupero</span>
+      {(actions || defer) && <div className="set-card-tools">{defer}{actions}</div>}
+    </div>
     <div className="set-rows">
       <div className={`set-grid set-header ${timed ? 'is-timed' : ''}`}><span>Serie</span>{!timed && <span>{exercise.loadUnit?.toUpperCase() ?? 'Carico'}</span>}<span>{minutes ? 'Minuti' : timed ? 'Secondi' : 'Ripetizioni'}</span><span>Fatto</span></div>
       {results.map((result, setIndex) => {
@@ -323,7 +326,8 @@ function SessionNote({ sessionId, note, editable, onChange }: { sessionId: strin
   </section>
 }
 
-export function SessionView({ session, sessions, onChange, onComplete, onDiscard, onEndCorrection, onNote, syncSlot }: {
+export function SessionView({ session, sessions, onChange, onComplete, onDiscard, onEndCorrection, onNote, syncSlot, exerciseActions }: {
+  exerciseActions?: (exercise: ExercisePrescription) => ReactNode
   session: WorkoutSession; sessions: WorkoutSession[]
   onChange: (exerciseId: string, index: number, result: SetResult) => void; onComplete: () => void
   /** Elimina la seduta in corso (conferma nel menu «⋯»). */
@@ -405,7 +409,7 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
       actions={<><span className={`session-status ${finished ? 'finished' : ''}`}><span />{finished ? 'Completato' : 'In corso'}</span>{syncSlot}{!finished && onDiscard && <button type="button" className="icon-button session-more" aria-haspopup="dialog" aria-label="Opzioni della seduta" onClick={() => setOptions(true)}><Icon name="more" size={24} strokeWidth={3} /></button>}</>} />
     <div className="session-progress"><div><span>{completedRequired} di {required} serie</span><strong>{required ? Math.round(completedRequired / required * 100) : 0}%</strong></div><progress max={required} value={completedRequired} aria-label="Serie completate" /></div>
     {finished && <div className="session-correction"><p className="small muted">{correcting ? 'Correzione attiva: le modifiche aggiornano solo lo storico di questa seduta.' : 'Seduta completata.'}</p><button className="button secondary session-correct" onClick={() => { if (correcting) onEndCorrection?.(); setCorrecting(!correcting) }}>{correcting ? 'Fine correzione' : 'Correggi valori'}</button></div>}
-    <div className="session-cards">{ordered.map(exercise => <ExerciseSetCard key={exercise.id} session={session} exercise={exercise} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)}
+    <div className="session-cards">{ordered.map(exercise => <ExerciseSetCard key={`${exercise.id}:${exercise.exerciseId}`} session={session} exercise={exercise} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)} actions={exerciseActions?.(exercise)}
       deferred={deferred.includes(exercise.id)} canDefer={pendingCount > 1} onDefer={finished ? undefined : toggleLater} onEnterFirstSet={enterFirstSet} />)}</div>
     <SessionNote sessionId={session.id} note={session.note ?? ''} editable={!finished || correcting} onChange={onNote} />
     {!finished && <div className="session-actions"><span>{completedRequired === required ? 'Tutte le serie previste sono fatte' : `${exerciseCount} ${exerciseCount === 1 ? 'esercizio' : 'esercizi'} · ${required - completedRequired} serie da fare`}</span><button className="button primary session-finish" onClick={requestComplete}>Termina allenamento<Icon name="check" size={20} /></button></div>}

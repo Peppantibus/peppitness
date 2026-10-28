@@ -1,6 +1,8 @@
 import { emptyExercise, sameExercise, sameExerciseIdentity, validateExercise } from '../domain/exercises.ts'
 import type { CatalogExercise, ExerciseValues } from '../domain/exercises.ts'
 import type { ExercisesRepository } from './exercises-repository.ts'
+import type { KeyValueStorage } from './diary-store.ts'
+import { isExerciseId } from '../domain/exercises.ts'
 
 interface ExerciseDraft { id: string; values: ExerciseValues; base: CatalogExercise | null }
 export interface ExercisesState {
@@ -20,10 +22,31 @@ export class ExercisesStore {
   private listeners = new Set<() => void>()
   private operation: AbortController | null = null
   private adoption: AbortController | null = null
-  constructor(repository: ExercisesRepository) { this.repository = repository }
+  private cache?: { storage: KeyValueStorage; key: string }
+  private cleared = false
+  constructor(repository: ExercisesRepository, cache?: { storage: KeyValueStorage; owner: string }) {
+    this.repository = repository
+    if (cache) {
+      this.cache = { storage: cache.storage, key: `peppitness:catalog:v1:${cache.owner}` }
+      try {
+        const saved = JSON.parse(cache.storage.get(this.cache.key) ?? 'null') as { rows: CatalogExercise[]; sharedRows: CatalogExercise[] } | null
+        if (saved && [saved.rows, saved.sharedRows].every(rows => Array.isArray(rows) && rows.every(row => isExerciseId(row.id) && !validateExercise(row) && Number.isSafeInteger(row.revision) && row.revision > 0))) {
+          this.state = { ...this.state, rows: saved.rows, sharedRows: saved.sharedRows }
+        }
+      } catch { /* catalogo da scaricare */ }
+    }
+  }
   getSnapshot = () => this.state
   subscribe = (listener: () => void) => { this.listeners.add(listener); return () => { this.listeners.delete(listener) } }
-  private publish(value: Partial<ExercisesState>) { this.state = { ...this.state, ...value }; this.listeners.forEach(listener => listener()) }
+  private publish(value: Partial<ExercisesState>) {
+    if (this.cleared) return
+    this.state = { ...this.state, ...value }
+    if (this.cache && (value.rows || value.sharedRows)) {
+      try { this.cache.storage.set(this.cache.key, JSON.stringify({ rows: this.state.rows, sharedRows: this.state.sharedRows })) } catch { /* resta disponibile la copia in memoria */ }
+    }
+    this.listeners.forEach(listener => listener())
+  }
+  clearDevice = () => { this.cleared = true; this.stop(); this.cache?.storage.remove(this.cache.key) }
   stop = () => { this.operation?.abort(); this.operation = null; this.adoption?.abort(); this.adoption = null }
   private begin() {
     this.stop()
