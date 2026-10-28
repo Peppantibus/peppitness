@@ -388,6 +388,7 @@ a.meal-card-link:hover, .exercise-card:hover, a.history-card:hover, button.histo
 .dialog-content p { font-size: var(--text-md); }
 .dialog-content .small { margin: var(--space-3) 0; font-size: var(--text-sm); }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
+@keyframes sheet-fade { from { opacity: .6; } to { opacity: 1; } }
 
 /* Stato del salvataggio: icona compatta e riquadro solo quando serve un'azione. */
 .sync-indicator { color: var(--color-text-muted); }
@@ -489,6 +490,8 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
   .detail-dialog { max-height: calc(100dvh - var(--space-7) - env(safe-area-inset-top)); }
   .dialog-content { padding: var(--space-7) var(--space-5) var(--space-6); }
   .sheet-dialog { width: 100%; max-width: 100%; max-height: 90dvh; margin: auto 0 0; border-bottom: 0; border-radius: var(--radius-xl) var(--radius-xl) 0 0; animation: sheet-up .25s ease-out; }
+  /* iOS can retain the caret's opening position when its focused input is translated. */
+  .sheet-dialog:has(.wz-search) { animation-name: sheet-fade; }
   .sheet-dialog .dialog-content { padding: var(--space-6) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom)); }
   .sheet-dialog::before { content: ""; position: absolute; top: var(--space-2); left: 50%; width: 2.5rem; height: 4px; border-radius: var(--radius-pill); background: var(--color-border-strong); transform: translateX(-50%); }
   .toast-stack { left: var(--space-3); right: var(--space-3); width: auto; transform: none; bottom: calc(4.5rem + env(safe-area-inset-bottom)); }
@@ -1215,7 +1218,11 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .wz-sheet { display: grid; gap: var(--space-4); }
 .wz-sheet h2 { margin-right: var(--space-8); }
 .wz-search { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-4); border: 1px solid var(--color-input); border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-text-muted); }
-.wz-search input:not([type=checkbox]) { padding-left: 0; border: 0; background: transparent; outline: none; }
+/* Keep the native search field's text/caret metrics inside the custom search outline. */
+.wz-search input:not([type=checkbox]) {
+  -webkit-appearance: none; appearance: none; height: var(--control-md); padding: 0 var(--space-3) 0 0;
+  border: 0; background: transparent; line-height: normal; outline: none;
+}
 .wz-search input:not([type=checkbox]):focus-visible { outline: none; }
 .wz-search:focus-within { outline: 3px solid var(--color-focus); outline-offset: 1px; border-color: var(--color-focus); }
 .wz-results { display: grid; margin: 0; padding: 0; list-style: none; }
