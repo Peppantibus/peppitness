@@ -102,7 +102,7 @@ export function ProgramWizard({ store, state, catalog, step, setStep, onAdvanced
 }) {
   const document = state.document ? withCatalogMuscleGroups(state.document, catalog.state.rows) : null
   const [sheet, setSheet] = useState(false)
-  const [confirm, setConfirm] = useState<{ title: string; text: string; action: () => void } | null>(null)
+  const [confirm, setConfirm] = useState<{ title: string; text: string; action: () => void; actionLabel?: string; destructive?: boolean } | null>(null)
   // Dopo il primo tentativo di proseguire gli errori si aggiornano mentre l'utente corregge.
   const [checked, setChecked] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -146,7 +146,7 @@ export function ProgramWizard({ store, state, catalog, step, setStep, onAdvanced
       const item = prefillFromDay(newPrescription(exercise), current)
       store.edit(setWeeklyDay(store.getSnapshot().document!, step, { ...current, exercises: [...current.exercises, item] }))
     }} />}
-    {confirm && <Modal label={confirm.title} onClose={() => setConfirm(null)}><h2>{confirm.title}</h2><p>{confirm.text}</p><div className="program-actions"><button className="button secondary" onClick={() => setConfirm(null)}>Annulla</button><button className="button primary" onClick={() => { confirm.action(); setConfirm(null) }}>Conferma</button></div></Modal>}
+    {confirm && <Modal label={confirm.title} onClose={() => setConfirm(null)}><h2>{confirm.title}</h2><p>{confirm.text}</p><div className="program-actions program-confirm-actions"><button type="button" className="button secondary" onClick={() => setConfirm(null)}>Annulla</button><button type="button" className={`button ${confirm.destructive ? 'danger' : 'primary'}`} onClick={() => { confirm.action(); setConfirm(null) }}>{confirm.actionLabel ?? 'Conferma'}</button></div></Modal>}
   </section>
 
   // ------------------------------------------------------------------ nome
@@ -200,10 +200,19 @@ export function ProgramWizard({ store, state, catalog, step, setStep, onAdvanced
   const last = index === 6
   const update = (value: ProgramDay | null) => store.edit(setWeeklyDay(document, index, value))
   const updateItem = (item: PrescriptionDraft) => update({ ...day!, exercises: exercises.map(value => value.id === item.id ? item : value) })
+  const removeExercise = (item: PrescriptionDraft) => setConfirm({
+    title: 'Rimuovere l’esercizio?', text: `${item.exercise.name} verrà rimosso da ${weekday.name.toLowerCase()}. La modifica verrà applicata quando salvi il programma.`,
+    actionLabel: 'Rimuovi', destructive: true,
+    action: () => {
+      const current = store.getSnapshot().document
+      const currentDay = current && weeklyDay(current, index)
+      if (current && currentDay) store.edit(setWeeklyDay(current, index, { ...currentDay, exercises: currentDay.exercises.filter(value => value.id !== item.id) }))
+    },
+  })
   const next = () => last ? void save() : setStep(index + 1)
   const rest = () => {
     const apply = () => { update(null); next() }
-    if (exercises.length) setConfirm({ title: `${weekday.name} di riposo?`, text: `${exercises.length === 1 ? 'L’esercizio inserito verrà rimosso' : `Gli ${exercises.length} esercizi inseriti verranno rimossi`} da questo giorno.`, action: apply })
+    if (exercises.length) setConfirm({ title: `${weekday.name} di riposo?`, text: `${exercises.length === 1 ? 'L’esercizio inserito verrà rimosso' : `Gli ${exercises.length} esercizi inseriti verranno rimossi`} da questo giorno.`, action: apply, actionLabel: 'Segna riposo', destructive: true })
     else apply()
   }
   const forward = () => {
@@ -253,7 +262,7 @@ export function ProgramWizard({ store, state, catalog, step, setStep, onAdvanced
     {!exercises.length && others.length > 0 && <div className="wz-copy"><span>Stessa seduta di un altro giorno?</span><div className="chip-row">{others.map(other => <button key={other.id} type="button" className="chip" disabled={busy} onClick={() => update(copyWeeklyDay(other, index))}>Copia {weekdays.find(item => item.code === other.label)?.name.toLowerCase()} · {other.title}</button>)}</div></div>}
     <div className="wz-exercises">{exercises.map((item, position) => <ExerciseCard key={item.id} item={item} index={position} count={exercises.length} issues={issues}
       onChange={updateItem} onMove={direction => update({ ...day!, exercises: moveItem(exercises, position, direction) })}
-      onRemove={() => update({ ...day!, exercises: exercises.filter(value => value.id !== item.id) })} />)}</div>
+      onRemove={() => removeExercise(item)} />)}</div>
     <button type="button" className="wz-add" disabled={busy || exercises.length >= 200} onClick={() => setSheet(true)}><Icon name="plus" size={20} /><span>Aggiungi esercizio</span></button>
     {exercises.length > 0 && <label className="wz-day-note" htmlFor={`${day!.id}-note`}>Note del giorno<textarea id={`${day!.id}-note`} rows={2} maxLength={4000} placeholder="Facoltative" value={day!.note} onChange={event => update({ ...day!, note: event.target.value })} /></label>}
   </>, <>

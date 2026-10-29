@@ -59,7 +59,7 @@ function RowActions({ name, first, last, onUp, onDown, onCopy, copyDisabled, onR
     <button type="button" className={`icon-button is-outlined ${css.up}`} disabled={first} aria-label={`Sposta su ${name}`} title="Sposta su" onClick={onUp}><Icon name="arrowUp" size={20} /></button>
     <button type="button" className={`icon-button is-outlined ${css.down}`} disabled={last} aria-label={`Sposta giù ${name}`} title="Sposta giù" onClick={onDown}><Icon name="arrowDown" size={20} /></button>
     <button type="button" className={`icon-button is-outlined ${css.copy}`} disabled={copyDisabled} aria-label={`Duplica ${noun} ${name}`} title={`Duplica ${noun}`} onClick={onCopy}><Icon name="copy" size={20} /></button>
-    <button type="button" className={`icon-button is-outlined row-remove ${css.remove}`} aria-label={`Rimuovi ${noun} ${name}`} title={`Rimuovi ${noun}`} onClick={onRemove}><Icon name="trash" size={20} /></button>
+    <button type="button" className={`icon-button is-outlined row-remove ${css.remove}`} aria-label={`Rimuovi ${noun} ${name}`} title={`Rimuovi ${noun}`} onClick={onRemove}><Icon name={kind === 'prescription' ? 'close' : 'trash'} size={kind === 'prescription' ? 16 : 20} /></button>
   </div>
 }
 function PrescriptionFields({ item, onChange }: { item: PrescriptionDraft; onChange: (value: PrescriptionDraft) => void }) {

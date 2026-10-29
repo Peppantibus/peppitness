@@ -30,6 +30,8 @@ export function useRoute() {
     isHistory: route === `/${section}/storico`,
     isSettings: route === '/impostazioni',
     isSession: route === '/scheda/seduta',
+    isMorning: route === '/scheda/mattino' || route === '/scheda/mattino/modifica',
+    isMorningEditor: route === '/scheda/mattino/modifica',
     historySessionId: param('/scheda/storico/'),
     mealId: param('/dieta/pasto/'),
     exerciseId: param('/scheda/esercizio/'),

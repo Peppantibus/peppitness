@@ -30,14 +30,17 @@ import { SessionSummaryDialog } from './features/SessionSummary'
 import { Settings } from './features/Settings'
 import { ExerciseDetail, forgetDeferredExercises, SessionView } from './features/Workout'
 import { WorkoutReplacement } from './features/WorkoutReplacement'
+import { MorningRoutineCard, MorningRoutineStatus } from './features/MorningRoutine'
 import { useDiary } from './persistence/use-diary'
 import { useExercises } from './persistence/use-exercises'
 import { useImports } from './persistence/use-imports'
 import { usePlans } from './persistence/use-plans'
 import { usePrograms } from './persistence/use-programs'
 import { useSettings } from './persistence/use-settings'
+import { useMorningRoutine } from './persistence/use-morning-routine'
 
 const Programs = lazy(() => import('./features/ProgramEditor').then(module => ({ default: module.Programs })))
+const MorningRoutinePage = lazy(() => import('./features/MorningRoutinePage').then(module => ({ default: module.MorningRoutinePage })))
 const ExerciseCatalog = lazy(() => import('./features/ExerciseCatalog').then(module => ({ default: module.ExerciseCatalog })))
 const MealPlans = lazy(() => import('./features/MealPlans').then(module => ({ default: module.MealPlans })))
 const ImportPlan = lazy(() => import('./features/import/ImportPlan').then(module => ({ default: module.ImportPlan })))
@@ -48,7 +51,7 @@ const pageTitles: [keyof ReturnType<typeof useRoute>, string][] = [
 
 export function App() {
   const page = useRoute()
-  const { route, section, isCatalog, isPrograms, isMealPlans, isProgress, isImport, importKind, isHistory, isSettings, isSession } = page
+  const { route, section, isCatalog, isPrograms, isMealPlans, isProgress, isImport, importKind, isHistory, isSettings, isSession, isMorning, isMorningEditor } = page
   const settings = useSettings()
   // Il catalogo serve anche alla revisione della scheda importata (scelte esistente/comune/nuovo).
   const catalog = useExercises(route.startsWith('/scheda'))
@@ -70,6 +73,8 @@ export function App() {
   // Importazione: il motore si carica sulla sua pagina o in Impostazioni (logout).
   const importReview = useImports(isImport || isSettings, onImportSaved)
   const diary = useDiary()
+  const morning = useMorningRoutine()
+  const [morningDirty, setMorningDirty] = useState(false)
   const configured = Boolean(plans.store)
   const view = diary.state.view
   const timeZone = settings.state.saved?.timeZone ?? 'Europe/Rome'
@@ -99,10 +104,10 @@ export function App() {
   const historySession = page.historySessionId ? view.sessions.find(session => session.id === page.historySessionId && session.completedAt) : undefined
   const meal = page.mealId ? menu.meals.find(item => item.id === page.mealId) ?? view.mealLogs[mealLogKey(date, page.mealId)]?.snapshot : undefined
   const exercise = page.exerciseId ? schedule.workoutDays.flatMap(item => item.exercises).find(item => item.id === page.exerciseId) : undefined
-  const validRoute = route === '/dieta' || route === '/scheda' || isHistory || isSettings || isSession || isCatalog || isPrograms || isMealPlans || isProgress || isImport || Boolean(meal || exercise || historySession)
+  const validRoute = route === '/dieta' || route === '/scheda' || isHistory || isSettings || isSession || isCatalog || isPrograms || isMealPlans || isProgress || isImport || isMorning || Boolean(meal || exercise || historySession)
   const inDetail = Boolean(meal || exercise)
   // Pagine secondarie: intestazione propria (← e titolo); su mobile la barra superiore si nasconde.
-  const subpage = isHistory || isProgress || isSettings || isCatalog || isPrograms || isMealPlans || isImport
+  const subpage = isHistory || isProgress || isSettings || isCatalog || isPrograms || isMealPlans || isImport || isMorning
   const showDaily = validRoute && !subpage && !isSession && !historySession
   const programDocument = programs.state.document, mealDraft = plans.state.editor.draft
   const programWizard = isPrograms && Boolean(programDocument) && editors.programMode === 'wizard'
@@ -111,9 +116,9 @@ export function App() {
 
   const pendingPreferences = settings.dirty || ['saving', 'checking', 'uncertain', 'conflict'].includes(settings.state.phase)
   const volatile = diary.store.hasVolatileData || !diary.state.storage
-  const pendingEditors = pendingPreferences || catalog.pending || programs.pending || plans.pending
+  const pendingEditors = pendingPreferences || catalog.pending || programs.pending || plans.pending || morningDirty
   // Il logout cancella anche le letture d'importazione di questo account: conferma se c'è qualcosa da perdere.
-  const hasUnsavedData = pendingEditors || volatile || diary.store.hasPending || importReview.logoutRisk
+  const hasUnsavedData = pendingEditors || volatile || diary.store.hasPending || importReview.logoutRisk || morning.store.hasPending || !morning.state.storage
   const editorsBusy = ['saving', 'checking'].includes(catalog.state.phase) || ['saving', 'publishing', 'checking'].includes(programs.state.phase) || ['saving', 'checking'].includes(plans.state.editor.phase)
 
   useEffect(() => {
@@ -123,7 +128,7 @@ export function App() {
     return () => { window.removeEventListener('online', updateNetwork); window.removeEventListener('offline', updateNetwork) }
   }, [])
 
-  const pageTitle = isImport ? (importKind === 'diet' ? 'Importa un piano alimentare' : 'Importa una scheda')
+  const pageTitle = isMorning ? (isMorningEditor ? 'Modifica routine' : 'Routine del mattino') : isImport ? (importKind === 'diet' ? 'Importa un piano alimentare' : 'Importa una scheda')
     : pageTitles.find(([key]) => page[key])?.[1] ?? (section === 'dieta' ? 'Dieta' : 'Scheda')
   useEffect(() => {
     document.title = `${pageTitle} · peppitness`
@@ -132,11 +137,11 @@ export function App() {
 
   useEffect(() => {
     // Il diario sincronizzabile è già sul dispositivo: l'avviso resta per bozze in memoria e letture in corso.
-    if (!pendingEditors && !volatile && !importReview.busy && !importReview.unsaved) return
+    if (!pendingEditors && !volatile && morning.state.storage && !importReview.busy && !importReview.unsaved) return
     const onBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = '' }
     window.addEventListener('beforeunload', onBeforeUnload)
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
-  }, [pendingEditors, volatile, importReview.busy, importReview.unsaved])
+  }, [pendingEditors, volatile, morning.state.storage, importReview.busy, importReview.unsaved])
 
   const followProgram = async (planId: string) => {
     if (!plans.store) return false
@@ -171,7 +176,8 @@ export function App() {
     setAnnouncement(`${message}. Puoi annullare dall’avviso in basso.`)
   }
 
-  const syncIndicator = <SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} />
+  const morningSync = { pending: morning.state.pending, conflict: morning.state.sync === 'conflict', sending: morning.state.sync === 'sending', storage: morning.state.storage, onRetry: morning.store.retry }
+  const syncIndicator = <SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} additional={morningSync} />
   const importContext = {
     online, catalog: { personal: catalog.state.rows, shared: catalog.state.sharedRows, complete: catalog.state.phase === 'ready' }, selection: plans.state.selection,
     selectionKnown: configured && plans.state.phase === 'ready' && !plans.state.cached,
@@ -181,8 +187,8 @@ export function App() {
   const deletionBlocked = diary.store.hasPending || diary.store.hasVolatileData
   const mealLog = meal ? view.mealLogs[mealLogKey(date, meal.id)] : undefined
 
-  return <Layout userName={settings.state.saved?.displayName} section={isSettings ? null : section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard} session={isSession || Boolean(historySession)} subpage={subpage}
-    status={syncIndicator} sidebarStatus={<SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} withLabel />}>
+  return <Layout userName={settings.state.saved?.displayName} section={isSettings ? null : section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard || isMorningEditor} session={isSession || Boolean(historySession)} subpage={subpage}
+    status={syncIndicator} sidebarStatus={<SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} additional={morningSync} withLabel />}>
     <div className="sr-only" role="status" aria-live="polite">{announcement}</div>
     {!online && <div className="network-notice" role="status"><Icon name="info" size={20} /><span>Rete assente. {configured ? 'Le registrazioni restano sul dispositivo e verranno inviate al ritorno della connessione.' : ''}</span></div>}
     {plans.state.message && showDaily && <p className="small muted plans-message" role="status">{plans.state.message}</p>}
@@ -191,11 +197,14 @@ export function App() {
       <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} current={section === 'scheda' ? workout?.plan.name : menu.mealPlan?.name} /></div>
       <DatePicker date={date} onChange={setDate} today={today} planned={section === 'scheda' ? schedule.trainingDates : []} done={section === 'scheda' ? schedule.sessionDates : menu.mealDates} doneLabel={section === 'scheda' ? 'seduta completata' : 'pasti registrati'} />
       <DateContext date={date} today={today} onToday={() => setDate(today)} />
+      {section === 'scheda' && <MorningRoutineCard state={morning.state} date={date} />}
       {section === 'dieta'
         ? <DietToday configured={configured} plans={plans} diary={diary} menu={menu} date={date} today={today} onQuickFollow={quickFollow} />
         : <WorkoutToday configured={configured} plans={plans} diary={diary} schedule={schedule} date={date} today={today} workoutWeekdays={settings.state.saved?.workoutWeekdays} onStart={start} onDiscard={setDiscardingSessionId} />}
     </>}
     {isHistory && <History section={section} state={view} onDate={setDate} />}
+    {section === 'scheda' && (showDaily || isMorning) && <MorningRoutineStatus store={morning.store} state={morning.state} />}
+    {isMorning && <Suspense fallback={<p role="status">Apertura della routine…</p>}><MorningRoutinePage store={morning.store} state={morning.state} editing={isMorningEditor} date={date} today={today} onDate={setDate} onDirty={setMorningDirty} /></Suspense>}
     {isCatalog && <Suspense fallback={<p role="status">Apertura del catalogo…</p>}><ExerciseCatalog store={catalog.store} state={catalog.state} /></Suspense>}
     {isPrograms && <Suspense fallback={<p role="status">Apertura dei programmi…</p>}><Programs store={programs.store} state={programs.state} catalog={catalog} mode={editors.programMode} setMode={editors.setProgramMode} step={editors.programStep} setStep={editors.setProgramStep}
       followedPlanId={plans.state.selection?.workoutPlanId ?? null} followedDays={workout?.document.days ?? null} onFollow={followProgram} onDeleted={async () => { await plans.store?.load() }} deletionBlocked={deletionBlocked} today={today} /></Suspense>}
@@ -203,7 +212,7 @@ export function App() {
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={editors.mealMode} setMode={editors.setMealMode} step={editors.mealStep} setStep={editors.setMealStep} deletionBlocked={deletionBlocked} /></Suspense>}
     {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} engine={importReview.engine} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}
     {isSettings && <Settings backSection={page.lastSection} weeklyProgram={schedule.weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy}
-      onSignedOut={() => { diary.store.clearDevice(); plans.store?.clearDevice(); catalog.store?.clearDevice(); forgetDeferredExercises(); void importReview.clearDevice() }} {...settings} />}
+      onSignedOut={() => { diary.store.clearDevice(); morning.store.clearDevice(); plans.store?.clearDevice(); catalog.store?.clearDevice(); forgetDeferredExercises(); void importReview.clearDevice() }} {...settings} />}
     {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} onNote={updateNote(activeSession.id)} syncSlot={syncIndicator}
       exerciseActions={exercise => <WorkoutReplacement exercise={exercise} session={activeSession} sessions={view.sessions} days={schedule.baseDays} changes={view.changes ?? []} catalog={catalog} store={diary.store} today={today}
         enabled={schedule.weekly && workout?.version.id === activeSession.versionId} announce={setAnnouncement}
@@ -237,7 +246,7 @@ export function App() {
     {diary.state.restTimer && <RestTimer timer={diary.state.restTimer} onChange={diary.store.setRestTimer} />}
     <div className="toast-stack">
       {toast && <Toast key={toast.id} toast={toast} onClose={() => setToast(current => current?.id === toast.id ? null : current)} />}
-      <PwaUpdate hidden={isSession || Boolean(historySession)} busy={Boolean(activeSession) || inDetail || pendingEditors || diary.state.sync === 'sending' || editorsBusy || importReview.busy} hasDemoData={pendingEditors || volatile || importReview.unsaved} />
+      <PwaUpdate hidden={isSession || Boolean(historySession)} busy={Boolean(activeSession) || inDetail || pendingEditors || diary.state.sync === 'sending' || morning.state.sync === 'sending' || editorsBusy || importReview.busy} hasDemoData={pendingEditors || volatile || !morning.state.storage || importReview.unsaved} />
     </div>
   </Layout>
 }

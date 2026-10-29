@@ -30,6 +30,8 @@
     "test:workout-changes:local": "node --experimental-strip-types scripts/workout-changes-local-check.mjs",
     "test:workout-changes:browser": "node --experimental-strip-types scripts/workout-changes-browser-check.mjs",
     "test:wizard:browser": "node scripts/wizard-browser-check.mjs",
+    "test:morning:local": "node --experimental-strip-types scripts/morning-routine-local-check.mjs",
+    "test:morning:browser": "node --experimental-strip-types scripts/morning-routine-browser-check.mjs",
     "test:pwa:browser": "node scripts/pwa-browser-check.mjs",
     "test:mfa:local": "node --experimental-strip-types scripts/mfa-api-local-check.mjs",
     "test:diary:incremental:local": "node --experimental-strip-types scripts/diary-incremental-local-check.mjs",

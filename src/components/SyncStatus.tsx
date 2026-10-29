@@ -20,10 +20,12 @@ const syncTitles: Record<DiaryState['sync'], string> = { local: 'Solo in questa 
  * Stato del salvataggio in forma compatta: un'icona che si apre per i dettagli.
  * Il riquadro completo (`SyncStatus`) resta solo quando serve un'azione.
  */
-export function SyncIndicator({ store, state, localOnly = false, withLabel = false }: { store: DiaryStore; state: DiaryState; localOnly?: boolean; withLabel?: boolean }) {
+export function SyncIndicator({ store, state, localOnly = false, withLabel = false, additional }: { store: DiaryStore; state: DiaryState; localOnly?: boolean; withLabel?: boolean; additional?: { pending: number; sending: boolean; conflict: boolean; storage: boolean; onRetry: () => void } }) {
   const [open, setOpen] = useState(false)
-  const sync = localOnly ? 'local' : state.sync
-  const pending = !localOnly && state.pending > 0 && sync !== 'conflict' ? state.pending : 0
+  const baseSync = localOnly ? 'local' : state.sync
+  const sync = baseSync === 'conflict' || additional?.conflict ? 'conflict' : additional && !additional.storage ? 'local'
+    : additional?.pending && baseSync === 'synced' ? (navigator.onLine ? additional.sending ? 'sending' : 'pending' : 'waiting') : baseSync
+  const pending = !localOnly && sync !== 'conflict' ? state.pending + (additional?.pending ?? 0) : 0
   const title = `${syncTitles[sync]}${pending ? ` (${pending})` : ''}`
   return <>
     {withLabel
@@ -34,10 +36,11 @@ export function SyncIndicator({ store, state, localOnly = false, withLabel = fal
         <span className={`sync-details-icon sync-indicator-${sync}`}><Icon name={syncIcons[sync]} size={24} /></span>
         <h2>{syncTitles[sync]}</h2>
         <p>{syncLabels[sync]}{pending ? ` Registrazioni in attesa: ${pending}.` : ''}</p>
+        {Boolean(additional?.pending) && <p>Routine del mattino: {additional!.pending} modifiche in attesa. Trovi stato e possibili conflitti nella Scheda.</p>}
         {!localOnly && !state.storage && <p>Archivio del dispositivo non disponibile: tieni aperta la pagina finché le registrazioni risultano sincronizzate.</p>}
         {sync === 'conflict' && <p>Trovi le registrazioni da confrontare in cima alla pagina.</p>}
         {sync === 'synced' && <p className="muted">Le registrazioni sono salvate anche online e le ritrovi da ogni dispositivo.</p>}
-        <div className="program-actions">{sync === 'waiting' && <button type="button" className="button primary" onClick={() => { store.retryNow(); setOpen(false) }}>Riprova ora</button>}<button type="button" className="button secondary" onClick={() => setOpen(false)}>Chiudi</button></div>
+        <div className="program-actions">{sync === 'waiting' && <button type="button" className="button primary" onClick={() => { store.retryNow(); additional?.onRetry(); setOpen(false) }}>Riprova ora</button>}<button type="button" className="button secondary" onClick={() => setOpen(false)}>Chiudi</button></div>
       </div>
     </Modal>}
   </>

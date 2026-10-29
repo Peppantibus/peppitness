@@ -280,6 +280,8 @@ fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
 .icon-button.is-outlined:hover:not(:disabled) { background: var(--color-surface-muted); border-color: var(--color-control); }
 .icon-button.is-outlined[aria-current] { border-color: var(--color-primary); color: var(--color-primary); }
 .button-row, .program-actions, .catalog-actions, .preferences-actions, .account-actions { display: flex; flex-wrap: wrap; gap: var(--space-3); margin: var(--space-4) 0; }
+.program-confirm-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.program-confirm-actions .button { min-width: 0; white-space: normal; }
 .workout-cancel-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
 .workout-cancel-actions .button { min-width: 0; padding: var(--space-2) var(--space-3); white-space: normal; line-height: var(--leading-snug); }
 .account-actions { justify-content: flex-end; margin-top: var(--space-6); }

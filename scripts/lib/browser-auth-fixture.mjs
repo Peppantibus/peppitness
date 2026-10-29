@@ -2,6 +2,7 @@
 // Non sono una prova RLS o un sostituto dei test HTTP contro Supabase reale.
 import { diaryFixture, diaryPaths } from './diary-fixture.mjs'
 import { programsFixture } from './programs-fixture.mjs'
+import { morningPaths, morningFixture } from './morning-routine-fixture.mjs'
 import { importFlowFixture, importFlowPaths } from './import-flow-fixture.mjs'
 import { loadEnv } from 'vite'
 export const fixtureSupabaseOrigin = new URL(loadEnv('development', process.cwd(), 'VITE_').VITE_SUPABASE_URL).origin
@@ -140,6 +141,7 @@ export async function installAuthFixture(rawSend, socket, appOrigin, state = {})
         }
       } else { status = 400; state.failures.push('Operazione esercizi inattesa') }
     }
+    else if (morningPaths.includes(url.pathname)) { const result = morningFixture(request, url, state); status = result.status; data = result.data }
     else if (diaryPaths.includes(url.pathname)) {
       const result = diaryFixture(request, url, state)
       if (result.failure) { await send('Fetch.failRequest', { requestId, errorReason: result.failure }); return }
