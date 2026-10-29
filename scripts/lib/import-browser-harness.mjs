@@ -59,7 +59,7 @@ export async function ensureChrome({ url = debugUrl } = {}) {
   const binary = chromePath()
   if (!binary) throw new Error(`Chrome non trovato: imposta CHROME_PATH oppure avvia un Chrome di test con --remote-debugging-port su ${url}`)
   const port = new URL(url).port
-  const profile = join(root, 'artifacts', `chrome-profile-${process.pid}`)
+  const profile = join(root, 'artifacts', `chrome-profile-${process.pid}-${port}`)
   await mkdir(profile, { recursive: true })
   const child = spawn(binary, ['--headless=new', `--remote-debugging-port=${port}`, '--remote-debugging-address=127.0.0.1', `--user-data-dir=${profile}`,
     '--no-first-run', '--no-default-browser-check', '--disable-extensions', '--disable-background-networking', '--disable-sync', 'about:blank'], { stdio: 'ignore' })

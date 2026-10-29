@@ -82,7 +82,7 @@ try {
   await until('Boolean(document.querySelector("#landing-title"))')
   await click('.landing-bar-signin')
   await until('Boolean(document.querySelector("#login-email"))')
-  await click('.auth-back a')
+  await click('a[href="#/benvenuto"]')
   await until('Boolean(document.querySelector("#landing-title")) && location.hash === "#/benvenuto"')
   await click('.landing-cta a')
   await until('Boolean(document.querySelector("#login-email"))')

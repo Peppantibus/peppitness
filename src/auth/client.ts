@@ -11,8 +11,7 @@ export function getSupabaseClient(): SupabaseClient | null {
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      // Accesso iniziale con password. I link email saranno abilitati dopo il collaudo
-      // del recupero: non devono interferire con la navigazione hash dell'app.
+      // Il recupero verifica esplicitamente token_hash con un client isolato.
       detectSessionInUrl: false,
     },
     global: { fetch: (input, init) => fetch(input, { ...init, signal: init?.signal ?? AbortSignal.timeout(15_000) }) },
