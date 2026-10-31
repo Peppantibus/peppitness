@@ -214,6 +214,7 @@ export function App() {
     {isSettings && <Settings backSection={page.lastSection} weeklyProgram={schedule.weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy}
       onSignedOut={() => { diary.store.clearDevice(); morning.store.clearDevice(); plans.store?.clearDevice(); catalog.store?.clearDevice(); forgetDeferredExercises(); void importReview.clearDevice() }} {...settings} />}
     {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} onNote={updateNote(activeSession.id)} syncSlot={syncIndicator}
+      editing={{ store: diary.store, catalog, context: diary.state.workoutContext?.[activeSession.id] }}
       exerciseActions={exercise => <WorkoutReplacement exercise={exercise} session={activeSession} sessions={view.sessions} days={schedule.baseDays} changes={view.changes ?? []} catalog={catalog} store={diary.store} today={today}
         enabled={schedule.weekly && workout?.version.id === activeSession.versionId} announce={setAnnouncement}
         onApplied={change => {

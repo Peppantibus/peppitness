@@ -32,6 +32,7 @@ export function countsOf(revisions: Record<string, number>): DiaryCounts {
 }
 
 export interface DiaryTransport {
+  editSession?(op: Extract<DiaryOp, { type: 'session-edit' }>, setRevisions: Record<string, number>, signal: AbortSignal): Promise<Row>
   change?(op: Extract<DiaryOp, { type: 'change' | 'undo-change' }>, signal: AbortSignal): Promise<ExerciseChange>
   /** Lettura completa; `cursor` è l'`updated_at` più recente letto (assente nei trasporti di prova). */
   loadAll(signal: AbortSignal): Promise<{ data: DiaryData; revisions: Record<string, number>; cursor?: string | null }>
@@ -73,6 +74,7 @@ function snapshotExercise(value: unknown): SnapshotExercise {
   const row = record(value)
   if (row.muscle_group !== undefined && row.muscle_group !== null && !isMuscleGroup(row.muscle_group)) bad()
   const result = {
+    ...(row.session_added === true ? { session_added: true } : {}),
     ...(row.muscle_group === undefined ? {} : { muscle_group: row.muscle_group }),
     id: id(row.id), exercise_id: id(row.exercise_id), name: string(row.name), variant: string(row.variant), equipment: string(row.equipment),
     load_convention: string(row.load_convention), load_unit: string(row.load_unit), per_side: row.per_side, exercise_note: string(row.exercise_note ?? ''),
@@ -266,6 +268,15 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
     }
   }
   return {
+    async editSession(op, setRevisions, signal) {
+      const auth = await token(signal)
+      const { data, error } = await client.rpc('edit_workout_session_exercises', {
+        p_request_id: op.opId, p_session_id: op.sessionId, p_edit: op.edit, p_expected_order: op.expectedOrder, p_set_revisions: setRevisions,
+      }).setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+      signal.throwIfAborted()
+      if (error) throw failure(error)
+      return owned(data)
+    },
     async change(op, signal) {
       const auth = await token(signal)
       const { data, error } = op.type === 'change'

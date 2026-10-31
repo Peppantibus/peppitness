@@ -5,6 +5,8 @@ import { parseNonNegativeNumber, validateSet } from './validation.ts'
 import type { DayType, ExercisePrescription, LocalDate, Meal, MealLog, MealStatus, RestTimerState, SetResult, WorkoutDay, WorkoutSession } from './types.ts'
 import { applyExerciseChange, changeAt } from './exercise-changes.ts'
 import type { ExerciseChange } from './exercise-changes.ts'
+import { editSessionExercises } from './session-exercises.ts'
+import type { SessionEdit } from './session-exercises.ts'
 
 /** Stato del diario mostrato dalle schermate: sedute, pasti e tipo di giornata. */
 export interface DiaryData {
@@ -18,6 +20,7 @@ export function mealLogKey(date: LocalDate, mealId: string): string { return `${
 
 /** Prescrizione salvata nello snapshot server della seduta. */
 export interface SnapshotExercise {
+  session_added?: boolean
   muscle_group?: MuscleGroup | null
   id: string; exercise_id: string; name: string; variant: string; equipment: string
   load_convention: 'total' | 'single-dumbbell' | 'bodyweight'; load_unit: 'kg' | 'lb'; per_side: boolean; exercise_note: string
@@ -87,6 +90,7 @@ export function setValues(result: SetResult, mode: ExercisePrescription['mode'])
 
 /** Operazioni del diario: applicate subito alla vista locale e poi inviate in ordine. */
 export type DiaryOp =
+  | { type: 'session-edit'; opId: string; sessionId: string; edit: SessionEdit; expectedOrder: string[] }
   | { type: 'change'; opId: string; sessionId: string; change: ExerciseChange; exerciseRevision: number }
   | { type: 'undo-change'; opId: string; sessionId: string; changeId: string }
   | { type: 'start'; opId: string; session: WorkoutSession; planId: string; versionId: string; timeZone: string }
@@ -100,6 +104,7 @@ export type DiaryOp =
 /** Chiave della riga server interessata: operazioni con la stessa chiave si uniscono. */
 export function opKey(op: DiaryOp): string {
   switch (op.type) {
+    case 'session-edit': return `session-edit:${op.opId}`
     case 'change': return `change:${op.change.id}`
     case 'undo-change': return `change:${op.changeId}`
     // La nota sta sulla riga della seduta: stessa revisione di avvio e completamento.
@@ -112,6 +117,7 @@ export function opKey(op: DiaryOp): string {
 
 export function applyOp(data: DiaryData, op: DiaryOp): DiaryData {
   switch (op.type) {
+    case 'session-edit': return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId ? editSessionExercises(session, op.edit) : session) }
     case 'change': return applyExerciseChange(data, op.change)
     case 'undo-change': {
       const change = data.changes?.find(item => item.id === op.changeId)

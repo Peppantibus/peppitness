@@ -8,6 +8,8 @@ import type { DiaryTransport, Row } from './diary-repository.ts'
 import { applyExerciseChange, canUndoChange, changeAt, intact } from '../domain/exercise-changes.ts'
 import type { ExerciseChange } from '../domain/exercise-changes.ts'
 import { localDate } from '../domain/dates.ts'
+import { editSessionExercises } from '../domain/session-exercises.ts'
+import type { SessionEdit, WorkoutContext } from '../domain/session-exercises.ts'
 
 /**
  * Da risolvere con una scelta esplicita:
@@ -19,6 +21,7 @@ import { localDate } from '../domain/dates.ts'
 export interface DiaryConflict { id: string; op: DiaryOp; kind: 'conflict' | 'blocked' | 'rejected'; label: string; local: string; remote: string; sessionId?: string }
 
 export interface DiaryState {
+  workoutContext?: Record<string, WorkoutContext>
   /** loading: nessun dato sul dispositivo; ready: vista disponibile (anche offline). */
   phase: 'loading' | 'ready' | 'error'
   view: DiaryData
@@ -41,6 +44,7 @@ export const browserStorage: KeyValueStorage = {
 
 /** Parte locale, piccola e sincrona (localStorage): ciò che esiste solo su questo dispositivo. */
 interface LocalPart {
+  workoutContext?: Record<string, WorkoutContext>
   version: 2; queue: DiaryOp[]; conflicts: DiaryConflict[]; restTimer: RestTimerState | null
   /** Operazioni già inviate almeno una volta: il server potrebbe averle applicate. */
   attempted: string[]
@@ -61,6 +65,7 @@ export const CURSOR_OVERLAP_MS = 5 * 60 * 1000
 const describe = (op: DiaryOp, data: DiaryData): { label: string; value: string } => {
   const session = 'sessionId' in op ? data.sessions.find(item => item.id === op.sessionId) : op.type === 'start' ? op.session : undefined
   switch (op.type) {
+    case 'session-edit': return { label: 'Esercizi della seduta', value: op.edit.action === 'add' ? `Aggiungi ${op.edit.exercise.name}` : op.edit.action === 'move' ? 'Sposta esercizio' : 'Rimuovi esercizio' }
     case 'change': return { label: op.change.partner ? 'Scambio esercizi' : 'Sostituzione esercizio', value: `${op.change.before.name} → ${op.change.after.name}` }
     case 'undo-change': return { label: 'Annullamento sostituzione', value: 'Ripristina gli esercizi originali' }
     case 'set': {
@@ -158,8 +163,8 @@ export class DiaryStore {
     } catch { return null }
   }
   private localPart(): LocalPart {
-    const { queue, conflicts, restTimer, attempted, blocked, serverStamp } = this.data ?? this.empty()
-    return { version: 2, queue, conflicts, restTimer, attempted, blocked, serverStamp }
+    const { queue, conflicts, restTimer, attempted, blocked, serverStamp, workoutContext } = this.data ?? this.empty()
+    return { version: 2, queue, conflicts, restTimer, attempted, blocked, serverStamp, workoutContext }
   }
   private serverCopy(): ServerCopy {
     const { server, revisions, refreshedAt, cursor, fullAt } = this.data
@@ -228,7 +233,7 @@ export class DiaryStore {
   private derived(): Partial<DiaryState> {
     const pending = this.data.queue.length
     return {
-      view: replay(this.data.server, this.data.queue), restTimer: this.data.restTimer, pending, conflicts: this.data.conflicts, refreshedAt: this.data.refreshedAt,
+      view: replay(this.data.server, this.data.queue), restTimer: this.data.restTimer, pending, conflicts: this.data.conflicts, refreshedAt: this.data.refreshedAt, workoutContext: this.data.workoutContext,
       sync: !this.transport ? 'local' : this.data.conflicts.length ? 'conflict' : this.inFlight ? 'sending' : pending ? (this.waiting ? 'waiting' : 'pending') : 'synced',
     }
   }
@@ -341,7 +346,7 @@ export class DiaryStore {
     // applicata dal server con risposta persa e deve essere verificata così com'è.
     // Stesso tipo: la nota condivide la chiave della seduta con avvio e completamento.
     const index = replaceable ? this.data.queue.findIndex(item => opKey(item) === key && item.type === op.type && item.opId !== this.inFlight && !this.data.attempted.includes(item.opId)) : -1
-    if (index >= 0 && this.data.queue.slice(index + 1).every(item => opKey(item) !== key && item.type !== 'change' && item.type !== 'undo-change')) {
+    if (index >= 0 && this.data.queue.slice(index + 1).every(item => opKey(item) !== key && item.type !== 'change' && item.type !== 'undo-change' && item.type !== 'session-edit')) {
       const previous = this.data.queue[index]!
       this.removed.add(previous.opId)
       this.data.queue[index] = op.type === 'meal' && previous.type === 'meal' ? { ...op, meal: previous.meal, dayType: previous.dayType } : op
@@ -360,6 +365,16 @@ export class DiaryStore {
   updateSet = (sessionId: string, prescriptionId: string, index: number, result: SetResult) => {
     const session = this.view.sessions.find(item => item.id === sessionId)
     if (!session || !session.results[prescriptionId]?.[index]) return
+    if (!session.completedAt) {
+      const exercise = session.day.exercises.find(item => item.id === prescriptionId)!
+      const results = session.results[prescriptionId]
+      const complete = results.map((set, i) => i === index ? result : set).filter(set => set.completed).length >= exercise.sets
+      const justCompleted = complete && results.filter(set => set.completed).length < exercise.sets
+      const context = this.data.workoutContext?.[sessionId] ?? {}
+      this.data.workoutContext = { ...this.data.workoutContext, [sessionId]: { ...context,
+        ...(result.completed || result.load !== '' || result.amount !== '' ? { workingId: prescriptionId } : {}),
+        ...(justCompleted ? { lastCompletedId: prescriptionId } : {}) } }
+    }
     this.data.restTimer = session.completedAt ? this.data.restTimer : nextRestTimer(this.data.restTimer, session, prescriptionId, index, result)
     const change = session.versionId ? changeAt(this.view.changes ?? [], session.versionId, session.date, session.day.id, prescriptionId) : undefined
     this.enqueue({ type: 'set', opId: crypto.randomUUID(), sessionId, prescriptionId, index, result: { ...result }, exerciseId: session.day.exercises.find(item => item.id === prescriptionId)?.exerciseId, changeId: change?.id ?? null })
@@ -368,7 +383,7 @@ export class DiaryStore {
     this.merge(this.readLocal())
     const view = this.view, session = view.sessions.find(item => item.id === change.sessionId)
     const changes = view.changes ?? []
-    if (!session || session.completedAt || !session.versionId || session.date !== localDate(new Date(), session.timeZone)
+    if (!session || session.completedAt || session.day.exercises.find(item => item.id === change.sourceId)?.snapshot?.session_added || !session.versionId || session.date !== localDate(new Date(), session.timeZone)
       || session.versionId !== change.versionId || !intact(session, change.sourceId)
       || session.day.exercises.find(item => item.id === change.sourceId)?.exerciseId === change.after.exercise_id
       || changeAt(changes, change.versionId, change.sourceDate, change.sourceDayId, change.sourceId)
@@ -382,6 +397,17 @@ export class DiaryStore {
     const view = this.view, change = view.changes?.find(item => item.id === changeId)
     if (!change || !canUndoChange(change, view.sessions)) return false
     this.enqueue({ type: 'undo-change', opId: crypto.randomUUID(), sessionId: change.sessionId, changeId })
+    return true
+  }
+  editSession = (sessionId: string, edit: SessionEdit): boolean => {
+    this.merge(this.readLocal())
+    const session = this.view.sessions.find(item => item.id === sessionId)
+    if (!session || editSessionExercises(session, edit) === session) return false
+    if (edit.action === 'remove') {
+      this.drop(op => op.type === 'set' && op.sessionId === sessionId && op.prescriptionId === edit.id && op.opId !== this.inFlight && !this.data.attempted.includes(op.opId) && !this.setValuesFor(op))
+      if (this.data.restTimer?.sessionId === sessionId && this.data.restTimer.exerciseId === edit.id) this.data.restTimer = null
+    }
+    this.enqueue({ type: 'session-edit', opId: crypto.randomUUID(), sessionId, edit: structuredClone(edit), expectedOrder: session.day.exercises.map(item => item.id) })
     return true
   }
   /** Valori incompleti (es. "12,") non inviabili: si torna a quelli confermati. */
@@ -530,7 +556,9 @@ export class DiaryStore {
   }
 
   private setValuesFor(op: Extract<DiaryOp, { type: 'set' }>) {
-    const session = replay(this.data.server, this.data.queue).sessions.find(item => item.id === op.sessionId)
+    // La rimozione successiva non deve rendere invisibili le serie ancora da inviare prima di essa.
+    const index = this.data.queue.findIndex(item => item.opId === op.opId)
+    const session = replay(this.data.server, index < 0 ? this.data.queue : this.data.queue.slice(0, index + 1)).sessions.find(item => item.id === op.sessionId)
     const exercise = session?.day.exercises.find(item => item.id === op.prescriptionId)
     return exercise ? setValues(op.result, exercise.mode) : null
   }
@@ -538,7 +566,7 @@ export class DiaryStore {
   private reject(op: DiaryOp, kind: 'conflict' | 'rejected', remote: string) {
     const described = describe(op, replay(this.data.server, this.data.queue))
     this.data.attempted = this.data.attempted.filter(id => id !== op.opId)
-    if (op.type === 'start' || op.type === 'change' || op.type === 'undo-change') {
+    if (op.type === 'start' || op.type === 'change' || op.type === 'undo-change' || op.type === 'session-edit') {
       // La seduta e le sue serie restano sul dispositivo, ferme, finché l'utente sceglie:
       // nessuna registrazione viene eliminata senza uno scarto esplicito.
       const sessionId = op.type === 'start' ? op.session.id : op.sessionId
@@ -563,6 +591,19 @@ export class DiaryStore {
     const key = opKey(op)
     const known = this.data.revisions[key]
     switch (op.type) {
+      case 'session-edit': {
+        if (!transport.editSession) throw new DiaryFailure('unavailable')
+        const prefix = op.edit.action === 'remove' ? `set:${op.sessionId}:${op.edit.id}:` : ''
+        const setRevisions = Object.fromEntries(Object.entries(this.data.revisions).filter(([key]) => prefix && key.startsWith(prefix)).map(([key, value]) => [key.slice(prefix.length), value]))
+        const row = await transport.editSession(op, setRevisions, signal)
+        const parsed = sessionFromRow(row)
+        const existing = this.data.server.sessions.find(item => item.id === op.sessionId)
+        const results = Object.fromEntries(parsed.session.day.exercises.map(item => [item.id, existing?.results[item.id] ?? parsed.session.results[item.id]!]))
+        this.data.server.sessions = this.data.server.sessions.map(item => item.id === op.sessionId ? { ...parsed.session, results } : item)
+        this.data.revisions[`session:${op.sessionId}`] = parsed.revision
+        if (prefix) for (const key of Object.keys(this.data.revisions)) if (key.startsWith(prefix)) delete this.data.revisions[key]
+        return
+      }
       case 'change': case 'undo-change': {
         if (!transport.change) throw new DiaryFailure('unavailable')
         const change = await transport.change(op, signal)

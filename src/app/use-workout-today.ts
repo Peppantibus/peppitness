@@ -46,8 +46,8 @@ export function useWorkoutToday({ configured, workout, programs, catalogRows, se
   const shownWeek = weekDates(date)
   return {
     workoutDays, baseDays, weekly, planned, suggestion, day, selectDay,
-    /** Cambio di programma: la scelta manuale della seduta non vale più. */
-    resetDay: () => setDayId(null),
+    /** Ripristina la proposta del programma, incluso il riposo nei giorni senza seduta. */
+    resetDay: () => { setDayId(null); setDayChoice(null) },
     followable: programs.filter(item => item.plan.activeVersionId && !item.plan.archivedAt),
     activeSession: sessions.find(session => !session.completedAt),
     cycleFinished: cycleNow?.status === 'finished', cycleScore, cycleSummary, programSessions,

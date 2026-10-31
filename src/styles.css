@@ -659,6 +659,8 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .workout-summary { position: relative; isolation: isolate; display: grid; gap: var(--space-3); margin-bottom: var(--space-5); padding: var(--space-4); }
 .workout-summary-toggle { position: absolute; z-index: 1; inset: 0; width: 100%; height: 100%; padding: 0; border: 0; border-radius: inherit; background: transparent; cursor: pointer; }
 .workout-summary .workout-start, .workout-summary .workout-cancel, .workout-summary .change-session { position: relative; z-index: 2; }
+.workout-return-rest { justify-self: center; justify-content: center; font-size: var(--text-sm); color: var(--color-text-muted); }
+.workout-return-rest:hover:not(:disabled) { text-decoration: none; }
 .workout-summary h2 > svg { flex-shrink: 0; color: var(--color-text-muted); transition: transform var(--duration); }
 .workout-summary.is-expanded h2 > svg { transform: rotate(180deg); }
 .workout-summary-top { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); }
@@ -783,6 +785,9 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .session-page { max-width: 47.5rem; margin-inline: auto; }
 .session-page .subpage-header { margin-bottom: var(--space-4); }
 .session-more { color: var(--color-text); }
+.session-discard-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.session-discard-actions .button { min-width: 0; padding-inline: var(--space-2); }
+.session-add-button { flex-shrink: 0; }
 .session-progress { margin: 0 0 var(--space-4); }
 .session-progress > div { display: flex; justify-content: space-between; margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text-muted); }
 .session-progress strong { color: var(--color-primary); font-variant-numeric: tabular-nums; }
@@ -846,7 +851,6 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .set-summary-copy strong { display: block; font-size: var(--text-base); overflow-wrap: anywhere; }
 .set-summary-copy small { display: block; margin-top: 2px; overflow: hidden; font-size: var(--text-sm); color: var(--color-text-muted); white-space: nowrap; text-overflow: ellipsis; }
 .session-actions { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-6) 0 var(--space-3); }
-.session-actions > span { font-size: var(--text-sm); color: var(--color-text-muted); }
 .session-page.is-active .session-actions { position: sticky; bottom: 0; z-index: 6; margin-top: var(--space-3); padding: var(--space-5) 0 calc(var(--space-4) + env(safe-area-inset-bottom)); background: linear-gradient(to bottom, transparent, var(--color-bg) 34%); }
 .session-options { display: grid; gap: var(--space-3); }
 .session-options h2 { margin-bottom: 0 !important; }
@@ -912,8 +916,8 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
   .set-row { padding: var(--space-1) 0; }
   .set-card-footer { padding: 0 var(--space-4) 2px; }
   .set-summary { gap: var(--space-3); padding: var(--space-3) var(--space-4); }
-  .session-actions { gap: var(--space-3); }
-  .session-actions > span { flex: 1; min-width: 0; line-height: var(--leading-snug); }
+  .session-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2) var(--space-3); }
+  .session-actions .button { min-width: 0; padding-inline: var(--space-2); white-space: normal; }
   .session-actions .button { flex-shrink: 0; }
   .session-end-actions { flex-direction: column; align-items: stretch; }
   .session-end-actions .text-button { justify-content: center; margin-left: 0; }
@@ -1418,3 +1422,10 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .replacement-dose { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .75rem; margin: .75rem 0; }
 .replacement-dose label { min-width: 0; font-size: .85rem; }
 .replacement-dose input { width: 100%; min-width: 0; min-height: 44px; margin-top: .3rem; }
+.session-position { display: grid; gap: var(--space-1); min-width: 0; }
+.session-position select { width: 100%; min-width: 0; min-height: var(--touch); }
+.session-duplicate { margin-block: var(--space-4); }
+.session-duplicate label { display: flex; gap: var(--space-2); align-items: center; }
+.session-duplicate input { width: auto; min-height: 24px; }
+.session-added-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); width: 100%; }
+.collapsed-exercise-actions { padding: 0 var(--space-4) var(--space-3); }

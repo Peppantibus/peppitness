@@ -16,11 +16,16 @@ import { formatImprovement, sessionRecords, setImprovement } from '../domain/rec
 import { installAudioUnlock, useScreenWakeLock } from '../workout-alerts'
 import type { PreviousExercise } from '../domain/workout'
 import type { WorkoutSession, ExercisePrescription, SetResult, WorkoutDay } from '../domain/types'
+import { defaultExercisePosition } from '../domain/session-exercises'
+import type { ExercisePosition, WorkoutContext } from '../domain/session-exercises'
+import type { DiaryStore } from '../persistence/diary-store'
+import type { ExercisesState, ExercisesStore } from '../persistence/exercises-store'
+import { SessionExerciseActions, SessionExerciseAddition } from './SessionExercises'
 
 /** Posizione nel ciclo del programma seguito, già formulata per la Scheda. */
 export interface CycleSummary { label: string; detail?: string; ratio: number | null }
 
-export function Workout({ day, days, planTitle, planGuidance, date, today, sessions, onDay, cycle, progressHref, activeSession, onStart, onDiscard, suggestedDayId, weekly = false, workoutWeekdays = [] }: {
+export function Workout({ day, days, planTitle, planGuidance, date, today, sessions, onDay, cycle, progressHref, activeSession, onStart, onDiscard, onCancelSelection, suggestedDayId, weekly = false, workoutWeekdays = [] }: {
   day: WorkoutDay; days: WorkoutDay[]; planTitle: string; planGuidance?: string; date: string; today: string; sessions: WorkoutSession[]; onDay: (id: string) => void
   cycle?: CycleSummary; progressHref?: string
   /** Settimanale: seduta prevista per la data; altrimenti seduta suggerita dalla rotazione. */
@@ -28,6 +33,8 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
   activeSession?: WorkoutSession; onStart: () => void; weekly?: boolean; workoutWeekdays?: number[]
   /** Richiede la conferma prima di annullare l'allenamento in corso. */
   onDiscard?: () => void
+  /** Torna al riposo prima di avviare la seduta scelta. */
+  onCancelSelection?: () => void
 }) {
   const [choosing, setChoosing] = useState(false)
   const [expanded, setExpanded] = useState(false)
@@ -91,6 +98,7 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
         {activeElsewhere && activeSession
           ? <><button ref={startButton} className="button secondary lg workout-start" onClick={onStart}>{startLabel}<Icon name="play" size={20} /></button><p className="workout-blocked">Termina l’allenamento in corso per iniziare questa seduta.</p></>
           : <button ref={startButton} className="button primary lg workout-start" onClick={onStart}>{startLabel}<Icon name="play" size={20} /></button>}
+        {!activeHere && onCancelSelection && <button type="button" className="text-button workout-cancel workout-return-rest" onClick={onCancelSelection}>Torna al riposo</button>}
         {activeSession && onDiscard && <button type="button" className="button secondary danger workout-cancel" aria-haspopup="dialog" onClick={onDiscard}>Annulla allenamento<Icon name="close" size={16} /></button>}
       </section>
       </div>
@@ -275,16 +283,17 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
     ? <button type="button" className="text-button defer-exercise" onClick={() => { setExpanded(false); onDefer(exercise.id) }}>{deferred ? 'Rimetti al suo posto' : 'Fallo dopo'}</button> : null
   if (collapsed) {
     const summary = results.filter(set => set.completed).map(set => formatResult(set, exercise)).join(' · ')
-    return <article className={`set-panel is-collapsed ${complete ? 'exercise-complete' : 'exercise-later'}`} id={`exercise-${prefix}`}>
+    return <article tabIndex={-1} className={`set-panel is-collapsed ${complete ? 'exercise-complete' : 'exercise-later'}`} id={`exercise-${prefix}`}>
       <button ref={summaryButton} type="button" className="set-summary" aria-expanded="false" aria-label={complete ? `${exercise.name}: completato, ${completed} di ${exercise.sets} serie. Apri per modificare` : `${exercise.name}: rimandato, ${completed} di ${exercise.sets} serie. Apri per farlo ora`} onClick={() => setExpanded(true)}>
         <span className={`exercise-number ${complete ? 'is-done' : 'is-later'}`}><Icon name={complete ? 'check' : 'clock'} size={20} /></span>
         <span className="set-summary-copy"><strong>{exercise.name}{recordIndex !== undefined && <span className="record-badge"><Icon name="star" size={16} />Record</span>}</strong><small>{complete ? summary : `Rimandato${summary ? ` · ${summary}` : ''}`}</small></span>
         <span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span>
         <Icon name="chevronDown" size={20} />
       </button>
+      {actions && <div className="collapsed-exercise-actions">{actions}</div>}
     </article>
   }
-  return <article className={`set-panel ${complete ? 'exercise-complete' : ''}`} id={`exercise-${prefix}`}>
+  return <article tabIndex={-1} className={`set-panel ${complete ? 'exercise-complete' : ''}`} id={`exercise-${prefix}`}>
     <div className="set-card-heading"><MuscleGroupImage exercise={exercise} /><div>{area && <span className="mini-label">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} illustrated={false} /></div><span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span></div>
     <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` · +${exercise.optionalSets} facoltative` : ''}</span><span className="prescription-rest"><Icon name="clock" size={16} />{restLabel(exercise.restSeconds)} recupero</span>
       {(actions || defer) && <div className="set-card-tools">{defer}{actions}</div>}
@@ -336,11 +345,12 @@ function SessionNote({ sessionId, note, editable, onChange }: { sessionId: strin
   </section>
 }
 
-export function SessionView({ session, sessions, onChange, onComplete, onDiscard, onEndCorrection, onNote, syncSlot, exerciseActions }: {
+export function SessionView({ session, sessions, onChange, onComplete, onDiscard, onEndCorrection, onNote, syncSlot, exerciseActions, editing }: {
+  editing?: { store: DiaryStore; catalog: { store: ExercisesStore | null; state: ExercisesState }; context?: WorkoutContext }
   exerciseActions?: (exercise: ExercisePrescription) => ReactNode
   session: WorkoutSession; sessions: WorkoutSession[]
   onChange: (exerciseId: string, index: number, result: SetResult) => void; onComplete: () => void
-  /** Elimina la seduta in corso (conferma nel menu «⋯»). */
+  /** Elimina la seduta in corso dopo la conferma esplicita. */
   onDiscard?: () => void
   /** Fine correzione dello storico: i valori incompleti rimasti non vengono conservati. */
   onEndCorrection?: () => void
@@ -352,7 +362,10 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
   const finished = Boolean(session.completedAt)
   const [correcting, setCorrecting] = useState(false)
   const [options, setOptions] = useState(false)
+  const [confirmDiscard, setConfirmDiscard] = useState(false)
   const [confirmEnd, setConfirmEnd] = useState(false)
+  const [adding, setAdding] = useState<ExercisePosition | null>(null)
+  const reveal = useRef<string | null>(null)
   // «Fallo dopo» vale solo per la seduta in corso; lo storico mostra sempre l'ordine prescritto.
   const [later, setLater] = useState(() => finished ? [] : readLater(session.id))
   const endCorrection = useEffectEvent(() => onEndCorrection?.())
@@ -362,7 +375,6 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
   useEffect(() => finished ? undefined : installAudioUnlock(), [finished])
   const records = sessionRecords(session, sessions)
   const { required, completedRequired } = sessionProgress(session)
-  const exerciseCount = session.day.exercises.length
   const deferred = finished ? [] : later.filter(id => session.day.exercises.some(exercise => exercise.id === id))
   const ordered = sessionOrder(session.day.exercises, deferred)
   const isPending = (exercise: ExercisePrescription) => (session.results[exercise.id] ?? []).filter(set => set.completed).length < exercise.sets
@@ -371,6 +383,23 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     document.getElementById(`exercise-${session.id}-${exerciseId}`)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
   }
+  const afterEdit = (id?: string) => {
+    setAdding(null)
+    if (id) {
+      setLater([]); writeLater(session.id, [])
+      reveal.current = id
+    }
+  }
+  useLayoutEffect(() => {
+    const id = reveal.current
+    if (!id || !session.day.exercises.some(item => item.id === id)) return
+    reveal.current = null
+    window.requestAnimationFrame(() => {
+      const card = document.getElementById(`exercise-${session.id}-${id}`)
+      card?.focus({ preventScroll: true })
+      card?.scrollIntoView({ behavior: 'auto', block: 'start' })
+    })
+  })
   // Esercizio completato: si passa al successivo ancora da fare, se esiste; i rimandati per ultimi.
   const goToNext = (exerciseId: string) => {
     const next = nextExercise(session, deferred, exerciseId)
@@ -416,19 +445,35 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
   return <section className={`session-page ${finished ? '' : 'is-active'}`}>
     <SubpageHeader back={finished ? '#/scheda/storico' : '#/scheda'} backLabel={finished ? 'Torna allo storico' : 'Torna alla scheda'} title={session.day.title}
       subtitle={formatDate(session.date, { weekday: 'long', day: 'numeric', month: 'long' })}
-      actions={<><span className={`session-status ${finished ? 'finished' : ''}`}><span />{finished ? 'Completato' : 'In corso'}</span>{syncSlot}{!finished && onDiscard && <button type="button" className="icon-button session-more" aria-haspopup="dialog" aria-label="Opzioni della seduta" onClick={() => setOptions(true)}><Icon name="more" size={24} strokeWidth={3} /></button>}</>} />
+      actions={<>
+        {finished && <span className="session-status finished"><span />Completato</span>}
+        {syncSlot}
+        {!finished && onDiscard && <button type="button" className="icon-button session-more" aria-haspopup="dialog" aria-label="Opzioni della seduta" onClick={() => setOptions(true)}><Icon name="more" size={24} strokeWidth={3} /></button>}
+      </>} />
     <div className="session-progress"><div><span>{completedRequired} di {required} serie</span><strong>{required ? Math.round(completedRequired / required * 100) : 0}%</strong></div><progress max={required} value={completedRequired} aria-label="Serie completate" /></div>
     {finished && <div className="session-correction"><p className="small muted">{correcting ? 'Correzione attiva: le modifiche aggiornano solo lo storico di questa seduta.' : 'Seduta completata.'}</p><button className="button secondary session-correct" onClick={() => { if (correcting) onEndCorrection?.(); setCorrecting(!correcting) }}>{correcting ? 'Fine correzione' : 'Correggi valori'}</button></div>}
-    <div className="session-cards">{ordered.map(exercise => <ExerciseSetCard key={`${exercise.id}:${exercise.exerciseId}`} session={session} exercise={exercise} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)} actions={exerciseActions?.(exercise)}
+    <div className="session-cards">{ordered.map(exercise => <ExerciseSetCard key={`${exercise.id}:${exercise.exerciseId}`} session={session} exercise={exercise} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)} actions={exercise.snapshot?.session_added && editing ? <SessionExerciseActions exercise={exercise} session={session} store={editing.store} onApplied={afterEdit} /> : exerciseActions?.(exercise)}
       deferred={deferred.includes(exercise.id)} canDefer={pendingCount > 1} onDefer={finished ? undefined : toggleLater} onEnterFirstSet={enterFirstSet} />)}</div>
     <SessionNote sessionId={session.id} note={session.note ?? ''} editable={!finished || correcting} onChange={onNote} />
-    {!finished && <div className="session-actions"><span>{completedRequired === required ? 'Tutte le serie previste sono fatte' : `${exerciseCount} ${exerciseCount === 1 ? 'esercizio' : 'esercizi'} · ${required - completedRequired} serie da fare`}</span><button className="button primary session-finish" onClick={requestComplete}>Termina allenamento<Icon name="check" size={20} /></button></div>}
+    {!finished && <div className="session-actions">
+      <button className="button primary session-finish" onClick={requestComplete}>Termina allenamento<Icon name="check" size={20} /></button>
+      <button type="button" className="button secondary session-add-button" disabled={!editing} aria-haspopup="dialog" onClick={() => setAdding(defaultExercisePosition(session, editing?.context))}>Aggiungi esercizio</button>
+    </div>}
+    {!finished && adding && editing && <SessionExerciseAddition session={session} store={editing.store} catalog={editing.catalog} position={adding} onClose={() => setAdding(null)} onApplied={afterEdit} />}
     {options && onDiscard && <Modal label="Opzioni della seduta" variant="sheet" onClose={() => setOptions(false)}>
       <div className="session-options">
         <h2>Opzioni della seduta</h2>
         <p className="muted">Eliminare la seduta cancella questa seduta in corso e le serie annotate. Le sedute completate restano nello storico.</p>
-        <button type="button" className="button secondary danger full-width session-discard" onClick={() => { setOptions(false); onDiscard() }}>Elimina seduta</button>
+        <button type="button" className="button secondary danger full-width session-discard" onClick={() => { setOptions(false); setConfirmDiscard(true) }}>Elimina seduta</button>
         <button type="button" className="button secondary full-width" onClick={() => setOptions(false)}>Continua l’allenamento</button>
+      </div>
+    </Modal>}
+    {confirmDiscard && onDiscard && <Modal label="Eliminare la seduta?" onClose={() => setConfirmDiscard(false)}>
+      <h2>Eliminare la seduta?</h2>
+      <p>La seduta in corso e tutte le serie annotate verranno eliminate. Non potrai recuperarle.</p>
+      <div className="program-actions session-discard-actions">
+        <button type="button" className="button secondary session-discard-cancel" onClick={() => setConfirmDiscard(false)}>Continua</button>
+        <button type="button" className="button danger session-discard-confirm" onClick={() => { setConfirmDiscard(false); onDiscard() }}>Elimina</button>
       </div>
     </Modal>}
     {confirmEnd && <Modal label={filled.length ? 'Segnare le serie compilate?' : 'Terminare l’allenamento?'} onClose={() => setConfirmEnd(false)}>

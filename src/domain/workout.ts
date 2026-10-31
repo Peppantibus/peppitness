@@ -32,9 +32,10 @@ export function findPreviousExercise(
 }
 
 const minuteNumber = new Intl.NumberFormat('it-IT', { useGrouping: false, maximumFractionDigits: 6 })
+type AmountExercise = Pick<ExercisePrescription, 'name' | 'mode' | 'muscleGroup' | 'comparison'>
 
 /** Il cardio si legge in minuti; risultati, confronti e persistenza restano in secondi. */
-export function displaySetAmount(value: string, exercise: ExercisePrescription): string {
+export function displaySetAmount(value: string, exercise: AmountExercise): string {
   if (!isTimedCardio(exercise)) return value
   try {
     const seconds = parseNonNegativeNumber(value)
@@ -43,7 +44,7 @@ export function displaySetAmount(value: string, exercise: ExercisePrescription):
 }
 
 /** Un input incompleto non deve far registrare come secondi un valore scritto in minuti. */
-export function storedSetAmount(value: string, exercise: ExercisePrescription): string {
+export function storedSetAmount(value: string, exercise: AmountExercise): string {
   if (!isTimedCardio(exercise)) return value
   try {
     const minutes = parseNonNegativeNumber(value)

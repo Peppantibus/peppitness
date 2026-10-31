@@ -75,6 +75,7 @@ export function WorkoutToday({ configured, plans, diary, schedule, date, today, 
     <Workout day={day} days={workoutDays} planTitle={workout ? workout.plan.name : 'Full body'} planGuidance={workout?.version.guidance || undefined} date={date} today={today}
       sessions={diary.state.view.sessions} onDay={schedule.selectDay} cycle={schedule.cycleSummary} progressHref={workout ? '#/scheda/progressi' : undefined}
       activeSession={activeSession} suggestedDayId={weekly ? schedule.planned?.id : workoutDays.length > 1 ? schedule.suggestion?.id : undefined} weekly={weekly}
-      workoutWeekdays={weekly ? [] : workoutWeekdays} onStart={onStart} onDiscard={activeSession ? () => onDiscard(activeSession.id) : undefined} />
+      workoutWeekdays={weekly ? [] : workoutWeekdays} onStart={onStart} onDiscard={activeSession ? () => onDiscard(activeSession.id) : undefined}
+      onCancelSelection={weekly && !schedule.planned ? schedule.resetDay : undefined} />
   </>
 }

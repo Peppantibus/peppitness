@@ -77,7 +77,7 @@ export function WorkoutReplacement({ exercise, session, sessions, days, changes,
   const [open, setOpen] = useState(false), [selected, setSelected] = useState<CatalogExercise | null>(null), [error, setError] = useState('')
   const applied = useRef(false)
   const change = session.versionId ? changeAt(changes, session.versionId, session.date, session.day.id, exercise.id) : undefined
-  const available = enabled && session.date === today && !session.completedAt && Boolean(exercise.snapshot) && intact(session, exercise.id)
+  const available = enabled && !exercise.snapshot?.session_added && session.date === today && !session.completedAt && Boolean(exercise.snapshot) && intact(session, exercise.id)
   const partnersFor = (row: CatalogExercise) => futurePartners({ source: exercise, selected: row, session, sessions, days, changes })
   const hints = Object.fromEntries(catalog.state.rows.map(row => [row.id, partnersFor(row).map(partner => `${formatDate(partner.date, { weekday: 'long', day: 'numeric', month: 'long' })} · ${doseText(partner.before)}`).join(' / ')]))
   const apply = (dose: ChangeDose, partner: ChangePartner | null) => {
