@@ -1,3 +1,4 @@
+import type { DaySwap } from '../domain/day-swaps'
 import { Icon } from '../components/Icon'
 import { SubpageHeader } from '../components/SubpageHeader'
 import { formatDate, shiftDate } from '../domain/dates'
@@ -55,12 +56,12 @@ function TrendCard({ trend }: { trend: ExerciseTrend }) {
   </article>
 }
 
-export function Progress({ workout, days, sessions, today }: { workout: SavedProgram | null; days: WorkoutDay[]; sessions: WorkoutSession[]; today: string }) {
+export function Progress({ workout, days, sessions, today, swaps = [] }: { workout: SavedProgram | null; days: WorkoutDay[]; sessions: WorkoutSession[]; today: string; swaps?: DaySwap[] }) {
   const header = (subtitle?: string) => <SubpageHeader back="#/scheda" backLabel="Torna alla scheda" title="I tuoi progressi" subtitle={subtitle} />
   if (!workout || !days.length) return <>{header()}<section className="panel empty-state"><span className="empty-icon"><Icon name="trend" size={32} /></span><h2>Nessun programma da seguire</h2><p>Scegli o crea un programma: qui vedrai costanza e andamento degli esercizi.</p><a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma</a></section></>
   const cycle = workout.plan.cycle ?? { start: shiftDate(mondayOf(today), -7 * 7), weeks: 8 }
   const info = cycleInfo(cycle, today)
-  const weeks = weeklyProgress(days, sessions, cycle, today)
+  const weeks = weeklyProgress(days, sessions, cycle, today, swaps, workout.version.id)
   const score = adherence(weeks)
   const trends = exerciseTrends(days, sessions, cycle.start, info.end)
   const setsDone = sessions.filter(session => session.completedAt && session.date >= cycle.start && session.date <= info.end).reduce((sum, session) => sum + Object.values(session.results).flat().filter(set => set.completed).length, 0)
@@ -70,7 +71,7 @@ export function Progress({ workout, days, sessions, today }: { workout: SavedPro
   const otherWeeks = weeks.filter(week => week !== featuredWeek)
   const weekRow = (week: typeof weeks[number]) => <li key={week.index} className={week.current ? 'is-current' : ''}>
     <div className="week-name"><strong>Settimana {week.index}</strong><small>{short(week.start)} – {short(week.end)}</small></div>
-    <div className="week-slots">{week.slots.map((slot, i) => <span key={`${slot.label}-${i}`} className={`slot is-${slot.state}`} title={`${weekdays.find(day => day.code === slot.label)?.name ?? slot.label} · ${slot.title}: ${stateLabel[slot.state]}`} aria-label={`${slot.label} ${slot.title}: ${stateLabel[slot.state]}`}>{slot.state === 'done' ? <Icon name="check" size={16} /> : slot.state === 'missed' ? '–' : null}<em>{slot.label.slice(0, 3)}</em></span>)}{week.extra > 0 && <span className="slot-extra">+{week.extra}</span>}</div>
+    <div className="week-slots">{week.slots.map((slot, i) => <span key={`${slot.label}-${i}`} className={`slot is-${slot.state}`} title={`${weekdays.find(day => day.code === slot.label)?.name ?? slot.label} · ${slot.title}: ${stateLabel[slot.state]}`} aria-label={`${slot.label}${slot.date ? ` ${short(slot.date)}` : ''} ${slot.title}: ${stateLabel[slot.state]}`}>{slot.state === 'done' ? <Icon name="check" size={16} /> : slot.state === 'missed' ? '–' : null}<em>{slot.label.slice(0, 3)}</em></span>)}{week.extra > 0 && <span className="slot-extra" aria-label={`${week.extra} ${week.extra === 1 ? 'allenamento extra' : 'allenamenti extra'}`}>+{week.extra}</span>}</div>
   </li>
   return <>
     {header(workout.plan.name)}

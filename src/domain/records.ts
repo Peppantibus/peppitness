@@ -147,7 +147,7 @@ export function sessionSummary(session: WorkoutSession, sessions: WorkoutSession
     return index !== undefined && score ? [{ exercise, index, score }] : []
   })
   // Confronto con l'ultima volta della stessa seduta del programma (stesso giorno o etichetta).
-  const last = sessions.filter(other => before(other, session) && (other.day.id === session.day.id || other.day.label === session.day.label))
+  const last = sessions.filter(other => session.kind !== 'free' && other.kind !== 'free' && before(other, session) && (other.day.id === session.day.id || other.day.label === session.day.label))
     .sort((a, b) => b.date.localeCompare(a.date) || b.startedAt.localeCompare(a.startedAt))[0]
   return { minutes, sets, requiredSets, volume, records, previous: last ? { date: last.date, ...volumeOf(last) } : null }
 }

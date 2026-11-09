@@ -96,7 +96,7 @@ export function App() {
     if (catalog.state.phase === 'ready') plans.store?.applyCatalogMuscleGroups(catalog.state.rows)
   }, [catalog.state.phase, catalog.state.rows, plans.store, plans.state.workout, plans.state.cached])
 
-  const schedule = useWorkoutToday({ configured, workout, programs: plans.state.programs, catalogRows: catalog.state.rows, sessions: view.sessions, date, today, changes: view.changes })
+  const schedule = useWorkoutToday({ configured, workout, programs: plans.state.programs, catalogRows: catalog.state.rows, sessions: view.sessions, date, today, changes: view.changes, swaps: view.swaps })
   const menu = useDietToday({ configured, mealPlans: plans.state.mealPlans, mealPlanId: plans.state.selection?.mealPlanId, view, date, programDayType: schedule.programDayType })
   const { activeSession } = schedule
 
@@ -162,7 +162,12 @@ export function App() {
     if (activeSession) { navigate('/scheda/seduta'); return }
     const day = schedule.day
     if (!day || (configured && (!workout || diary.state.phase !== 'ready'))) return
-    if (diary.store.startSession({ date, day, planId: workout?.plan.id ?? 'local', versionId: workout?.version.id ?? 'local', timeZone })) navigate('/scheda/seduta')
+    if (diary.store.startSession({ date, day, planId: workout?.plan.id ?? 'local', versionId: workout?.version.id ?? 'local', timeZone, expectedSchedule: schedule.expectedSchedule })) navigate('/scheda/seduta')
+  }
+  const startFree = () => {
+    if (activeSession) { navigate('/scheda/seduta'); return }
+    if (configured && diary.state.phase !== 'ready') return
+    if (diary.store.startFreeSession(date, timeZone)) navigate('/scheda/seduta')
   }
   // Registrazione rapida dalla card: «Seguito» con un tocco, oppure lo toglie; «Annulla» ripristina lo stato precedente.
   const quickFollow = (meal: Meal) => {
@@ -195,12 +200,12 @@ export function App() {
     {configured && (showDaily || isSession) && <SyncStatus store={diary.store} state={diary.state} />}
     {showDaily && <>
       <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} current={section === 'scheda' ? workout?.plan.name : menu.mealPlan?.name} /></div>
-      <DatePicker date={date} onChange={setDate} today={today} planned={section === 'scheda' ? schedule.trainingDates : []} done={section === 'scheda' ? schedule.sessionDates : menu.mealDates} doneLabel={section === 'scheda' ? 'seduta completata' : 'pasti registrati'} />
+      <DatePicker date={date} onChange={setDate} today={today} planned={section === 'scheda' ? schedule.trainingDates : []} done={section === 'scheda' ? schedule.sessionDates : menu.mealDates} doneLabel={section === 'scheda' ? value => view.sessions.some(session => session.date === value && session.completedAt && session.kind !== 'free') ? 'seduta completata' : 'allenamento libero completato' : 'pasti registrati'} />
       <DateContext date={date} today={today} onToday={() => setDate(today)} />
       {section === 'scheda' && <MorningRoutineCard state={morning.state} date={date} />}
       {section === 'dieta'
         ? <DietToday configured={configured} plans={plans} diary={diary} menu={menu} date={date} today={today} onQuickFollow={quickFollow} />
-        : <WorkoutToday configured={configured} plans={plans} diary={diary} schedule={schedule} date={date} today={today} workoutWeekdays={settings.state.saved?.workoutWeekdays} onStart={start} onDiscard={setDiscardingSessionId} />}
+        : <WorkoutToday configured={configured} plans={plans} diary={diary} schedule={schedule} date={date} today={today} workoutWeekdays={settings.state.saved?.workoutWeekdays} onStart={start} onStartFree={startFree} onDiscard={setDiscardingSessionId} timeZone={timeZone} />}
     </>}
     {isHistory && <History section={section} state={view} onDate={setDate} />}
     {section === 'scheda' && (showDaily || isMorning) && <MorningRoutineStatus store={morning.store} state={morning.state} />}
@@ -208,14 +213,14 @@ export function App() {
     {isCatalog && <Suspense fallback={<p role="status">Apertura del catalogo…</p>}><ExerciseCatalog store={catalog.store} state={catalog.state} /></Suspense>}
     {isPrograms && <Suspense fallback={<p role="status">Apertura dei programmi…</p>}><Programs store={programs.store} state={programs.state} catalog={catalog} mode={editors.programMode} setMode={editors.setProgramMode} step={editors.programStep} setStep={editors.setProgramStep}
       followedPlanId={plans.state.selection?.workoutPlanId ?? null} followedDays={workout?.document.days ?? null} onFollow={followProgram} onDeleted={async () => { await plans.store?.load() }} deletionBlocked={deletionBlocked} today={today} /></Suspense>}
-    {isProgress && <Progress workout={workout} days={schedule.workoutDays} sessions={schedule.programSessions} today={today} />}
+    {isProgress && <Progress workout={workout} days={schedule.baseDays} sessions={schedule.programSessions} today={today} swaps={view.swaps ?? []} />}
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={editors.mealMode} setMode={editors.setMealMode} step={editors.mealStep} setStep={editors.setMealStep} deletionBlocked={deletionBlocked} /></Suspense>}
     {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} engine={importReview.engine} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}
     {isSettings && <Settings backSection={page.lastSection} weeklyProgram={schedule.weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy}
       onSignedOut={() => { diary.store.clearDevice(); morning.store.clearDevice(); plans.store?.clearDevice(); catalog.store?.clearDevice(); forgetDeferredExercises(); void importReview.clearDevice() }} {...settings} />}
     {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} onNote={updateNote(activeSession.id)} syncSlot={syncIndicator}
       editing={{ store: diary.store, catalog, context: diary.state.workoutContext?.[activeSession.id] }}
-      exerciseActions={exercise => <WorkoutReplacement exercise={exercise} session={activeSession} sessions={view.sessions} days={schedule.baseDays} changes={view.changes ?? []} catalog={catalog} store={diary.store} today={today}
+      exerciseActions={exercise => <WorkoutReplacement exercise={exercise} session={activeSession} sessions={view.sessions} days={schedule.baseDays} changes={view.changes ?? []} swaps={view.swaps ?? []} catalog={catalog} store={diary.store} today={today}
         enabled={schedule.weekly && workout?.version.id === activeSession.versionId} announce={setAnnouncement}
         onApplied={change => {
           const message = change.partner ? 'Esercizi scambiati' : 'Esercizio sostituito'

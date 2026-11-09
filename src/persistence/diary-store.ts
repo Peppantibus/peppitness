@@ -1,3 +1,6 @@
+import { applyDaySwap, newDaySwap, swapAt, swapBlocked } from '../domain/day-swaps.ts'
+import type { DaySwap, ScheduleExpectation } from '../domain/day-swaps.ts'
+import type { ProgramCycle } from '../domain/programs.ts'
 import { applyOp, emptyDiary, emptyResults, mealLogKey, nextRestTimer, opKey, replay, setValues } from '../domain/diary.ts'
 import type { DiaryData, DiaryOp } from '../domain/diary.ts'
 import type { DayType, LocalDate, Meal, MealStatus, RestTimerState, SetResult, WorkoutDay, WorkoutSession } from '../domain/types.ts'
@@ -65,6 +68,7 @@ export const CURSOR_OVERLAP_MS = 5 * 60 * 1000
 const describe = (op: DiaryOp, data: DiaryData): { label: string; value: string } => {
   const session = 'sessionId' in op ? data.sessions.find(item => item.id === op.sessionId) : op.type === 'start' ? op.session : undefined
   switch (op.type) {
+    case 'swap': case 'undo-swap': return { label: 'Spostamento allenamento', value: `${op.swap.sourceDate} / ${op.swap.targetDate}` }
     case 'session-edit': return { label: 'Esercizi della seduta', value: op.edit.action === 'add' ? `Aggiungi ${op.edit.exercise.name}` : op.edit.action === 'move' ? 'Sposta esercizio' : 'Rimuovi esercizio' }
     case 'change': return { label: op.change.partner ? 'Scambio esercizi' : 'Sostituzione esercizio', value: `${op.change.before.name} → ${op.change.after.name}` }
     case 'undo-change': return { label: 'Annullamento sostituzione', value: 'Ripristina gli esercizi originali' }
@@ -356,10 +360,37 @@ export class DiaryStore {
   }
   private get view() { return replay(this.data.server, this.data.queue) }
 
-  startSession = (args: { date: LocalDate; day: WorkoutDay; planId: string; versionId: string; timeZone: string }) => {
+  swapDays = (args: { planId: string; versionId: string; days: WorkoutDay[]; sourceDate: string; targetDate: string; timeZone: string; cycle?: ProgramCycle | null }): DaySwap => {
+    this.merge(this.readLocal())
+    const swap = newDaySwap(args, this.view)
+    this.enqueue({ type: 'swap', opId: swap.id, swap })
+    return swap
+  }
+  undoSwap = (id: string): boolean => {
+    this.merge(this.readLocal())
+    const swap = this.view.swaps?.find(item => item.id === id && !item.cancelled)
+    if (!swap || swapBlocked(swap, this.view, undefined, id)) return false
+    this.enqueue({ type: 'undo-swap', opId: crypto.randomUUID(), swap })
+    return true
+  }
+  startFreeSession = (date: LocalDate, timeZone: string) => {
+    this.merge(this.readLocal())
+    if (this.view.sessions.some(session => !session.completedAt)) return null
+    const id = crypto.randomUUID()
+    const session: WorkoutSession = { id, kind: 'free', date, timeZone, day: { id, label: 'Libero', title: 'Allenamento libero', subtitle: '', exercises: [] }, startedAt: new Date().toISOString(), results: {} }
+    this.enqueue({ type: 'start', opId: crypto.randomUUID(), session, planId: null, versionId: null, timeZone })
+    return id
+  }
+  startSession = (args: { date: LocalDate; day: WorkoutDay; planId: string; versionId: string; timeZone: string; expectedSchedule?: ScheduleExpectation }) => {
+    this.merge(this.readLocal())
+    if (this.data.conflicts.some(item => item.op.type === 'swap' || item.op.type === 'undo-swap')) return null
+    const expected = args.expectedSchedule
+    if (expected && (expected.swapId !== (swapAt(this.view.swaps ?? [], args.versionId, args.date)?.id ?? null) || !expected.manualChoice && expected.dayId !== args.day.id)) {
+      this.emit({ message: 'Il calendario è cambiato. Rileggi la Scheda prima di iniziare.' }); return null
+    }
     if (this.view.sessions.some(session => !session.completedAt)) return null
     const session: WorkoutSession = { id: crypto.randomUUID(), planId: args.planId, versionId: args.versionId, timeZone: args.timeZone, date: args.date, day: structuredClone(args.day), startedAt: new Date().toISOString(), results: emptyResults(args.day) }
-    this.enqueue({ type: 'start', opId: crypto.randomUUID(), session, planId: args.planId, versionId: args.versionId, timeZone: args.timeZone })
+    this.enqueue({ type: 'start', opId: crypto.randomUUID(), session, planId: args.planId, versionId: args.versionId, timeZone: args.timeZone, expectedSchedule: args.expectedSchedule })
     return session.id
   }
   updateSet = (sessionId: string, prescriptionId: string, index: number, result: SetResult) => {
@@ -419,6 +450,7 @@ export class DiaryStore {
   completeSession = (sessionId: string) => {
     const session = this.view.sessions.find(item => item.id === sessionId)
     if (!session || session.completedAt) return
+    if (session.kind === 'free' && !session.day.exercises.length) { this.emit({ message: 'Aggiungi un esercizio prima di terminare, oppure elimina la seduta vuota.' }); return }
     this.data.restTimer = null
     this.drop(op => op.type === 'set' && op.sessionId === sessionId && op.opId !== this.inFlight && !this.setValuesFor(op))
     this.enqueue({ type: 'complete', opId: crypto.randomUUID(), sessionId, at: new Date().toISOString() })
@@ -477,6 +509,14 @@ export class DiaryStore {
     const conflict = this.data.conflicts.find(item => item.id === conflictId)
     if (!conflict) return
     this.closeConflict(conflict)
+    if (conflict.op.type === 'swap' || conflict.op.type === 'undo-swap') {
+      // Un rifiuto ferma anche gli avvii dipendenti, senza eliminare le registrazioni locali.
+      const swap = conflict.op.swap
+      const dependent = this.data.queue.filter((op): op is Extract<DiaryOp, { type: 'start' }> => op.type === 'start' && op.versionId === swap.versionId && [swap.sourceDate, swap.targetDate].includes(op.session.date))
+      this.drop(op => op.opId === conflict.op.opId || (op.type === 'swap' || op.type === 'undo-swap') && op.swap.id === swap.id)
+      for (const op of dependent) this.reject(op, 'rejected', 'Lo spostamento è stato respinto. Scarta questo avvio e rileggi il calendario prima di iniziare.')
+      void this.refresh()
+    }
     if (conflict.sessionId && this.data.blocked.includes(conflict.sessionId)) {
       // Scarto esplicito della seduta non avviabile e di tutte le sue registrazioni.
       const sessionId = conflict.sessionId
@@ -484,7 +524,7 @@ export class DiaryStore {
       this.unblock(sessionId)
       if (this.data.restTimer?.sessionId === sessionId) this.data.restTimer = null
     }
-    this.emit({ message: '' })
+    this.emit({ message: '' }); this.schedule(0)
   }
 
   // ------------------------------------------------------------------ invio
@@ -517,6 +557,7 @@ export class DiaryStore {
       while (active()) {
         const op = this.data.queue.find(item => !this.data.blocked.includes(sessionOf(item) ?? '') && (item.type !== 'set' || this.setValuesFor(item)))
         if (!op) break
+        if ((op.type === 'swap' || op.type === 'undo-swap') && this.data.conflicts.some(item => item.op.opId === op.opId)) break
         this.inFlight = op.opId
         if (!this.data.attempted.includes(op.opId)) this.data.attempted.push(op.opId)
         this.emit()
@@ -566,6 +607,10 @@ export class DiaryStore {
   private reject(op: DiaryOp, kind: 'conflict' | 'rejected', remote: string) {
     const described = describe(op, replay(this.data.server, this.data.queue))
     this.data.attempted = this.data.attempted.filter(id => id !== op.opId)
+    if (op.type === 'swap' || op.type === 'undo-swap') {
+      this.data.conflicts.push({ id: crypto.randomUUID(), op, kind: 'rejected', label: described.label, local: described.value, remote: 'Spostamento respinto: il calendario o le registrazioni sono cambiati online. Gli avvii dipendenti restano sul dispositivo. Usa quello online e rileggi il calendario.' })
+      return
+    }
     if (op.type === 'start' || op.type === 'change' || op.type === 'undo-change' || op.type === 'session-edit') {
       // La seduta e le sue serie restano sul dispositivo, ferme, finché l'utente sceglie:
       // nessuna registrazione viene eliminata senza uno scarto esplicito.
@@ -591,6 +636,11 @@ export class DiaryStore {
     const key = opKey(op)
     const known = this.data.revisions[key]
     switch (op.type) {
+      case 'swap': case 'undo-swap': {
+        if (!transport.swap) throw new DiaryFailure('unavailable')
+        this.data.server = applyDaySwap(this.data.server, await transport.swap(op, signal))
+        return
+      }
       case 'session-edit': {
         if (!transport.editSession) throw new DiaryFailure('unavailable')
         const prefix = op.edit.action === 'remove' ? `set:${op.sessionId}:${op.edit.id}:` : ''
@@ -619,9 +669,17 @@ export class DiaryStore {
       }
       case 'start': {
         let row: Row
-        try { row = await transport.start({ sessionId: op.session.id, versionId: op.versionId, dayId: op.session.day.id, date: op.session.date, timeZone: op.timeZone }, signal) }
+        try {
+          if (op.session.kind === 'free') {
+            if (!transport.startFree) throw new DiaryFailure('unavailable')
+            row = await transport.startFree({ sessionId: op.session.id, date: op.session.date, timeZone: op.timeZone }, signal)
+          } else {
+            if (!op.versionId) throw new DiaryFailure('rejected')
+            row = await transport.start({ sessionId: op.session.id, versionId: op.versionId, dayId: op.session.day.id, date: op.session.date, timeZone: op.timeZone, expectedSchedule: op.expectedSchedule }, signal)
+          }
+        }
         catch (error) {
-          if (error instanceof DiaryFailure && error.kind === 'conflict') throw new RemoteValue('conflict', 'Un’altra seduta risulta già in corso online: completala o annullala, poi scegli Riprova. Le serie di questa seduta restano sul dispositivo.')
+          if (error instanceof DiaryFailure && error.kind === 'conflict') throw new RemoteValue('conflict', op.session.kind === 'free' ? 'L’avvio libero è in conflitto con lo stato online. Le registrazioni restano sul dispositivo: risolvi il conflitto prima di riprovare.' : 'Il calendario è cambiato oppure un’altra seduta è già in corso online. Rileggi la Scheda e risolvi il conflitto prima di riprovare. Le serie di questa seduta restano sul dispositivo.')
           throw error
         }
         const { session, revision } = sessionFromRow(row)

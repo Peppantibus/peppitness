@@ -1,3 +1,5 @@
+import { applyDaySwap } from './day-swaps.ts'
+import type { DaySwap, ScheduleExpectation } from './day-swaps.ts'
 import { loadLabels } from './exercises.ts'
 import type { MuscleGroup } from './muscle-groups.ts'
 import type { ProgramDocument } from './programs.ts'
@@ -10,12 +12,13 @@ import type { SessionEdit } from './session-exercises.ts'
 
 /** Stato del diario mostrato dalle schermate: sedute, pasti e tipo di giornata. */
 export interface DiaryData {
+  swaps?: DaySwap[]
   changes?: ExerciseChange[]
   sessions: WorkoutSession[]
   mealLogs: Record<string, MealLog>
   dayTypes: Record<LocalDate, DayType>
 }
-export const emptyDiary = (): DiaryData => ({ sessions: [], mealLogs: {}, dayTypes: {}, changes: [] })
+export const emptyDiary = (): DiaryData => ({ sessions: [], mealLogs: {}, dayTypes: {}, changes: [], swaps: [] })
 export function mealLogKey(date: LocalDate, mealId: string): string { return `${date}:${mealId}` }
 
 /** Prescrizione salvata nello snapshot server della seduta. */
@@ -90,10 +93,12 @@ export function setValues(result: SetResult, mode: ExercisePrescription['mode'])
 
 /** Operazioni del diario: applicate subito alla vista locale e poi inviate in ordine. */
 export type DiaryOp =
+  | { type: 'swap'; opId: string; swap: DaySwap }
+  | { type: 'undo-swap'; opId: string; swap: DaySwap }
   | { type: 'session-edit'; opId: string; sessionId: string; edit: SessionEdit; expectedOrder: string[] }
   | { type: 'change'; opId: string; sessionId: string; change: ExerciseChange; exerciseRevision: number }
   | { type: 'undo-change'; opId: string; sessionId: string; changeId: string }
-  | { type: 'start'; opId: string; session: WorkoutSession; planId: string; versionId: string; timeZone: string }
+  | { type: 'start'; opId: string; session: WorkoutSession; planId: string | null; versionId: string | null; timeZone: string; expectedSchedule?: ScheduleExpectation }
   | { type: 'set'; opId: string; sessionId: string; prescriptionId: string; index: number; result: SetResult; exerciseId?: string; changeId?: string | null }
   | { type: 'complete'; opId: string; sessionId: string; at: string }
   | { type: 'discard'; opId: string; sessionId: string }
@@ -104,6 +109,7 @@ export type DiaryOp =
 /** Chiave della riga server interessata: operazioni con la stessa chiave si uniscono. */
 export function opKey(op: DiaryOp): string {
   switch (op.type) {
+    case 'swap': case 'undo-swap': return `swap:${op.opId}`
     case 'session-edit': return `session-edit:${op.opId}`
     case 'change': return `change:${op.change.id}`
     case 'undo-change': return `change:${op.changeId}`
@@ -117,6 +123,8 @@ export function opKey(op: DiaryOp): string {
 
 export function applyOp(data: DiaryData, op: DiaryOp): DiaryData {
   switch (op.type) {
+    case 'swap': return applyDaySwap(data, op.swap)
+    case 'undo-swap': return applyDaySwap(data, { ...op.swap, cancelled: true })
     case 'session-edit': return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId ? editSessionExercises(session, op.edit) : session) }
     case 'change': return applyExerciseChange(data, op.change)
     case 'undo-change': {
@@ -169,7 +177,7 @@ export function nextRestTimer(timer: RestTimerState | null, session: WorkoutSess
 export function suggestedDay(days: WorkoutDay[], sessions: WorkoutSession[]): WorkoutDay | undefined {
   // Una nuova versione ha ID diversi: l'etichetta conserva la rotazione fra versioni.
   const position = (day: WorkoutDay) => { const byId = days.findIndex(item => item.id === day.id); return byId >= 0 ? byId : days.findIndex(item => item.label === day.label) }
-  const last = sessions.filter(session => session.completedAt && position(session.day) >= 0)
+  const last = sessions.filter(session => session.completedAt && session.kind !== 'free' && position(session.day) >= 0)
     .sort((a, b) => b.date.localeCompare(a.date) || b.startedAt.localeCompare(a.startedAt))[0]
   if (!last) return days[0]
   return days[(position(last.day) + 1) % days.length]

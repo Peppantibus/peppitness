@@ -1,9 +1,11 @@
+import { scheduledDay } from './day-swaps.ts'
+import type { DaySwap } from './day-swaps.ts'
 import { prescription, totalSets } from './diary.ts'
 import type { DiaryData, SnapshotExercise } from './diary.ts'
 import { weekDates } from './dates.ts'
 import type { CatalogExercise } from './exercises.ts'
 import { isTimedCardio } from './muscle-groups.ts'
-import { dayForDate, isWeekly } from './weekly.ts'
+import { isWeekly } from './weekly.ts'
 import type { ExercisePrescription, WorkoutDay, WorkoutSession } from './types.ts'
 
 export interface ChangePartner {
@@ -30,11 +32,11 @@ export function datedDay(day: WorkoutDay, date: string, versionId: string, chang
     return change ? prescription(change.sourceDate === date && change.sourceDayId === day.id && change.sourceId === exercise.id ? change.after : change.partner!.after) : exercise
   }) }
 }
-export function futurePartners(args: { source: ExercisePrescription; selected: CatalogExercise; session: WorkoutSession; days: WorkoutDay[]; changes: ExerciseChange[]; sessions: WorkoutSession[] }): ChangePartner[] {
+export function futurePartners(args: { source: ExercisePrescription; selected: CatalogExercise; session: WorkoutSession; days: WorkoutDay[]; changes: ExerciseChange[]; sessions: WorkoutSession[]; swaps?: DaySwap[] }): ChangePartner[] {
   const { source, selected, session, days, changes, sessions } = args
   if (cardioReplacement(source, selected) || !isWeekly(days) || !session.versionId) return []
   return weekDates(session.date).filter(date => date > session.date).flatMap(date => {
-    const base = dayForDate(days, date)
+    const base = scheduledDay(days, date, session.versionId!, args.swaps)
     if (!base) return []
     const day = datedDay(base, date, session.versionId!, changes)
     return day.exercises.flatMap(exercise => {

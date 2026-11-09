@@ -1,6 +1,7 @@
 // Modello HTTP sintetico di diario, piani seguiti e piani alimentari per i test frontend.
 // Riproduce revisioni, unicità e proprietario come il database, non verifica RLS/transazioni reali.
 const keys = {
+  workout_day_swaps: ['id'],
   workout_changes: ['id'],
   active_plans: ['owner_id'],
   meal_plans: ['id'],
@@ -45,6 +46,7 @@ function matches(row, url) {
 
 export function diaryFixture(request, url, state) {
   state.diary ??= { active_plans: [], meal_plans: [], workout_sessions: [], workout_set_logs: [], meal_logs: [], diary_days: [] }
+  state.diary.workout_day_swaps ??= []
   state.diary.workout_changes ??= []
   state.diaryWrites ??= []
   const owner = ownerOf(request)

@@ -162,3 +162,11 @@ export function adjustRest(timer: RestTimerState, deltaSeconds: number, now = Da
 export function formatRest(seconds: number): string {
   return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
 }
+
+/** Minuti cardio effettivi dalle sole serie completate; distinti dal tempo trascorso nell'app. */
+export function completedCardioMinutes(session: WorkoutSession): number {
+  return session.day.exercises.filter(isTimedCardio).reduce((total, exercise) => total + (session.results[exercise.id] ?? []).reduce((seconds, set) => {
+    if (!set.completed) return seconds
+    try { return seconds + (parseNonNegativeNumber(set.amount) ?? 0) } catch { return seconds }
+  }, 0), 0) / 60
+}

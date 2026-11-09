@@ -1,3 +1,5 @@
+import { scheduledDay, swapAt } from './day-swaps.ts'
+import type { DaySwap } from './day-swaps.ts'
 import { shiftDate } from './dates.ts'
 import type { ProgramCycle } from './programs.ts'
 import type { ExercisePrescription, LocalDate, WorkoutDay, WorkoutSession } from './types.ts'
@@ -35,27 +37,35 @@ export interface WeekProgress { index: number; start: LocalDate; end: LocalDate;
  * Una seduta fatta in un altro giorno della stessa settimana conta comunque: prima si
  * abbinano le sedute con la stessa etichetta, poi le restanti ai posti ancora liberi.
  */
-export function weeklyProgress(days: WorkoutDay[], sessions: WorkoutSession[], cycle: ProgramCycle, today: LocalDate): WeekProgress[] {
+export function weeklyProgress(days: WorkoutDay[], sessions: WorkoutSession[], cycle: ProgramCycle, today: LocalDate, swaps: readonly DaySwap[] = [], versionId?: string): WeekProgress[] {
   const weekly = isWeekly(days)
   const done = sessions.filter(session => session.completedAt)
   return Array.from({ length: cycle.weeks }, (_, i) => {
     const start = shiftDate(cycle.start, i * 7), end = shiftDate(start, 6)
-    const inWeek = done.filter(session => session.date >= start && session.date <= end)
+    const allInWeek = done.filter(session => session.date >= start && session.date <= end)
+    const inWeek = allInWeek.filter(session => session.kind !== 'free')
     const used = new Set<string>()
-    const slots: PlannedSlot[] = days.map(day => {
-      const date = weekly ? shiftDate(start, (weekdayIndex(day.label) - weekdayOfDate(start) + 7) % 7) : null
-      const match = inWeek.find(session => !used.has(session.id) && session.day.label === day.label)
+    const weekSwaps = swaps.filter(swap => !swap.cancelled && swap.versionId === versionId && swap.sourceDate <= end && swap.targetDate >= start)
+    const effective = weekly && weekSwaps.length ? Array.from({ length: 7 }, (_, n) => {
+      const date = shiftDate(start, n), day = scheduledDay(days, date, versionId!, weekSwaps, cycle)
+      return day ? { day, date } : null
+    }).filter((slot): slot is { day: WorkoutDay; date: string } => slot !== null) : null
+    const slots: PlannedSlot[] = (effective ?? days.map(day => ({ day, date: null }))).map(({ day, date: effectiveDate }) => {
+      const date = effectiveDate ?? (weekly ? shiftDate(start, (weekdayIndex(day.label) - weekdayOfDate(start) + 7) % 7) : null)
+      const moved = date && versionId ? swapAt(weekSwaps, versionId, date) : undefined
+      const match = inWeek.find(session => !used.has(session.id) && session.day.label === day.label && (!moved || session.date === date && session.versionId === versionId))
       if (match) used.add(match.id)
-      return { label: day.label, title: day.title, date, state: match ? 'done' : 'planned' }
+      return { label: moved && date ? ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'][weekdayOfDate(date)]! : day.label, title: day.title, date, state: match ? 'done' : 'planned' }
     })
     for (const slot of slots) {
       if (slot.state === 'done') continue
+      if (slot.date && versionId && swapAt(weekSwaps, versionId, slot.date)) continue
       const other = inWeek.find(session => !used.has(session.id))
       if (other) { used.add(other.id); slot.state = 'done' }
     }
     // Scaduto: il giorno previsto è passato (o, senza date, la settimana è finita).
     for (const slot of slots) if (slot.state === 'planned' && (slot.date ? slot.date < today : end < today)) slot.state = 'missed'
-    return { index: i + 1, start, end, slots, extra: inWeek.length - used.size, current: today >= start && today <= end }
+    return { index: i + 1, start, end, slots, extra: allInWeek.length - used.size, current: today >= start && today <= end }
   })
 }
 

@@ -1,3 +1,5 @@
+import { FreeWorkoutPreview } from './FreeWorkout'
+import { WorkoutCardMenu } from './WorkoutCardMenu'
 import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
 import { MuscleGroupImage } from '../components/MuscleGroupImage'
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
@@ -6,7 +8,7 @@ import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
 import { SubpageHeader } from '../components/SubpageHeader'
 import { Segmented } from '../components/Segmented'
-import { weekdays } from '../domain/weekly'
+import { weekdayOfDate, weekdays } from '../domain/weekly'
 import { isTimedCardio } from '../domain/muscle-groups'
 import { formatDate } from '../domain/dates'
 import { isWorkoutWeekday } from '../domain/settings'
@@ -25,8 +27,11 @@ import { SessionExerciseActions, SessionExerciseAddition } from './SessionExerci
 /** Posizione nel ciclo del programma seguito, già formulata per la Scheda. */
 export interface CycleSummary { label: string; detail?: string; ratio: number | null }
 
-export function Workout({ day, days, planTitle, planGuidance, date, today, sessions, onDay, cycle, progressHref, activeSession, onStart, onDiscard, onCancelSelection, suggestedDayId, weekly = false, workoutWeekdays = [] }: {
+export function Workout({ day, days, planTitle, planGuidance, date, today, sessions, onDay, cycle, progressHref, activeSession, onStart, onDiscard, onCancelSelection, onStartFree, freeAvailable = true, scheduleActions, scheduleStatus, suggestedDayId, weekly = false, workoutWeekdays = [] }: {
   day: WorkoutDay; days: WorkoutDay[]; planTitle: string; planGuidance?: string; date: string; today: string; sessions: WorkoutSession[]; onDay: (id: string) => void
+  onStartFree?: () => void; freeAvailable?: boolean
+  scheduleActions?: (onChooseDay: () => void) => ReactNode
+  scheduleStatus?: ReactNode
   cycle?: CycleSummary; progressHref?: string
   /** Settimanale: seduta prevista per la data; altrimenti seduta suggerita dalla rotazione. */
   suggestedDayId?: string
@@ -37,6 +42,7 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
   onCancelSelection?: () => void
 }) {
   const [choosing, setChoosing] = useState(false)
+  const [freePreview, setFreePreview] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const totalSets = day.exercises.reduce((sum, exercise) => sum + exercise.sets, 0)
   const optionalSets = day.exercises.reduce((sum, exercise) => sum + (exercise.optionalSets ?? 0), 0)
@@ -46,7 +52,7 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
   const ofDay = (label: string) => { const name = weekdayName(label).toLowerCase(); return name === 'domenica' ? `della ${name}` : `del ${name}` }
   // Settimanale: «oggi» solo se è davvero la seduta prevista per la data di oggi.
   const kicker = weekly
-    ? day.id === suggestedDayId ? date === today ? 'Seduta di oggi' : `Seduta ${ofDay(day.label)}` : `Seduta ${ofDay(day.label)} · scelta da te`
+    ? day.id === suggestedDayId ? date === today ? 'Seduta di oggi' : `Seduta ${ofDay(weekdays[weekdayOfDate(date)]!.code)}` : `Seduta ${ofDay(day.label)} · scelta da te`
     : `Seduta ${day.label}${day.id === suggestedDayId ? ' · suggerita' : ''}`
   // Allenamento in corso: se è proprio questa seduta in questa data la card diventa «in corso»
   // e il banner sarebbe un doppione; se è un'altra, il banner resta e la card non finge di riprenderla.
@@ -87,7 +93,7 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
         {activeHere
           ? <div className="workout-live-progress"><p className="workout-stats"><strong>{activeDone} di {activeRequired} serie</strong> · {day.exercises.length} {day.exercises.length === 1 ? 'esercizio' : 'esercizi'}</p><progress max={activeRequired || 1} value={activeDone} aria-label={`Serie completate: ${activeDone} di ${activeRequired}`} /></div>
           : <p className="workout-stats">{day.exercises.length} {day.exercises.length === 1 ? 'esercizio' : 'esercizi'} · {totalSets} serie{optionalSets > 0 && <> + {optionalSets} facoltative</>}</p>}
-        </div>{weekly && days.length > 0 && !activeHere && <button type="button" className="text-button change-session" aria-label="Cambia seduta" aria-haspopup="dialog" onClick={() => setChoosing(true)}>Cambia<Icon name="swap" size={16} /></button>}</div>
+        </div>{weekly && days.length > 0 && !activeHere && (scheduleActions ? scheduleActions(() => setChoosing(true)) : <WorkoutCardMenu onChoose={() => setChoosing(true)} />)}</div>
         <div className="workout-program-content" id="workout-program-details" hidden={!expanded}>
           <p className="workout-program-name"><strong>{planTitle}</strong>{cycle && <span className="workout-program-week"> · {cycle.label}</span>}</p>
           {cycle && (progressHref ? <a className="cycle-link" href={progressHref} aria-label={`${planTitle}, ${cycle.label}. Apri i tuoi progressi`}>{cycleContent}<Icon name="chevron" size={20} /></a> : <div className="cycle-link is-static">{cycleContent}</div>)}
@@ -95,6 +101,7 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
           {planGuidance && <section className="workout-guidance"><h3>Indicazioni del programma</h3><p>{planGuidance}</p></section>}
           {day.notes && <section className="workout-guidance"><h3>Indicazioni della seduta</h3><p>{day.notes}</p></section>}
         </div>
+        {scheduleStatus}
         {activeElsewhere && activeSession
           ? <><button ref={startButton} className="button secondary lg workout-start" onClick={onStart}>{startLabel}<Icon name="play" size={20} /></button><p className="workout-blocked">Termina l’allenamento in corso per iniziare questa seduta.</p></>
           : <button ref={startButton} className="button primary lg workout-start" onClick={onStart}>{startLabel}<Icon name="play" size={20} /></button>}
@@ -117,10 +124,12 @@ export function Workout({ day, days, planTitle, planGuidance, date, today, sessi
         <span className="sticky-cta-copy"><strong>{startLabel}</strong>{!activeElsewhere && <small>{day.title}</small>}</span><Icon name="play" size={20} />
       </button>
     </div>
+    {freePreview && onStartFree && <FreeWorkoutPreview date={date} onStart={onStartFree} active={Boolean(activeSession)} disabled={!freeAvailable} onClose={() => setFreePreview(false)} />}
     {choosing && <Modal label="Cambia seduta" variant="sheet" onClose={() => setChoosing(false)}>
       <div className="session-picker">
         <h2>Cambia seduta</h2>
         <p className="muted">Vale solo per {date === today ? 'oggi' : formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })}: il programma non cambia.</p>
+        {onStartFree && <button type="button" className="free-workout-choice" onClick={() => { setChoosing(false); setFreePreview(true) }}><Icon name="plus" size={20} /><span><strong>Allenamento libero</strong><small>Aggiungi gli esercizi mentre ti alleni</small></span><Icon name="chevron" size={16} /></button>}
         <ul>{days.map(item => <li key={item.id}><button type="button" aria-current={item.id === day.id ? 'true' : undefined} onClick={() => { onDay(item.id); setChoosing(false) }}>
           <span className="session-picker-day">{item.label}</span>
           <span className="session-picker-copy"><strong>{item.title}</strong><small>{weekdayName(item.label)}{item.id === suggestedDayId ? ' · prevista' : ''}</small></span>
@@ -442,7 +451,7 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
     filled.forEach(item => onChange(item.exerciseId, item.index, { ...item.result, completed: true }))
     onComplete()
   }
-  return <section className={`session-page ${finished ? '' : 'is-active'}`}>
+  return <section className={`session-page ${session.kind === 'free' ? 'is-free ' : ''}${finished ? '' : 'is-active'}`}>
     <SubpageHeader back={finished ? '#/scheda/storico' : '#/scheda'} backLabel={finished ? 'Torna allo storico' : 'Torna alla scheda'} title={session.day.title}
       subtitle={formatDate(session.date, { weekday: 'long', day: 'numeric', month: 'long' })}
       actions={<>
@@ -450,14 +459,14 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
         {syncSlot}
         {!finished && onDiscard && <button type="button" className="icon-button session-more" aria-haspopup="dialog" aria-label="Opzioni della seduta" onClick={() => setOptions(true)}><Icon name="more" size={24} strokeWidth={3} /></button>}
       </>} />
-    <div className="session-progress"><div><span>{completedRequired} di {required} serie</span><strong>{required ? Math.round(completedRequired / required * 100) : 0}%</strong></div><progress max={required} value={completedRequired} aria-label="Serie completate" /></div>
+    {session.kind === 'free' && !session.day.exercises.length ? <div className="free-workout-empty"><Icon name="dumbbell" size={32} /><h2>Da cosa vuoi iniziare?</h2><p>Aggiungi il primo esercizio, oppure scegli il cardio e indica i minuti svolti.</p></div> : <div className="session-progress"><div><span>{completedRequired} di {required} serie</span><strong>{required ? Math.round(completedRequired / required * 100) : 0}%</strong></div><progress max={required} value={completedRequired} aria-label="Serie completate" /></div>}
     {finished && <div className="session-correction"><p className="small muted">{correcting ? 'Correzione attiva: le modifiche aggiornano solo lo storico di questa seduta.' : 'Seduta completata.'}</p><button className="button secondary session-correct" onClick={() => { if (correcting) onEndCorrection?.(); setCorrecting(!correcting) }}>{correcting ? 'Fine correzione' : 'Correggi valori'}</button></div>}
     <div className="session-cards">{ordered.map(exercise => <ExerciseSetCard key={`${exercise.id}:${exercise.exerciseId}`} session={session} exercise={exercise} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)} actions={exercise.snapshot?.session_added && editing ? <SessionExerciseActions exercise={exercise} session={session} store={editing.store} onApplied={afterEdit} /> : exerciseActions?.(exercise)}
       deferred={deferred.includes(exercise.id)} canDefer={pendingCount > 1} onDefer={finished ? undefined : toggleLater} onEnterFirstSet={enterFirstSet} />)}</div>
     <SessionNote sessionId={session.id} note={session.note ?? ''} editable={!finished || correcting} onChange={onNote} />
     {!finished && <div className="session-actions">
-      <button className="button primary session-finish" onClick={requestComplete}>Termina allenamento<Icon name="check" size={20} /></button>
-      <button type="button" className="button secondary session-add-button" disabled={!editing} aria-haspopup="dialog" onClick={() => setAdding(defaultExercisePosition(session, editing?.context))}>Aggiungi esercizio</button>
+      {(session.kind !== 'free' || session.day.exercises.length > 0) && <button className="button primary session-finish" onClick={requestComplete}>Termina allenamento<Icon name="check" size={20} /></button>}
+      <button type="button" className={`button ${session.day.exercises.length ? 'secondary' : 'primary'} session-add-button`} disabled={!editing} aria-haspopup="dialog" onClick={() => setAdding(defaultExercisePosition(session, editing?.context))}>Aggiungi esercizio</button>
     </div>}
     {!finished && adding && editing && <SessionExerciseAddition session={session} store={editing.store} catalog={editing.catalog} position={adding} onClose={() => setAdding(null)} onApplied={afterEdit} />}
     {options && onDiscard && <Modal label="Opzioni della seduta" variant="sheet" onClose={() => setOptions(false)}>

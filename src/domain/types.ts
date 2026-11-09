@@ -75,6 +75,7 @@ export interface SetResult {
 }
 
 export interface WorkoutSession {
+  kind?: 'free'
   id: string
   planId?: string
   versionId?: string

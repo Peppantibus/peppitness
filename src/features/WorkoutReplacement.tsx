@@ -1,3 +1,4 @@
+import type { DaySwap } from '../domain/day-swaps'
 import { useRef, useState } from 'react'
 import { Modal } from '../components/Modal'
 import { formatDate } from '../domain/dates'
@@ -69,8 +70,8 @@ function ReplacementProposal({ source, selected, partners, onApply, onBack, onCl
 }
 
 /** Punto d'accesso sulla card della seduta avviata; mai nello storico. */
-export function WorkoutReplacement({ exercise, session, sessions, days, changes, catalog, store, today, enabled, announce, onApplied }: {
-  exercise: ExercisePrescription; session: WorkoutSession; sessions: WorkoutSession[]; days: WorkoutDay[]; changes: ExerciseChange[]
+export function WorkoutReplacement({ exercise, session, sessions, days, changes, swaps, catalog, store, today, enabled, announce, onApplied }: {
+  exercise: ExercisePrescription; session: WorkoutSession; sessions: WorkoutSession[]; days: WorkoutDay[]; changes: ExerciseChange[]; swaps?: DaySwap[]
   catalog: { store: ExercisesStore | null; state: ExercisesState }; store: DiaryStore; today: string; enabled: boolean; announce: (message: string) => void
   onApplied: (change: ExerciseChange) => void
 }) {
@@ -78,7 +79,7 @@ export function WorkoutReplacement({ exercise, session, sessions, days, changes,
   const applied = useRef(false)
   const change = session.versionId ? changeAt(changes, session.versionId, session.date, session.day.id, exercise.id) : undefined
   const available = enabled && !exercise.snapshot?.session_added && session.date === today && !session.completedAt && Boolean(exercise.snapshot) && intact(session, exercise.id)
-  const partnersFor = (row: CatalogExercise) => futurePartners({ source: exercise, selected: row, session, sessions, days, changes })
+  const partnersFor = (row: CatalogExercise) => futurePartners({ source: exercise, selected: row, session, sessions, days, changes, swaps })
   const hints = Object.fromEntries(catalog.state.rows.map(row => [row.id, partnersFor(row).map(partner => `${formatDate(partner.date, { weekday: 'long', day: 'numeric', month: 'long' })} · ${doseText(partner.before)}`).join(' / ')]))
   const apply = (dose: ChangeDose, partner: ChangePartner | null) => {
     if (!selected || !exercise.snapshot || applied.current || !available) return

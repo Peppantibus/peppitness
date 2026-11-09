@@ -29,13 +29,14 @@ export function StaleSessionPrompt({ session, today, onFinish, onResume }: {
   const { required, completedRequired } = sessionProgress(session)
   const filled = filledUnchecked(session)
   const emptyRequired = required - completedRequired - filled.filter(item => item.required).length
+  const freeEmpty = session.kind === 'free' && !session.day.exercises.length
   const day = session.date === today ? 'di oggi' : session.date === shiftDate(today, -1) ? 'di ieri' : `di ${formatDate(session.date, { weekday: 'long', day: 'numeric', month: 'long' })}`
   const time = new Date(session.startedAt).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })
   return <Modal label="Allenamento ancora aperto" onClose={close}>
-    <h2>Hai finito l’allenamento {day}?</h2>
-    <p><strong>{session.day.title}</strong> risulta in corso dalle {time}. Hai fatto {completedRequired} di {required} serie previste{filled.length > 0 ? `; ${filledSentence(filled.length, emptyRequired)}` : ''}.</p>
+    <h2>{freeEmpty ? 'Allenamento libero ancora vuoto' : <>Hai finito l’allenamento {day}?</>}</h2>
+    {freeEmpty ? <p>Aggiungi un esercizio per registrare l’allenamento, oppure elimina la seduta dal suo menu.</p> : <p><strong>{session.day.title}</strong> risulta in corso dalle {time}. Hai fatto {completedRequired} di {required} serie previste{filled.length > 0 ? `; ${filledSentence(filled.length, emptyRequired)}` : ''}.</p>}
     <div className="button-row session-end-actions stale-session-actions">
-      <button type="button" className="button primary stale-finish" onClick={() => { close(); onFinish(filled.length > 0) }}>{filled.length > 0 ? markFilledLabel(filled.length) : 'Termina con le serie fatte'}</button>
+      {(session.kind !== 'free' || session.day.exercises.length > 0) && <button type="button" className="button primary stale-finish" onClick={() => { close(); onFinish(filled.length > 0) }}>{filled.length > 0 ? markFilledLabel(filled.length) : 'Termina con le serie fatte'}</button>}
       {filled.length > 0 && <button type="button" className="button secondary stale-finish-plain" onClick={() => { close(); onFinish(false) }}>{filled.length === 1 ? 'Termina senza segnarla' : 'Termina senza segnarle'}</button>}
       <button type="button" className="button secondary stale-resume" onClick={() => { close(); onResume() }}>Riprendi l’allenamento</button>
       <button type="button" className="text-button stale-later" onClick={close}>Non ora</button>

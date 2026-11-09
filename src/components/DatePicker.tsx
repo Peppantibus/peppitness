@@ -8,7 +8,7 @@ import { Icon } from './Icon'
  */
 export function DatePicker({ date, onChange, today = localDate(), planned = [], done = [], plannedLabel = 'seduta prevista', doneLabel = 'registrato' }: {
   date: string; onChange: (date: string) => void; today?: string
-  planned?: string[]; done?: string[]; plannedLabel?: string; doneLabel?: string
+  planned?: string[]; done?: string[]; plannedLabel?: string; doneLabel?: string | ((date: string) => string)
 }) {
   const sameYear = date.slice(0, 4) === today.slice(0, 4)
   const year = sameYear ? {} : { year: 'numeric' } as const
@@ -30,7 +30,7 @@ export function DatePicker({ date, onChange, today = localDate(), planned = [], 
     <div className="week-strip">{weekDates(date).map(day => {
       const isDone = done.includes(day)
       const isPlanned = !isDone && planned.includes(day)
-      return <button key={day} className={`week-day ${day === date ? 'selected' : ''} ${day === today ? 'is-today' : ''}`} aria-pressed={day === date} aria-label={`${formatDate(day, { weekday: 'long', day: 'numeric', month: 'long' })}${day === today ? ', oggi' : ''}${isDone ? `, ${doneLabel}` : isPlanned ? `, ${plannedLabel}` : ''}`} onClick={() => onChange(day)}>
+      return <button key={day} className={`week-day ${day === date ? 'selected' : ''} ${day === today ? 'is-today' : ''}`} aria-pressed={day === date} aria-label={`${formatDate(day, { weekday: 'long', day: 'numeric', month: 'long' })}${day === today ? ', oggi' : ''}${isDone ? `, ${typeof doneLabel === 'function' ? doneLabel(day) : doneLabel}` : isPlanned ? `, ${plannedLabel}` : ''}`} onClick={() => onChange(day)}>
         <span>{formatDate(day, { weekday: 'short' }).replace('.', '')}</span><strong>{formatDate(day, { day: 'numeric' })}</strong><span className={`week-day-mark ${isDone ? 'is-done' : isPlanned ? 'is-planned' : ''}`} />
       </button>
     })}</div>

@@ -1,3 +1,4 @@
+import type { DaySwap, ScheduleExpectation } from '../domain/day-swaps.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isMealEnergy } from '../domain/food-energy.ts'
 import { dayFromSnapshot, emptyDiary, formatDecimal, mealLogKey, totalSets } from '../domain/diary.ts'
@@ -9,7 +10,7 @@ import type { DayType, Meal, MealStatus, SetResult, WorkoutSession } from '../do
 import type { ExerciseChange } from '../domain/exercise-changes.ts'
 import type { DiaryOp } from '../domain/diary.ts'
 
-export type DiaryTable = 'workout_set_logs' | 'meal_logs' | 'diary_days' | 'workout_sessions' | 'workout_changes'
+export type DiaryTable = 'workout_set_logs' | 'meal_logs' | 'diary_days' | 'workout_sessions' | 'workout_changes' | 'workout_day_swaps'
 export type RowKey = Record<string, string | number>
 export type Row = Record<string, unknown>
 
@@ -17,7 +18,7 @@ export type Row = Record<string, unknown>
 /** Righe cambiate dopo un istante, più gli ID delle sedute ancora attive (per riconoscere quelle annullate altrove). */
 /** Numero di righe per tabella sul server: rivela le cancellazioni, che le righe cambiate non mostrano. */
 export interface DiaryCounts { sessions: number; sets: number; meals: number; days: number }
-export interface DiaryChanges { sessions: unknown[]; sets: unknown[]; meals: unknown[]; days: unknown[]; changes?: ExerciseChange[]; activeSessionIds: string[]; cursor: string | null; counts?: DiaryCounts }
+export interface DiaryChanges { sessions: unknown[]; sets: unknown[]; meals: unknown[]; days: unknown[]; swaps?: DaySwap[]; changes?: ExerciseChange[]; activeSessionIds: string[]; cursor: string | null; counts?: DiaryCounts }
 
 /** Righe conosciute dalla copia confermata: una revisione per riga del server. */
 export function countsOf(revisions: Record<string, number>): DiaryCounts {
@@ -32,13 +33,15 @@ export function countsOf(revisions: Record<string, number>): DiaryCounts {
 }
 
 export interface DiaryTransport {
+  startFree?(args: { sessionId: string; date: string; timeZone: string }, signal: AbortSignal): Promise<Row>
+  swap?(op: Extract<DiaryOp, { type: 'swap' | 'undo-swap' }>, signal: AbortSignal): Promise<DaySwap>
   editSession?(op: Extract<DiaryOp, { type: 'session-edit' }>, setRevisions: Record<string, number>, signal: AbortSignal): Promise<Row>
   change?(op: Extract<DiaryOp, { type: 'change' | 'undo-change' }>, signal: AbortSignal): Promise<ExerciseChange>
   /** Lettura completa; `cursor` è l'`updated_at` più recente letto (assente nei trasporti di prova). */
   loadAll(signal: AbortSignal): Promise<{ data: DiaryData; revisions: Record<string, number>; cursor?: string | null }>
   /** Lettura incrementale: righe con `updated_at` successivo a `since`. Facoltativa: senza, sempre lettura completa. */
   loadChanges?(since: string, signal: AbortSignal): Promise<DiaryChanges>
-  start(args: { sessionId: string; versionId: string; dayId: string; date: string; timeZone: string }, signal: AbortSignal): Promise<Row>
+  start(args: { sessionId: string; versionId: string; dayId: string; date: string; timeZone: string; expectedSchedule?: ScheduleExpectation }, signal: AbortSignal): Promise<Row>
   insert(table: DiaryTable, values: Row, signal: AbortSignal): Promise<Row>
   update(table: DiaryTable, key: RowKey, values: Row, revision: number, signal: AbortSignal): Promise<Row | null>
   fetch(table: DiaryTable, key: RowKey, signal: AbortSignal): Promise<Row | null>
@@ -93,12 +96,22 @@ export function sessionFromRow(value: unknown): { session: WorkoutSession; revis
   if (!['active', 'completed'].includes(string(row.status))) bad()
   const parsed: SessionSnapshot = { label: string(snapshot.label), title: string(snapshot.title), note: string(snapshot.note), plan_title: string(snapshot.plan_title),
     version_number: nullableNumber(snapshot.version_number) ?? 0, exercises: Array.isArray(snapshot.exercises) ? snapshot.exercises.map(snapshotExercise) : bad() }
-  const day = dayFromSnapshot(id(row.day_id), parsed)
+  if (row.session_kind !== undefined && !['program', 'free'].includes(string(row.session_kind))) bad()
+  const free = row.session_kind === 'free'
+  if (free && (row.plan_id !== null || row.version_id !== null || row.day_id !== null)) bad()
+  const day = dayFromSnapshot(free ? id(row.id) : id(row.day_id), parsed)
   const results = Object.fromEntries(day.exercises.map(exercise => [exercise.id, Array.from({ length: totalSets(exercise) }, (): SetResult => ({ load: '', amount: '', completed: false }))]))
   const note = string(row.note ?? '')
-  const session: WorkoutSession = { id: id(row.id), planId: id(row.plan_id), ...(row.version_id ? { versionId: id(row.version_id) } : {}), ...(row.time_zone ? { timeZone: string(row.time_zone) } : {}), date: date(row.diary_date), day, startedAt: timestamp(row.started_at), results,
+  const session: WorkoutSession = { id: id(row.id), ...(free ? { kind: 'free' as const } : { planId: id(row.plan_id) }), ...(row.version_id ? { versionId: id(row.version_id) } : {}), ...(row.time_zone ? { timeZone: string(row.time_zone) } : {}), date: date(row.diary_date), day, startedAt: timestamp(row.started_at), results,
     ...(row.status === 'completed' ? { completedAt: timestamp(row.completed_at) } : {}), ...(note ? { note } : {}) }
   return { session, revision: revision(row.revision) }
+}
+
+export function swapFromRow(value: unknown): DaySwap {
+  const row = record(value)
+  if (typeof row.cancelled !== 'boolean') bad()
+  return { id: id(row.id), planId: id(row.plan_id), versionId: id(row.version_id), sourceDate: date(row.source_date), targetDate: date(row.target_date),
+    sourceDayId: row.source_day_id === null ? null : id(row.source_day_id), targetDayId: row.target_day_id === null ? null : id(row.target_day_id), timeZone: string(row.time_zone), cancelled: row.cancelled as boolean }
 }
 
 export function changeFromRow(value: unknown): ExerciseChange {
@@ -197,7 +210,7 @@ export function mergeDiary(base: DiaryData, baseRevisions: Record<string, number
     sessions.set(session.id, { ...session, results: { ...session.results, [set.prescriptionId]: results.map((value, index) => index === set.index ? set.result : value) } })
     revisions[`set:${set.sessionId}:${set.prescriptionId}:${set.index}`] = set.revision
   }
-  const data: DiaryData = { sessions: [...sessions.values()], mealLogs: { ...base.mealLogs }, dayTypes: { ...base.dayTypes }, changes: changes.changes ?? base.changes ?? [] }
+  const data: DiaryData = { sessions: [...sessions.values()], mealLogs: { ...base.mealLogs }, dayTypes: { ...base.dayTypes }, swaps: changes.swaps ?? base.swaps ?? [], changes: changes.changes ?? base.changes ?? [] }
   for (const raw of changes.meals) { const meal = mealLogFromRow(raw); data.mealLogs[mealLogKey(meal.date, meal.log.mealId)] = meal.log; revisions[`meal:${meal.date}:${meal.log.mealId}`] = meal.revision }
   for (const raw of changes.days) { const day = dayFromRow(raw); data.dayTypes[day.date] = day.dayType; revisions[`day:${day.date}`] = day.revision }
   data.sessions.sort((a, b) => a.date.localeCompare(b.date) || a.startedAt.localeCompare(b.startedAt))
@@ -222,8 +235,9 @@ export function buildDiary(sessions: unknown[], sets: unknown[], meals: unknown[
 }
 
 const columns: Record<DiaryTable, string> = {
+  workout_day_swaps: 'id,owner_id,plan_id,version_id,source_date,target_date,source_day_id,target_day_id,time_zone,cancelled,updated_at',
   workout_changes: 'id,owner_id,change_doc,updated_at',
-  workout_sessions: 'id,owner_id,plan_id,version_id,day_id,diary_date,time_zone,day_snapshot,status,started_at,completed_at,note,revision,updated_at',
+  workout_sessions: 'id,owner_id,session_kind,plan_id,version_id,day_id,diary_date,time_zone,day_snapshot,status,started_at,completed_at,note,revision,updated_at',
   workout_set_logs: 'id,owner_id,session_id,prescription_id,exercise_id,change_id,set_index,load,amount,completed,revision,updated_at',
   meal_logs: 'id,owner_id,diary_date,meal_id,meal_plan_id,status,note,day_type,meal_snapshot,revision,updated_at',
   diary_days: 'owner_id,diary_date,day_type,revision,updated_at',
@@ -248,7 +262,7 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
   async function mfaSatisfied(signal: AbortSignal) {
     const auth = await token(signal)
     try { if ((JSON.parse(atob(auth.split('.')[1]!.replace(/-/g, '+').replace(/_/g, '/'))) as { aal?: unknown }).aal === 'aal2') return true } catch { /* token non leggibile: chiede al server */ }
-    const { data, error } = await client.rpc('is_mfa_satisfied').setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+    const { data, error } = await client.rpc('is_mfa_satisfied').setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
     signal.throwIfAborted()
     if (error || typeof data !== 'boolean') throw new DiaryFailure('unavailable')
     return data
@@ -259,7 +273,7 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
     for (let offset = 0; ; offset += 500) {
       const query = client.from(table).select(columns[table]).eq('owner_id', owner)
       const { data, error } = await (since ? query.gt('updated_at', since) : query).order(order).range(offset, offset + 499)
-        .setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+        .setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
       signal.throwIfAborted()
       if (error) throw failure(error)
       if (!Array.isArray(data)) bad()
@@ -268,11 +282,30 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
     }
   }
   return {
+    async startFree(args, signal) {
+      const auth = await token(signal)
+      const { data, error } = await client.rpc('start_free_workout_session', { p_session_id: args.sessionId, p_diary_date: args.date, p_time_zone: args.timeZone })
+        .setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
+      signal.throwIfAborted()
+      if (error) throw failure(error)
+      const row = owned(data)
+      if (row.id !== args.sessionId || row.session_kind !== 'free') bad()
+      return row
+    },
+    async swap(op, signal) {
+      const auth = await token(signal)
+      const { data, error } = op.type === 'swap'
+        ? await client.rpc('apply_workout_day_swap', { p_request_id: op.opId, p_swap: op.swap }).setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
+        : await client.rpc('undo_workout_day_swap', { p_request_id: op.opId, p_swap_id: op.swap.id }).setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
+      signal.throwIfAborted()
+      if (error) throw failure(error)
+      return swapFromRow(owned(data))
+    },
     async editSession(op, setRevisions, signal) {
       const auth = await token(signal)
       const { data, error } = await client.rpc('edit_workout_session_exercises', {
         p_request_id: op.opId, p_session_id: op.sessionId, p_edit: op.edit, p_expected_order: op.expectedOrder, p_set_revisions: setRevisions,
-      }).setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+      }).setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
       signal.throwIfAborted()
       if (error) throw failure(error)
       return owned(data)
@@ -280,8 +313,8 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
     async change(op, signal) {
       const auth = await token(signal)
       const { data, error } = op.type === 'change'
-        ? await client.rpc('apply_workout_change', { p_request_id: op.opId, p_change: op.change, p_exercise_revision: op.exerciseRevision }).setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
-        : await client.rpc('undo_workout_change', { p_request_id: op.opId, p_change_id: op.changeId }).setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+        ? await client.rpc('apply_workout_change', { p_request_id: op.opId, p_change: op.change, p_exercise_revision: op.exerciseRevision }).setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
+        : await client.rpc('undo_workout_change', { p_request_id: op.opId, p_change_id: op.changeId }).setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
       if (error) throw failure(error)
       return changeFromRow(owned(data))
     },
@@ -299,6 +332,7 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
       const known = new Set(sessions.map(row => row.id))
       if (sets.some(row => !known.has(row.session_id))) throw new DiaryFailure('unavailable')
       const full = buildDiary(sessions, sets, meals, days)
+      full.data.swaps = (await pages('workout_day_swaps', 'id', signal)).map(swapFromRow)
       full.data.changes = changes
       return { ...full, cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]) }
     },
@@ -308,7 +342,7 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
       // compare fra le modifiche oppure resta attiva fino alla lettura successiva, mai persa.
       const auth = await token(signal)
       const { data, error } = await client.from('workout_sessions').select('id').eq('owner_id', owner).eq('status', 'active')
-        .setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+        .setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
       signal.throwIfAborted()
       if (error) throw failure(error)
       if (!Array.isArray(data)) bad()
@@ -322,18 +356,18 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
       // Conteggi dopo le modifiche: una riga cancellata (anche dall'amministratore) li rende diversi dalla copia.
       const count = async (table: DiaryTable) => {
         const { count: rows, error: countError } = await client.from(table).select('owner_id', { count: 'exact', head: true }).eq('owner_id', owner)
-          .setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+          .setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
         signal.throwIfAborted()
         if (countError) throw failure(countError)
         return typeof rows === 'number' ? rows : bad()
       }
       const counts = { sessions: await count('workout_sessions'), sets: await count('workout_set_logs'), meals: await count('meal_logs'), days: await count('diary_days') }
-      return { sessions, sets, meals, days, changes, activeSessionIds, cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]), counts }
+      return { sessions, sets, meals, days, changes, swaps: (await pages('workout_day_swaps', 'id', signal)).map(swapFromRow), activeSessionIds, cursor: latestCursor(null, [...sessions, ...sets, ...meals, ...days]), counts }
     },
     async start(args, signal) {
       const auth = await token(signal)
-      const { data, error } = await client.rpc('start_workout_session', { p_session_id: args.sessionId, p_version_id: args.versionId, p_day_id: args.dayId, p_diary_date: args.date, p_time_zone: args.timeZone })
-        .setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+      const { data, error } = await client.rpc('start_workout_session', { p_session_id: args.sessionId, p_version_id: args.versionId, p_day_id: args.dayId, p_diary_date: args.date, p_time_zone: args.timeZone, ...(args.expectedSchedule ? { p_expected_day_id: args.expectedSchedule.dayId, p_expected_swap_id: args.expectedSchedule.swapId, p_manual_choice: args.expectedSchedule.manualChoice ?? false } : {}) })
+        .setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
       if (error) throw failure(error)
       const row = owned(Array.isArray(data) && data.length === 1 ? data[0] : data)
       if (row.id !== args.sessionId) bad()
@@ -341,27 +375,27 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
     },
     async insert(table, values, signal) {
       const auth = await token(signal)
-      const { data, error } = await client.from(table).insert(values).select(columns[table]).setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false).single()
+      const { data, error } = await client.from(table).insert(values).select(columns[table]).setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false).single()
       if (error) throw failure(error)
       return owned(data)
     },
     async update(table, key, values, next, signal) {
       const auth = await token(signal)
       const { data, error } = await client.from(table).update({ ...values, revision: next }).eq('owner_id', owner).match(key).select(columns[table])
-        .setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false).maybeSingle()
+        .setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false).maybeSingle()
       if (error) throw failure(error)
       return data === null ? null : owned(data)
     },
     async fetch(table, key, signal) {
       const auth = await token(signal)
-      const { data, error } = await client.from(table).select(columns[table]).eq('owner_id', owner).match(key).setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false).maybeSingle()
+      const { data, error } = await client.from(table).select(columns[table]).eq('owner_id', owner).match(key).setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false).maybeSingle()
       if (error) throw failure(error)
       return data === null ? null : owned(data)
     },
     async discard(sessionId, signal) {
       const auth = await token(signal)
       const { data, error } = await client.from('workout_sessions').delete().eq('owner_id', owner).eq('id', sessionId).eq('status', 'active').select('id')
-        .setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false)
+        .setHeader('Authorization', `Bearer ${auth}`).setHeader('X-Peppitness-Diary', 'free-v1').abortSignal(signal).retry(false)
       if (error) throw failure(error)
       return Array.isArray(data) && data.length === 1
     },

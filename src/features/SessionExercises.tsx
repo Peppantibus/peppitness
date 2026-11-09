@@ -39,6 +39,7 @@ function AdditionProposal({ selected, session, store, initialPosition, onClose, 
   const applied = useRef(false)
   const duplicate = session.day.exercises.some(item => item.exerciseId === selected.id)
   const timed = selected.measurementMode === 'seconds', cardio = isTimedCardio(selected)
+  const recordCardio = session.kind === 'free' && cardio
   const field = (key: 'sets' | 'repsMin' | 'repsMax' | 'restSeconds', label: string) => <label>{label}<input aria-label={label} inputMode="numeric" maxLength={8} value={draft[key]} onChange={event => setDraft({ ...draft, [key]: event.target.value })} /></label>
   const submit = () => {
     if (applied.current) return
@@ -54,22 +55,23 @@ function AdditionProposal({ selected, session, store, initialPosition, onClose, 
         applied.current = false
         throw new Error('La seduta o la posizione è cambiata. Controlla la posizione e riprova.')
       }
+      if (recordCardio) store.updateSet(session.id, snapshot.id, 0, { load: '', amount: String(snapshot.duration_seconds), completed: true })
       onApplied(snapshot.id)
     } catch (cause) { setError(cause instanceof Error ? cause.message : 'Controlla i campi.') }
   }
   return <Modal label="Configura esercizio" variant="sheet" onClose={onClose}><div className="wz-sheet session-exercise-proposal">
     <button type="button" className="text-button" onClick={onBack}>← Cambia esercizio</button>
     <h2>{selected.name}</h2><p className="muted">{[selected.variant, selected.equipment].filter(Boolean).join(' · ')}</p>
-    <SessionOrderNote />
-    <div className="replacement-dose">{field('sets', 'Serie')}
-      {timed ? <label>{cardio ? 'Durata in minuti' : 'Durata in secondi'}<input aria-label={cardio ? 'Durata in minuti' : 'Durata in secondi'} inputMode="decimal" value={duration} maxLength={8} onChange={event => setDuration(event.target.value)} /></label>
+    {recordCardio ? <p className="small muted">Indica i minuti effettivamente svolti: verranno registrati come completati solo in questo allenamento libero.</p> : <SessionOrderNote />}
+    <div className="replacement-dose">{!recordCardio && field('sets', 'Serie')}
+      {timed ? <label>{recordCardio ? 'Minuti svolti' : cardio ? 'Durata in minuti' : 'Durata in secondi'}<input aria-label={recordCardio ? 'Minuti svolti' : cardio ? 'Durata in minuti' : 'Durata in secondi'} inputMode="decimal" value={duration} maxLength={8} onChange={event => setDuration(event.target.value)} /></label>
         : <>{field('repsMin', 'Ripetizioni minime')}{field('repsMax', 'Ripetizioni massime')}</>}
-      {field('restSeconds', 'Recupero in secondi')}
+      {!recordCardio && field('restSeconds', 'Recupero in secondi')}
     </div>
-    <SessionPosition session={session} value={position} onChange={setPosition} />
+    {(!recordCardio || session.day.exercises.length > 0) && <SessionPosition session={session} value={position} onChange={setPosition} />}
     {duplicate && <div className="session-duplicate"><p>Questo esercizio è già presente nella seduta.</p><label><input type="checkbox" checked={allowDuplicate} onChange={event => setAllowDuplicate(event.target.checked)} /> Aggiungi comunque una nuova occorrenza</label></div>}
     {error && <p role="alert">{error}</p>}
-    <button type="button" className="button primary full-width" disabled={duplicate && !allowDuplicate} onClick={submit}>Conferma aggiunta</button>
+    <button type="button" className="button primary full-width" disabled={duplicate && !allowDuplicate} onClick={submit}>{recordCardio ? 'Aggiungi e registra' : 'Conferma aggiunta'}</button>
   </div></Modal>
 }
 

@@ -1,3 +1,5 @@
+import { FreeWorkoutEntry } from '../features/FreeWorkout'
+import { WorkoutDaySwap, WorkoutDaySwapStatus } from '../features/WorkoutDaySwap'
 import { Icon } from '../components/Icon'
 import { formatDate } from '../domain/dates'
 import { weekdayOfDate, weekdays } from '../domain/weekly'
@@ -12,8 +14,10 @@ interface Props {
   diary: { store: DiaryStore; state: DiaryState }
   schedule: Schedule
   date: string
+  timeZone: string
   today: string
   workoutWeekdays: number[] | undefined
+  onStartFree: () => void
   onStart: () => void
   onDiscard: (sessionId: string) => void
 }
@@ -28,10 +32,12 @@ function CycleFinished({ done, planned }: { done: number; planned: number }) {
 }
 
 /** Contenuto quotidiano della Scheda: caricamento, riposo, scelta del programma o seduta del giorno. */
-export function WorkoutToday({ configured, plans, diary, schedule, date, today, workoutWeekdays, onStart, onDiscard }: Props) {
+export function WorkoutToday({ configured, plans, diary, schedule, date, today, workoutWeekdays, onStart, onStartFree, onDiscard, timeZone }: Props) {
   const { state } = plans
   const workout = state.workout
   const { day, weekly, workoutDays, activeSession, followable } = schedule
+  const swapProps = configured && weekly && workout ? { workout, days: schedule.baseDays, date, today, timeZone, store: diary.store, state: diary.state, onApplied: schedule.resetDay } : null
+  const scheduleStatus = swapProps && <WorkoutDaySwapStatus key={`${workout!.version.id}:${date}`} {...swapProps} />
   const finished = schedule.cycleFinished && <CycleFinished done={schedule.cycleScore?.done ?? 0} planned={schedule.cycleScore?.planned ?? 0} />
   const cancel = activeSession && <button type="button" className="button secondary danger workout-cancel" aria-haspopup="dialog" onClick={() => onDiscard(activeSession.id)}>Annulla allenamento</button>
 
@@ -46,10 +52,14 @@ export function WorkoutToday({ configured, plans, diary, schedule, date, today, 
       <span className="rest-day-icon" aria-hidden="true"><Icon name="moon" size={24} /></span>
       <span className="eyebrow">{weekdays[weekdayOfDate(date)]!.name}</span>
       <h2 id="rest-day-title">Giorno di riposo</h2>
-      <p>Il tuo programma non prevede sedute oggi. Recupera bene.</p>
-      <div className="rest-day-options"><span>Vuoi allenarti comunque?</span><div className="chip-row">
+      <p>Il tuo programma non prevede sedute in questa giornata. Recupera bene.</p>
+      {swapProps && <WorkoutDaySwap key={`${workout.version.id}:${date}`} {...swapProps} />}
+      {scheduleStatus}
+      <details key={date} className="rest-day-options"><summary>Allenati senza cambiare programma<Icon name="chevronDown" size={16} /></summary>
+        <FreeWorkoutEntry date={date} onStart={onStartFree} active={Boolean(activeSession)} disabled={configured && diary.state.phase !== 'ready'} />
+        <p className="small muted">Oppure usa una seduta del programma solo per questa data.</p><div className="chip-row">
         {workoutDays.map(item => <button key={item.id} type="button" className="chip" onClick={() => schedule.selectDay(item.id)}>{weekdays.find(weekday => weekday.code === item.label)?.name ?? item.label} · {item.title}</button>)}
-      </div></div>
+      </div></details>
     </section>
   </>
 
@@ -61,6 +71,7 @@ export function WorkoutToday({ configured, plans, diary, schedule, date, today, 
       <span className="empty-icon"><Icon name="calendar" size={32} /></span><h2>Nessun programma da seguire</h2><p>Imposta la tua settimana: per ogni giorno scegli gli esercizi oppure il riposo.</p>
       <a className="button primary" href="#/scheda/programmi/nuovo">Crea il tuo programma<Icon name="arrow" size={20} /></a><a className="text-link" href="#/scheda/importa">Oppure importalo dal modello Word</a>
     </>}
+    <FreeWorkoutEntry date={date} onStart={onStartFree} active={Boolean(activeSession)} disabled={configured && diary.state.phase !== 'ready'} />
     {activeSession && <><a className="button secondary" href="#/scheda/seduta">Riprendi l’allenamento in corso</a>{cancel}</>}
   </section>
 
@@ -72,10 +83,10 @@ export function WorkoutToday({ configured, plans, diary, schedule, date, today, 
       </select></label></section>}
     {configured && diary.state.phase === 'loading' && <p className="small muted" role="status">Caricamento del diario…</p>}
     {configured && diary.state.phase === 'error' && <section className="panel"><p role="alert">{diary.state.message}</p><button className="button secondary" onClick={() => void diary.store.refresh()}>Riprova</button></section>}
-    <Workout day={day} days={workoutDays} planTitle={workout ? workout.plan.name : 'Full body'} planGuidance={workout?.version.guidance || undefined} date={date} today={today}
+    <Workout scheduleStatus={scheduleStatus} scheduleActions={swapProps ? onChooseDay => <WorkoutDaySwap key={`${workout!.version.id}:${date}`} {...swapProps} variant="menu" onChooseDay={onChooseDay} /> : undefined} day={day} days={workoutDays} planTitle={workout ? workout.plan.name : 'Full body'} planGuidance={workout?.version.guidance || undefined} date={date} today={today}
       sessions={diary.state.view.sessions} onDay={schedule.selectDay} cycle={schedule.cycleSummary} progressHref={workout ? '#/scheda/progressi' : undefined}
       activeSession={activeSession} suggestedDayId={weekly ? schedule.planned?.id : workoutDays.length > 1 ? schedule.suggestion?.id : undefined} weekly={weekly}
-      workoutWeekdays={weekly ? [] : workoutWeekdays} onStart={onStart} onDiscard={activeSession ? () => onDiscard(activeSession.id) : undefined}
+      workoutWeekdays={weekly ? [] : workoutWeekdays} onStart={onStart} onStartFree={onStartFree} freeAvailable={!configured || diary.state.phase === 'ready'} onDiscard={activeSession ? () => onDiscard(activeSession.id) : undefined}
       onCancelSelection={weekly && !schedule.planned ? schedule.resetDay : undefined} />
   </>
 }
