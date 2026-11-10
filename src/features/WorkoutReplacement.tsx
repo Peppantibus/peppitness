@@ -1,6 +1,7 @@
 import type { DaySwap } from '../domain/day-swaps'
 import { useRef, useState } from 'react'
 import { Modal } from '../components/Modal'
+import { Icon } from '../components/Icon'
 import { formatDate } from '../domain/dates'
 import { canUndoChange, changeAt, futurePartners, intact, proposedDose, replacementSnapshot } from '../domain/exercise-changes'
 import type { ChangeDose, ChangePartner, ExerciseChange } from '../domain/exercise-changes'
@@ -78,7 +79,8 @@ export function WorkoutReplacement({ exercise, session, sessions, days, changes,
   const [open, setOpen] = useState(false), [selected, setSelected] = useState<CatalogExercise | null>(null), [error, setError] = useState('')
   const applied = useRef(false)
   const change = session.versionId ? changeAt(changes, session.versionId, session.date, session.day.id, exercise.id) : undefined
-  const available = enabled && !exercise.snapshot?.session_added && session.date === today && !session.completedAt && Boolean(exercise.snapshot) && intact(session, exercise.id)
+  const eligible = enabled && !exercise.snapshot?.session_added && session.date === today && !session.completedAt && Boolean(exercise.snapshot)
+  const available = eligible && intact(session, exercise.id)
   const partnersFor = (row: CatalogExercise) => futurePartners({ source: exercise, selected: row, session, sessions, days, changes, swaps })
   const hints = Object.fromEntries(catalog.state.rows.map(row => [row.id, partnersFor(row).map(partner => `${formatDate(partner.date, { weekday: 'long', day: 'numeric', month: 'long' })} · ${doseText(partner.before)}`).join(' / ')]))
   const apply = (dose: ChangeDose, partner: ChangePartner | null) => {
@@ -92,11 +94,12 @@ export function WorkoutReplacement({ exercise, session, sessions, days, changes,
     setOpen(false); setSelected(null); onApplied(command)
   }
   if (!enabled && !change) return null
-  if (!change && !available && !open && !error) return null
+  if (!change && !eligible && !open && !error) return null
   return <div className="replacement-actions">
     {change ? <><span className="small muted">{change.partner ? `Scambiato con ${dayName(change.sourceDate === session.date ? change.partner.date : change.sourceDate)}` : `Al posto di ${change.before.name}`}</span>
-      {canUndoChange(change, sessions) && <button type="button" className="text-button" onClick={() => { if (store.undoChange(change.id)) announce('Modifica annullata'); else setError('Non è più possibile annullare: sono presenti registrazioni.') }}>Annulla</button>}</>
-      : available && <button type="button" className="text-button" aria-haspopup="dialog" onClick={() => { applied.current = false; setOpen(true); setError('') }}>Sostituisci</button>}
+      {canUndoChange(change, sessions) && <button type="button" className="text-button" onClick={() => { if (store.undoChange(change.id)) announce('Modifica annullata'); else setError('Non è più possibile annullare: sono presenti registrazioni.') }}><Icon name="back" size={20} />Annulla</button>}</>
+      : eligible && <><button type="button" className="text-button" aria-haspopup="dialog" disabled={!available} aria-describedby={!available ? `replacement-unavailable-${session.id}-${exercise.id}` : undefined} onClick={() => { applied.current = false; setOpen(true); setError('') }}><Icon name="swap" size={20} />Sostituisci</button>
+        {!available && <span id={`replacement-unavailable-${session.id}-${exercise.id}`} className="small muted">Esercizio già iniziato</span>}</>}
     {error && <p className="small" role="alert">{error}</p>}
     {open && !selected && <ExerciseSheet catalog={catalog} label={`Sostituisci ${exercise.name}`} single hints={hints} onClose={() => setOpen(false)} onAdd={row => { if (row.id === exercise.exerciseId) { setOpen(false); return } setSelected(row) }} />}
     {open && selected && <ReplacementProposal source={exercise} selected={selected} partners={partnersFor(selected)} onApply={apply} onBack={() => setSelected(null)} onClose={() => setOpen(false)} />}

@@ -3,6 +3,10 @@ import { WorkoutCardMenu } from './WorkoutCardMenu'
 import { MuscleGroupBadge } from '../components/MuscleGroupBadge'
 import { MuscleGroupImage } from '../components/MuscleGroupImage'
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
+import { readSessionOrder, writeSessionOrder } from '../persistence/session-order'
+import { useExerciseReorder } from './use-exercise-reorder'
+import { ExerciseCardMenu } from './ExerciseCardMenu'
+import type { ReorderCardProps } from './use-exercise-reorder'
 import type { ReactNode } from 'react'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
@@ -13,7 +17,7 @@ import { isTimedCardio } from '../domain/muscle-groups'
 import { formatDate } from '../domain/dates'
 import { isWorkoutWeekday } from '../domain/settings'
 import { validateSet } from '../domain/validation'
-import { completeSetChanges, displaySetAmount, filledUnchecked, findPreviousExercise, formatResult, nextExercise, pendingFilledSet, reusePreviousLoads, sessionOrder, sessionProgress, storedSetAmount } from '../domain/workout'
+import { completeSetChanges, displaySetAmount, filledUnchecked, findPreviousExercise, formatResult, nextExercise, pendingFilledSet, reusePreviousResults, sessionOrder, sessionProgress, storedSetAmount } from '../domain/workout'
 import { formatImprovement, sessionRecords, setImprovement } from '../domain/records'
 import { installAudioUnlock, useScreenWakeLock } from '../workout-alerts'
 import type { PreviousExercise } from '../domain/workout'
@@ -175,21 +179,7 @@ function PreviousInline({ result, previous, exercise, record }: { result: SetRes
     {record && <span className="record-badge"><Icon name="star" size={16} /><span className="sr-only">Nuovo </span>Record<span className="sr-only"> personale</span></span>}</div>
 }
 
-/** «Fallo dopo»: esercizi rimandati della seduta in corso, solo su questo dispositivo (il database non cambia). */
-const LATER_KEY = 'peppitness:workout-later:v1'
-function readLater(sessionId: string): string[] {
-  try {
-    const value = JSON.parse(window.localStorage.getItem(LATER_KEY) ?? 'null') as { sessionId?: unknown; ids?: unknown } | null
-    return value?.sessionId === sessionId && Array.isArray(value.ids) ? value.ids.filter((id): id is string => typeof id === 'string') : []
-  } catch { return [] }
-}
-function writeLater(sessionId: string, ids: string[]) {
-  try { if (ids.length) window.localStorage.setItem(LATER_KEY, JSON.stringify({ sessionId, ids })); else window.localStorage.removeItem(LATER_KEY) } catch { /* resta solo in memoria */ }
-}
-/** All'uscita dall'account: niente ordine della seduta rimasto sul dispositivo. */
-export function forgetDeferredExercises() { try { window.localStorage.removeItem(LATER_KEY) } catch { /* archivio non disponibile */ } }
-
-function ExerciseSetCard({ session, exercise, previous, onChange, locked, collapsible, onDone, recordIndex, deferred = false, canDefer = false, onDefer, onEnterFirstSet, actions }: {
+function ExerciseSetCard({ session, exercise, previous, onChange, locked, collapsible, onDone, recordIndex, reorderProps, onEnterFirstSet, actions }: {
   actions?: ReactNode
   session: WorkoutSession; exercise: ExercisePrescription; previous?: PreviousExercise; locked: boolean
   /** Serie che batte il miglior risultato precedente su questo esercizio. */
@@ -198,18 +188,15 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
   collapsible: boolean
   onDone: (exerciseId: string) => void
   onChange: (exerciseId: string, index: number, result: SetResult) => void
-  /** Rimandato con «Fallo dopo»: ridotto in fondo alla lista finché non lo si riapre. */
-  deferred?: boolean
-  /** C'è almeno un altro esercizio da fare prima di questo. */
-  canDefer?: boolean
-  /** Rimanda l'esercizio o lo rimette al suo posto; solo nella seduta in corso. */
-  onDefer?: (exerciseId: string) => void
+  reorderProps?: ReorderCardProps
   /** Entrando nella prima serie: la seduta segna l'ultima serie compilata dell'esercizio precedente. */
   onEnterFirstSet?: (exerciseId: string) => void
 }) {
   const [error, setError] = useState<{ index: number; message: string } | null>(null)
   const [expanded, setExpanded] = useState(false)
   const [showPrevious, setShowPrevious] = useState(false)
+  const [showDetails, setShowDetails] = useState(false)
+  const [copiedLoads, setCopiedLoads] = useState<{ index: number; field: 'load' | 'amount'; before: string; copied: string }[]>([])
   // Conserva virgola e decimali durante la digitazione, separati dal valore canonico in secondi.
   const [minuteDrafts, setMinuteDrafts] = useState<Record<number, { text: string; stored: string }>>({})
   const summaryButton = useRef<HTMLButtonElement>(null)
@@ -222,7 +209,7 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
   const results = session.results[exercise.id] ?? []
   const completed = results.filter(set => set.completed).length
   const complete = exercise.sets > 0 && completed >= exercise.sets
-  const collapsed = collapsible && (complete || deferred) && !expanded
+  const collapsed = collapsible && complete && !expanded
   const wasComplete = useRef(complete)
   useEffect(() => {
     // Solo nel passaggio a «completato»: la card si chiude e la pagina va all'esercizio successivo.
@@ -237,17 +224,35 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
     wasComplete.current = complete
   }, [complete, collapsible, exercise.id, onDone])
   const prefix = `${session.id}-${exercise.id}`
-  const area = exerciseArea(exercise)
+  const undoableLoads = copiedLoads.filter(change => {
+    const result = results[change.index]
+    return result && !result.completed && result[change.field] === change.copied
+  })
   const copyLoads = () => {
-    if (!previous) return
-    reusePreviousLoads(results, previous.results).forEach((set, i) => { if (set !== results[i]) onChange(exercise.id, i, set) })
+    if (finished || !previous) return
+    const next = reusePreviousResults(results, previous.results)
+    const changes = next.flatMap((set, index) => (['load', 'amount'] as const).flatMap(field => set[field] !== results[index]![field] ? [{ index, field, before: results[index]![field], copied: set[field] }] : []))
+    if (!changes.length) return
+    setCopiedLoads(changes)
+    next.forEach((set, index) => { if (set !== results[index]) onChange(exercise.id, index, set) })
+  }
+  const undoCopyLoads = () => {
+    if (finished) return
+    results.forEach((set, index) => {
+      const changes = undoableLoads.filter(change => change.index === index)
+      if (!changes.length) return
+      const restored = { ...set }
+      changes.forEach(change => { restored[change.field] = change.before })
+      onChange(exercise.id, index, restored)
+    })
+    setCopiedLoads([])
   }
   // Esercizi a tempo (plank, cardio): niente carico, si registra solo il tempo fatto.
   const timed = exercise.mode === 'seconds'
   const minutes = isTimedCardio(exercise)
   const amountLabel = minutes ? 'minuti' : timed ? 'secondi' : 'ripetizioni'
   // Un tocco sul carico vuoto lo riempie con quello della serie corrispondente dell'ultima volta. Solo il carico:
-  // le ripetizioni si scrivono sempre a mano (AGENT.md §6.1).
+  // le ripetizioni vengono riprese solo con il pulsante esplicito.
   const fillLoadFromLast = (setIndex: number) => {
     const result = results[setIndex], last = previous?.results[setIndex]
     if (finished || !result || result.load !== '' || !last?.completed || last.load.trim() === '') return
@@ -257,6 +262,8 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
   }
   /** Carico scritto: dopo un riempimento automatico il primo inserimento sostituisce, la prima cancellazione svuota. */
   const typeLoad = (setIndex: number, value: string, input: Event) => {
+    // Anche un valore riscritto uguale a quello ripreso diventa una modifica manuale.
+    setCopiedLoads(changes => changes.filter(change => change.index !== setIndex || change.field !== 'load'))
     let load = value
     if (freshLoad.current === setIndex && input instanceof InputEvent) {
       if (input.inputType.startsWith('insert') && input.data) load = input.data
@@ -271,6 +278,7 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
     const validation = result.completed ? null : validateSet(result.load, result.amount, exercise.mode)
     if (validation) { setError({ index: setIndex, message: validation }); return }
     setError(null)
+    setCopiedLoads(changes => changes.filter(change => change.index !== setIndex))
     // Riaprire toglie solo la spunta; spuntare porta anche lo stesso carico alla serie successiva ancora vuota.
     if (result.completed) onChange(exercise.id, setIndex, { ...result, completed: false })
     else completeSetChanges(results, setIndex, exercise.sets).forEach(change => onChange(exercise.id, change.index, change.result))
@@ -288,25 +296,31 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
   }
   /** Ultima volta, in grigio nel campo vuoto: il carico si riprende con un tocco, le ripetizioni sono solo un riferimento. */
   const last = (setIndex: number) => { const set = previous?.results[setIndex]; return !finished && set?.completed ? set : undefined }
-  const defer = onDefer && !complete && (deferred || canDefer)
-    ? <button type="button" className="text-button defer-exercise" onClick={() => { setExpanded(false); onDefer(exercise.id) }}>{deferred ? 'Rimetti al suo posto' : 'Fallo dopo'}</button> : null
+  const menu = <ExerciseCardMenu id={prefix} name={exercise.name} actions={actions} onHistory={previous ? () => setShowPrevious(true) : undefined}
+    onDetails={() => setShowDetails(true)} onCollapse={collapsible && complete && expanded ? () => setExpanded(false) : undefined} />
+  const details = <>
+    {showPrevious && <Modal label={`Ultima volta: ${exercise.name}`} variant="sheet" onClose={() => setShowPrevious(false)}>
+      <div className="previous-sheet"><span className="eyebrow">Ultima volta</span><h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><PreviousResults previous={previous} exercise={exercise} /></div>
+    </Modal>}
+    {showDetails && <Modal label={`Dettagli: ${exercise.name}`} variant="sheet" onClose={() => setShowDetails(false)}><ExerciseDetail exercise={exercise} previous={previous} /></Modal>}
+  </>
   if (collapsed) {
     const summary = results.filter(set => set.completed).map(set => formatResult(set, exercise)).join(' · ')
-    return <article tabIndex={-1} className={`set-panel is-collapsed ${complete ? 'exercise-complete' : 'exercise-later'}`} id={`exercise-${prefix}`}>
-      <button ref={summaryButton} type="button" className="set-summary" aria-expanded="false" aria-label={complete ? `${exercise.name}: completato, ${completed} di ${exercise.sets} serie. Apri per modificare` : `${exercise.name}: rimandato, ${completed} di ${exercise.sets} serie. Apri per farlo ora`} onClick={() => setExpanded(true)}>
-        <span className={`exercise-number ${complete ? 'is-done' : 'is-later'}`}><Icon name={complete ? 'check' : 'clock'} size={20} /></span>
-        <span className="set-summary-copy"><strong>{exercise.name}{recordIndex !== undefined && <span className="record-badge"><Icon name="star" size={16} />Record</span>}</strong><small>{complete ? summary : `Rimandato${summary ? ` · ${summary}` : ''}`}</small></span>
+    return <article tabIndex={-1} {...reorderProps} data-reorder-id={exercise.id} className="set-panel is-collapsed exercise-complete" id={`exercise-${prefix}`}>
+      {menu}
+      <button ref={summaryButton} type="button" className="set-summary" aria-expanded="false" aria-label={`${exercise.name}: completato, ${completed} di ${exercise.sets} serie. Apri per modificare`} onClick={() => setExpanded(true)}>
+        <span className="exercise-number is-done"><Icon name="check" size={20} /></span>
+        <span className="set-summary-copy"><strong>{exercise.name}{recordIndex !== undefined && <span className="record-badge"><Icon name="star" size={16} />Record</span>}</strong><small>{summary}</small></span>
         <span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span>
         <Icon name="chevronDown" size={20} />
       </button>
-      {actions && <div className="collapsed-exercise-actions">{actions}</div>}
+      {details}
     </article>
   }
-  return <article tabIndex={-1} className={`set-panel ${complete ? 'exercise-complete' : ''}`} id={`exercise-${prefix}`}>
-    <div className="set-card-heading"><MuscleGroupImage exercise={exercise} /><div>{area && <span className="mini-label">{area}</span>}<h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} illustrated={false} /></div><span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span></div>
-    <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` · +${exercise.optionalSets} facoltative` : ''}</span><span className="prescription-rest"><Icon name="clock" size={16} />{restLabel(exercise.restSeconds)} recupero</span>
-      {(actions || defer) && <div className="set-card-tools">{defer}{actions}</div>}
-    </div>
+  return <article tabIndex={-1} {...reorderProps} data-reorder-id={exercise.id} className={`set-panel ${complete ? 'exercise-complete' : ''}`} id={`exercise-${prefix}`}>
+    {menu}
+    <div className="set-card-heading"><MuscleGroupImage exercise={exercise} /><div><h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} illustrated={false} /></div><span className="exercise-counter">{completed}<span>/{exercise.sets}</span></span></div>
+    <div className="prescription-line"><span><strong>{prescriptionText(exercise)}</strong>{exercise.optionalSets ? ` (+${exercise.optionalSets} facoltative)` : ''}</span><span aria-hidden="true">·</span><span className="prescription-rest">Recupero {restLabel(exercise.restSeconds)}</span></div>
     <div className="set-rows">
       <div className={`set-grid set-header ${timed ? 'is-timed' : ''}`}><span>Serie</span>{!timed && <span>{exercise.loadUnit?.toUpperCase() ?? 'Carico'}</span>}<span>{minutes ? 'Minuti' : timed ? 'Secondi' : 'Ripetizioni'}</span><span>Fatto</span></div>
       {results.map((result, setIndex) => {
@@ -322,6 +336,7 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
             onFocus={() => enterSet(setIndex)} onBlur={() => { if (minutes) setMinuteDrafts(drafts => { const next = { ...drafts }; delete next[setIndex]; return next }) }}
             onChange={event => {
               setError(null)
+              setCopiedLoads(changes => changes.filter(change => change.index !== setIndex || change.field !== 'amount'))
               const text = event.target.value, stored = storedSetAmount(text, exercise)
               if (minutes) setMinuteDrafts(drafts => ({ ...drafts, [setIndex]: { text, stored } }))
               onChange(exercise.id, setIndex, { ...result, amount: stored, completed: false })
@@ -330,16 +345,10 @@ function ExerciseSetCard({ session, exercise, previous, onChange, locked, collap
           {previous && <PreviousInline result={result} previous={previous.results[setIndex]} exercise={exercise} record={recordIndex === setIndex} />}{error?.index === setIndex && <p className="form-error" id={`${prefix}-error`} role="alert">{error.message}</p>}</div>
       })}
     </div>
-    <div className="set-card-footer">
-      {previous ? timed ? <span /> : <button className="text-button reuse-loads" disabled={finished || !results.some((set, i) => !set.completed && set.load === '' && previous.results[i]?.completed && previous.results[i]?.load !== '')} onClick={copyLoads}>Riprendi i carichi<Icon name="back" size={16} /></button> : <span>Prima volta per questo esercizio</span>}
-      <span className="set-card-footer-end">
-        {collapsible && (complete || deferred) && <button type="button" className="text-button set-collapse" aria-expanded="true" onClick={() => setExpanded(false)}>Riduci</button>}
-        {previous && <button type="button" className="text-button history-peek" aria-haspopup="dialog" onClick={() => setShowPrevious(true)}>Storico<Icon name="chevron" size={16} /></button>}
-      </span>
-    </div>
-    {showPrevious && <Modal label={`Ultima volta: ${exercise.name}`} variant="sheet" onClose={() => setShowPrevious(false)}>
-      <div className="previous-sheet"><span className="eyebrow">Ultima volta</span><h2>{exercise.name}</h2><MuscleGroupBadge exercise={exercise} /><PreviousResults previous={previous} exercise={exercise} /></div>
-    </Modal>}
+    {previous && !timed && <div className="set-card-footer"><button type="button" className={`reuse-loads${undoableLoads.length ? ' undo-reuse-loads' : ''}`}
+      disabled={finished || !undoableLoads.length && reusePreviousResults(results, previous.results).every((set, i) => set === results[i])}
+      onClick={undoableLoads.length ? undoCopyLoads : copyLoads}><Icon name={undoableLoads.length ? 'back' : 'history'} size={20} /><span>{undoableLoads.length ? 'Annulla ripresa' : 'Riprendi carichi e ripetizioni'}</span></button></div>}
+    {details}
   </article>
 }
 
@@ -375,8 +384,13 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
   const [confirmEnd, setConfirmEnd] = useState(false)
   const [adding, setAdding] = useState<ExercisePosition | null>(null)
   const reveal = useRef<string | null>(null)
-  // «Fallo dopo» vale solo per la seduta in corso; lo storico mostra sempre l'ordine prescritto.
-  const [later, setLater] = useState(() => finished ? [] : readLater(session.id))
+  // Il riordino riguarda solo la seduta in corso, su questo dispositivo.
+  const [order, setOrder] = useState(() => finished ? [] : readSessionOrder(session.id, session.day.exercises))
+  const saveOrder = (ids: string[]) => { setOrder(ids); writeSessionOrder(session.id, ids) }
+  const {
+    container: reorderContainer, items: ordered, activeId: reorderingId, cardProps: reorderCardProps,
+    announcement: reorderAnnouncement, minHeight: reorderMinHeight,
+  } = useExerciseReorder(sessionOrder(session.day.exercises, finished ? [] : order), saveOrder, !finished && session.day.exercises.length > 1)
   const endCorrection = useEffectEvent(() => onEndCorrection?.())
   useEffect(() => () => endCorrection(), [])
   // Seduta in corso: schermo acceso e audio sbloccato dai tocchi per l'avviso di fine recupero.
@@ -384,18 +398,20 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
   useEffect(() => finished ? undefined : installAudioUnlock(), [finished])
   const records = sessionRecords(session, sessions)
   const { required, completedRequired } = sessionProgress(session)
-  const deferred = finished ? [] : later.filter(id => session.day.exercises.some(exercise => exercise.id === id))
-  const ordered = sessionOrder(session.day.exercises, deferred)
-  const isPending = (exercise: ExercisePrescription) => (session.results[exercise.id] ?? []).filter(set => set.completed).length < exercise.sets
-  const pendingCount = session.day.exercises.filter(isPending).length
+  const displayedSession = { ...session, day: { ...session.day, exercises: ordered } }
   const scrollTo = (exerciseId: string) => {
     const smooth = !window.matchMedia('(prefers-reduced-motion: reduce)').matches
     document.getElementById(`exercise-${session.id}-${exerciseId}`)?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' })
   }
-  const afterEdit = (id?: string) => {
+  const afterEdit = (id?: string, position?: ExercisePosition) => {
+    if (id && position) {
+      const ids = ordered.filter(exercise => exercise.id !== id).map(exercise => exercise.id)
+      const index = position.kind === 'start' ? 0 : position.kind === 'end' ? ids.length : ids.indexOf(position.id) + 1
+      ids.splice(index, 0, id)
+      saveOrder(ids)
+    }
     setAdding(null)
     if (id) {
-      setLater([]); writeLater(session.id, [])
       reveal.current = id
     }
   }
@@ -409,18 +425,10 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
       card?.scrollIntoView({ behavior: 'auto', block: 'start' })
     })
   })
-  // Esercizio completato: si passa al successivo ancora da fare, se esiste; i rimandati per ultimi.
+  // Il passaggio automatico segue sempre l'ordine scelto per questa seduta.
   const goToNext = (exerciseId: string) => {
-    const next = nextExercise(session, deferred, exerciseId)
+    const next = nextExercise(session, ordered.map(exercise => exercise.id), exerciseId)
     if (next) scrollTo(next)
-  }
-  const toggleLater = (exerciseId: string) => {
-    const deferring = !deferred.includes(exerciseId)
-    const next = deferring ? [...deferred, exerciseId] : deferred.filter(id => id !== exerciseId)
-    setLater(next); writeLater(session.id, next)
-    // Rimandato: la pagina va all'esercizio che ora viene dopo nel suo posto originale.
-    const target = deferring ? nextExercise(session, deferred, exerciseId) : exerciseId
-    if (target) window.requestAnimationFrame(() => scrollTo(target))
   }
   // Entrando nella prima serie di un esercizio si segna l'ultima serie compilata del precedente (nell'ordine mostrato).
   // La card sopra si riduce: lo scorrimento viene compensato perché il campo toccato resti sotto il dito.
@@ -461,14 +469,18 @@ export function SessionView({ session, sessions, onChange, onComplete, onDiscard
       </>} />
     {session.kind === 'free' && !session.day.exercises.length ? <div className="free-workout-empty"><Icon name="dumbbell" size={32} /><h2>Da cosa vuoi iniziare?</h2><p>Aggiungi il primo esercizio, oppure scegli il cardio e indica i minuti svolti.</p></div> : <div className="session-progress"><div><span>{completedRequired} di {required} serie</span><strong>{required ? Math.round(completedRequired / required * 100) : 0}%</strong></div><progress max={required} value={completedRequired} aria-label="Serie completate" /></div>}
     {finished && <div className="session-correction"><p className="small muted">{correcting ? 'Correzione attiva: le modifiche aggiornano solo lo storico di questa seduta.' : 'Seduta completata.'}</p><button className="button secondary session-correct" onClick={() => { if (correcting) onEndCorrection?.(); setCorrecting(!correcting) }}>{correcting ? 'Fine correzione' : 'Correggi valori'}</button></div>}
-    <div className="session-cards">{ordered.map(exercise => <ExerciseSetCard key={`${exercise.id}:${exercise.exerciseId}`} session={session} exercise={exercise} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)} actions={exercise.snapshot?.session_added && editing ? <SessionExerciseActions exercise={exercise} session={session} store={editing.store} onApplied={afterEdit} /> : exerciseActions?.(exercise)}
-      deferred={deferred.includes(exercise.id)} canDefer={pendingCount > 1} onDefer={finished ? undefined : toggleLater} onEnterFirstSet={enterFirstSet} />)}</div>
+    <p id="session-reorder-help" className="sr-only">Tieni premuto e trascina. Con la tastiera premi Invio o Spazio, usa le frecce su e giù, poi Invio per confermare o Escape per annullare.</p>
+    <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">{reorderAnnouncement}</div>
+    <div ref={reorderContainer} className={`session-cards${reorderingId ? ' is-reordering' : ''}`} style={{ minHeight: reorderMinHeight }}>
+      {ordered.map(exercise => <ExerciseSetCard key={`${exercise.id}:${exercise.exerciseId}`} session={session} exercise={exercise} previous={findPreviousExercise(sessions, exercise, session)} onChange={onChange} locked={finished && !correcting} collapsible={!finished} onDone={goToNext} recordIndex={records.get(exercise.id)} actions={exercise.snapshot?.session_added && editing ? <SessionExerciseActions exercise={exercise} session={session} store={editing.store} onApplied={afterEdit} /> : exerciseActions?.(exercise)}
+        reorderProps={!finished && ordered.length > 1 ? reorderCardProps(exercise) : undefined} onEnterFirstSet={enterFirstSet} />)}
+    </div>
     <SessionNote sessionId={session.id} note={session.note ?? ''} editable={!finished || correcting} onChange={onNote} />
     {!finished && <div className="session-actions">
       {(session.kind !== 'free' || session.day.exercises.length > 0) && <button className="button primary session-finish" onClick={requestComplete}>Termina allenamento<Icon name="check" size={20} /></button>}
       <button type="button" className={`button ${session.day.exercises.length ? 'secondary' : 'primary'} session-add-button`} disabled={!editing} aria-haspopup="dialog" onClick={() => setAdding(defaultExercisePosition(session, editing?.context))}>Aggiungi esercizio</button>
     </div>}
-    {!finished && adding && editing && <SessionExerciseAddition session={session} store={editing.store} catalog={editing.catalog} position={adding} onClose={() => setAdding(null)} onApplied={afterEdit} />}
+    {!finished && adding && editing && <SessionExerciseAddition session={displayedSession} store={editing.store} catalog={editing.catalog} position={adding} onClose={() => setAdding(null)} onApplied={afterEdit} />}
     {options && onDiscard && <Modal label="Opzioni della seduta" variant="sheet" onClose={() => setOptions(false)}>
       <div className="session-options">
         <h2>Opzioni della seduta</h2>

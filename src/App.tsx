@@ -28,7 +28,8 @@ import { History } from './features/History'
 import { Progress } from './features/Progress'
 import { SessionSummaryDialog } from './features/SessionSummary'
 import { Settings } from './features/Settings'
-import { ExerciseDetail, forgetDeferredExercises, SessionView } from './features/Workout'
+import { ExerciseDetail, SessionView } from './features/Workout'
+import { forgetSessionOrder } from './persistence/session-order'
 import { WorkoutReplacement } from './features/WorkoutReplacement'
 import { MorningRoutineCard, MorningRoutineStatus } from './features/MorningRoutine'
 import { useDiary } from './persistence/use-diary'
@@ -217,7 +218,7 @@ export function App() {
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={editors.mealMode} setMode={editors.setMealMode} step={editors.mealStep} setStep={editors.setMealStep} deletionBlocked={deletionBlocked} /></Suspense>}
     {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} engine={importReview.engine} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}
     {isSettings && <Settings backSection={page.lastSection} weeklyProgram={schedule.weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy}
-      onSignedOut={() => { diary.store.clearDevice(); morning.store.clearDevice(); plans.store?.clearDevice(); catalog.store?.clearDevice(); forgetDeferredExercises(); void importReview.clearDevice() }} {...settings} />}
+      onSignedOut={() => { diary.store.clearDevice(); morning.store.clearDevice(); plans.store?.clearDevice(); catalog.store?.clearDevice(); forgetSessionOrder(); void importReview.clearDevice() }} {...settings} />}
     {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} onNote={updateNote(activeSession.id)} syncSlot={syncIndicator}
       editing={{ store: diary.store, catalog, context: diary.state.workoutContext?.[activeSession.id] }}
       exerciseActions={exercise => <WorkoutReplacement exercise={exercise} session={activeSession} sessions={view.sessions} days={schedule.baseDays} changes={view.changes ?? []} swaps={view.swaps ?? []} catalog={catalog} store={diary.store} today={today}

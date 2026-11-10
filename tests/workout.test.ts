@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { adjustRest, carryLoadForward, comparable, completeSetChanges, displaySetAmount, pendingFilledSet, filledUnchecked, findPreviousExercise, formatResult, isStaleSession, nextExercise, remainingRest, reusePreviousLoads, sessionOrder, sessionProgress, storedSetAmount } from '../src/domain/workout.ts'
+import { adjustRest, carryLoadForward, comparable, completeSetChanges, displaySetAmount, pendingFilledSet, filledUnchecked, findPreviousExercise, formatResult, isStaleSession, nextExercise, remainingRest, reusePreviousResults, sessionOrder, sessionProgress, storedSetAmount } from '../src/domain/workout.ts'
 import { applyOp, emptyResults, nextRestTimer } from '../src/domain/diary.ts'
 import type { WorkoutSession, ExercisePrescription, RestTimerState, SetResult } from '../src/domain/types.ts'
 
@@ -39,14 +39,25 @@ test('ignora futuro, seduta corrente, incompleti e ultimi esercizi senza serie e
   assert.equal(findPreviousExercise([current], exercise, current), undefined)
 })
 
-test('riprendere i carichi conserva ripetizioni vuote e non sovrascrive valori inseriti', () => {
+test('riprendere carichi e ripetizioni riempie solo campi vuoti e non conferma serie', () => {
   const current = [{ ...empty }, { ...empty, load: '20' }, { ...completed }, { ...empty }]
   const previous = [{ ...completed }, { ...completed }, { ...completed, load: '25' }, { ...completed, completed: false }]
-  const result = reusePreviousLoads(current, previous)
-  assert.deepEqual(result[0], { load: '12,5', amount: '', completed: false })
-  assert.equal(result[1], current[1])
+  const result = reusePreviousResults(current, previous)
+  assert.deepEqual(result[0], { load: '12,5', amount: '10', completed: false })
+  assert.deepEqual(result[1], { load: '20', amount: '10', completed: false })
   assert.equal(result[2], current[2])
   assert.equal(result[3], current[3])
+  assert.equal(current[0].load, '')
+})
+
+test('ripresa conserva ripetizioni scritte, zero, serie senza storico e storico immutato', () => {
+  const current = [{ ...empty, amount: '8' }, { ...empty, load: '0', amount: '0' }, { ...empty }]
+  const previous = [{ ...completed }, { ...completed }]
+  const result = reusePreviousResults(current, previous)
+  assert.deepEqual(result[0], { load: '12,5', amount: '8', completed: false })
+  assert.equal(result[1], current[1])
+  assert.equal(result[2], current[2])
+  assert.equal(previous[0].amount, '10')
   assert.equal(current[0].load, '')
 })
 
@@ -171,18 +182,19 @@ test('serie compilate senza spunta, avanzamento e seduta dimenticata', () => {
   assert.equal(isStaleSession(session('done', '2026-10-02'), started + 24 * 3600_000), false, 'una seduta completata non è mai aperta')
 })
 
-test('«Fallo dopo»: il rimandato va in fondo e il passaggio automatico lo salta finché resta altro', () => {
+test('riordino libero: il passaggio automatico segue l’ordine scelto senza perdere gli incompleti', () => {
   const make = (id: string): ExercisePrescription => ({ ...exercise, id, exerciseId: id, sets: 1 })
   const [a, b, c] = [make('a'), make('b'), make('c')]
   const live: WorkoutSession = { id: 'live', date: '2026-10-02', startedAt: '2026-10-02T10:00:00Z', day: { id: 'd', label: 'A', title: 'A', subtitle: '', exercises: [a, b, c] }, results: { a: [{ ...empty }], b: [{ ...empty }], c: [{ ...empty }] } }
-  assert.deepEqual(sessionOrder(live.day.exercises, ['a']).map(item => item.id), ['b', 'c', 'a'])
-  assert.deepEqual(sessionOrder(live.day.exercises, ['c', 'a']).map(item => item.id), ['b', 'c', 'a'], 'nell’ordine in cui sono stati rimandati')
-  // Rimandando «a» si passa a «b»; completato «b» si va a «c», non al rimandato.
+  assert.deepEqual(sessionOrder(live.day.exercises, ['c', 'a', 'b']).map(item => item.id), ['c', 'a', 'b'])
+  assert.deepEqual(sessionOrder(live.day.exercises, ['c', 'c', 'removed', 'a', 'b']).map(item => item.id), ['c', 'a', 'b'], 'niente duplicati o ID non più presenti')
+  assert.deepEqual(sessionOrder(live.day.exercises, ['c', 'a']).map(item => item.id), ['c', 'a', 'b'], 'un nuovo esercizio segue il suo riferimento senza azzerare il riordino')
+  assert.deepEqual(sessionOrder(live.day.exercises, []).map(item => item.id), ['a', 'b', 'c'])
   assert.equal(nextExercise(live, [], 'a'), 'b')
-  assert.equal(nextExercise(live, ['a'], 'b'), 'c')
-  // Completati gli altri resta solo il rimandato: allora sì.
+  assert.equal(nextExercise(live, ['c', 'a', 'b'], 'c'), 'a')
+  assert.equal(nextExercise(live, ['c', 'a', 'b'], 'b'), 'c', 'alla fine torna ai precedenti ancora da fare')
   live.results.b = [{ ...completed }]; live.results.c = [{ ...completed }]
-  assert.equal(nextExercise(live, ['a'], 'c'), 'a')
+  assert.equal(nextExercise(live, ['c', 'a', 'b'], 'c'), 'a')
   live.results.a = [{ ...completed }]
-  assert.equal(nextExercise(live, ['a'], 'a'), undefined)
+  assert.equal(nextExercise(live, ['c', 'a', 'b'], 'a'), undefined)
 })

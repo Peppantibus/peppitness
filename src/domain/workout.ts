@@ -62,11 +62,14 @@ export function formatResult(result: SetResult | undefined, context: ExercisePre
   return result.load.trim() === '' || mode === 'seconds' ? amount : `${result.load} ${exercise?.loadUnit ?? unit} × ${amount}`
 }
 
-/** Copia solo i carichi nelle righe ancora vuote, senza segnare risultati eseguiti. */
-export function reusePreviousLoads(current: SetResult[], previous: SetResult[]): SetResult[] {
+/** Riprende i campi vuoti dalle serie eseguite, senza sovrascrivere valori o confermare serie. */
+export function reusePreviousResults(current: SetResult[], previous: SetResult[]): SetResult[] {
   return current.map((set, index) => {
     const old = previous[index]
-    return !set.completed && set.load === '' && old?.completed ? { ...set, load: old.load } : set
+    if (set.completed || !old?.completed) return set
+    const load = set.load === '' ? old.load : set.load
+    const amount = set.amount === '' ? old.amount : set.amount
+    return load !== set.load || amount !== set.amount ? { ...set, load, amount } : set
   })
 }
 
@@ -121,24 +124,25 @@ export function isStaleSession(session: WorkoutSession, now = Date.now()): boole
   return !session.completedAt && Number.isFinite(started) && now - started >= STALE_SESSION_MS
 }
 
-/** Ordine mostrato in seduta: gli esercizi rimandati passano in fondo, nell'ordine in cui sono stati rimandati. */
-export function sessionOrder(exercises: ExercisePrescription[], later: readonly string[]): ExercisePrescription[] {
-  const deferred = later.flatMap(id => exercises.filter(exercise => exercise.id === id))
-  return [...exercises.filter(exercise => !later.includes(exercise.id)), ...deferred]
+/** Ordine locale della seduta: ignora ID rimossi/duplicati e conserva anche gli esercizi appena aggiunti. */
+export function sessionOrder(exercises: ExercisePrescription[], ids: readonly string[]): ExercisePrescription[] {
+  const byId = new Map(exercises.map(exercise => [exercise.id, exercise]))
+  const ordered = [...new Set(ids)].flatMap(id => byId.has(id) ? [byId.get(id)!] : [])
+  exercises.forEach((exercise, index) => {
+    if (ordered.some(item => item.id === exercise.id)) return
+    const before = exercises[index - 1]
+    const position = before ? ordered.findIndex(item => item.id === before.id) + 1 : 0
+    ordered.splice(position, 0, exercise)
+  })
+  return ordered
 }
 
-/**
- * Esercizio a cui passare dopo `fromId`: il successivo ancora da fare nell'ordine mostrato, saltando i
- * rimandati finché resta qualcos'altro da fare; poi il primo rimandato ancora da fare.
- */
-export function nextExercise(session: WorkoutSession, later: readonly string[], fromId: string): string | undefined {
-  const order = sessionOrder(session.day.exercises, later)
+/** Il prossimo ancora da fare segue l'ordine mostrato, tornando all'inizio se necessario. */
+export function nextExercise(session: WorkoutSession, ids: readonly string[], fromId: string): string | undefined {
+  const order = sessionOrder(session.day.exercises, ids)
   const pending = (exercise: ExercisePrescription) => exercise.id !== fromId && (session.results[exercise.id] ?? []).filter(set => set.completed).length < exercise.sets
   const position = order.findIndex(exercise => exercise.id === fromId)
-  const after = order.find((exercise, index) => index > position && !later.includes(exercise.id) && pending(exercise))
-  if (after) return after.id
-  if (order.some(exercise => !later.includes(exercise.id) && pending(exercise))) return undefined
-  return order.find(exercise => later.includes(exercise.id) && pending(exercise))?.id
+  return order.find((exercise, index) => index > position && pending(exercise))?.id ?? order.find(pending)?.id
 }
 
 export function remainingRest(timer: RestTimerState, now = Date.now()): number {

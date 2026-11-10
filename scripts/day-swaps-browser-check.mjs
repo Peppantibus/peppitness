@@ -61,7 +61,7 @@ try {
   await tab.viewport(390, 844, true)
   await tab.navigate(`${server.origin}/#/scheda`, `!!document.querySelector('.rest-day')`); await synced()
   check(await tab.evaluate(`document.querySelectorAll('.rest-day .button.primary').length===1 && !document.querySelector('.rest-day-options').open && !document.querySelector('.rest-day').innerText.includes('Lunedì sintetico')`), 'Riposo: una CTA primaria e schede manuali nascoste nel link')
-  await tab.click('.rest-day-options summary'); await tab.click('.rest-day-options .chip')
+  await tab.click('.rest-day-options > summary'); await tab.click('.rest-day-sessions > summary'); await tab.click('.rest-day-session-list button')
   await tab.until(`!!document.querySelector('.workout-summary')`)
   check(await tab.evaluate(`document.querySelector('#workout-title').textContent.includes('Lunedì sintetico') && !document.querySelectorAll('.week-day')[1].querySelector('.is-planned')`), 'Scelta manuale dal riposo mostra la scheda senza spostare il calendario')
   check((await fixture.a.client.from('workout_day_swaps').select('id')).data.length===0 && (await fixture.a.client.from('workout_sessions').select('id')).data.length===0, 'Scelta manuale non crea scambi o sessioni')

@@ -1,4 +1,6 @@
 import { FreeWorkoutEntry } from '../features/FreeWorkout'
+import { useState } from 'react'
+import { Modal } from '../components/Modal'
 import { WorkoutDaySwap, WorkoutDaySwapStatus } from '../features/WorkoutDaySwap'
 import { Icon } from '../components/Icon'
 import { formatDate } from '../domain/dates'
@@ -26,6 +28,17 @@ function RetryPlans({ store }: { store: PlansStore | null }) {
   return <button className="button primary" onClick={() => void store?.load()}>Riprova</button>
 }
 
+function ActiveRestSession({ title, date, onDiscard }: { title: string; date: string; onDiscard: () => void }) {
+  const [optionsOpen, setOptionsOpen] = useState(false)
+  return <section className="rest-active-session" aria-label="Allenamento in corso">
+    <div className="rest-active-heading"><span className="rest-active-icon"><Icon name="play" size={20} /></span><div><strong>Hai una seduta in corso</strong><p>{formatDate(date, { weekday: 'long', day: 'numeric', month: 'long' })} · {title}</p></div>
+      <button type="button" className="icon-button" aria-label="Opzioni della seduta in corso" aria-haspopup="dialog" onClick={() => setOptionsOpen(true)}><Icon name="more" size={20} /></button>
+    </div>
+    <a className="button primary rest-active-resume" href="#/scheda/seduta">Riprendi allenamento<Icon name="arrow" size={20} /></a>
+    {optionsOpen && <Modal label="Seduta in corso" variant="sheet" onClose={() => setOptionsOpen(false)}><div className="workout-card-menu"><h2>Seduta in corso</h2><button type="button" className="rest-active-discard" aria-haspopup="dialog" onClick={() => { setOptionsOpen(false); onDiscard() }}><Icon name="close" size={20} /><span><strong>Annulla allenamento</strong><small>Ti chiederemo conferma prima di eliminarlo.</small></span><Icon name="chevron" size={20} /></button></div></Modal>}
+  </section>
+}
+
 function CycleFinished({ done, planned }: { done: number; planned: number }) {
   return <section className="cycle-finished"><Icon name="check" size={20} /><div><strong>Ciclo concluso</strong><p>Hai completato {done} sedute su {planned}. Guarda come è andata e prepara il prossimo.</p></div>
     <div className="program-actions"><a className="button secondary" href="#/scheda/progressi">Progressi</a><a className="button primary" href="#/scheda/programmi/rinnova">Crea dal programma concluso</a></div></section>
@@ -46,21 +59,22 @@ export function WorkoutToday({ configured, plans, diary, schedule, date, today, 
 
   if (!day && weekly && workout) return <>
     {finished}
-    {activeSession && <a className="resume-banner" href="#/scheda/seduta"><Icon name="play" /><span><strong>Allenamento in corso</strong><small>{activeSession.day.title} · {formatDate(activeSession.date)}</small></span><span>Riprendi</span><Icon name="arrow" size={20} /></a>}
-    {cancel}
+    {activeSession && <ActiveRestSession key={activeSession.id} title={activeSession.day.title} date={activeSession.date} onDiscard={() => onDiscard(activeSession.id)} />}
     <section className="rest-day" aria-labelledby="rest-day-title">
       <span className="rest-day-icon" aria-hidden="true"><Icon name="moon" size={24} /></span>
-      <span className="eyebrow">{weekdays[weekdayOfDate(date)]!.name}</span>
+      <div className="rest-day-copy"><span className="eyebrow">{weekdays[weekdayOfDate(date)]!.name}</span>
       <h2 id="rest-day-title">Giorno di riposo</h2>
-      <p>Il tuo programma non prevede sedute in questa giornata. Recupera bene.</p>
-      {swapProps && <WorkoutDaySwap key={`${workout.version.id}:${date}`} {...swapProps} />}
-      {scheduleStatus}
-      <details key={date} className="rest-day-options"><summary>Allenati senza cambiare programma<Icon name="chevronDown" size={16} /></summary>
-        <FreeWorkoutEntry date={date} onStart={onStartFree} active={Boolean(activeSession)} disabled={configured && diary.state.phase !== 'ready'} />
-        <p className="small muted">Oppure usa una seduta del programma solo per questa data.</p><div className="chip-row">
-        {workoutDays.map(item => <button key={item.id} type="button" className="chip" onClick={() => schedule.selectDay(item.id)}>{weekdays.find(weekday => weekday.code === item.label)?.name ?? item.label} · {item.title}</button>)}
-      </div></details>
+      <p>Nessuna seduta prevista. Prenditi il tempo per recuperare.</p></div>
+      {!activeSession && swapProps && <WorkoutDaySwap key={`${workout.version.id}:${date}`} {...swapProps} />}
     </section>
+    {scheduleStatus}
+      <details key={date} className="rest-day-options"><summary><span>Allenati senza cambiare programma<small>Allenamento libero o una seduta extra</small></span><Icon name="chevronDown" size={20} /></summary>
+        <div className="rest-day-actions">
+        {activeSession ? <p className="rest-active-hint">Puoi consultare le altre sedute. Per iniziare un altro allenamento, termina o annulla quello in corso.</p> : <FreeWorkoutEntry date={date} onStart={onStartFree} disabled={configured && diary.state.phase !== 'ready'} />}
+        <details className="rest-day-sessions"><summary><Icon name="dumbbell" size={20} /><span><strong>Usa una seduta del programma</strong><small>Solo per questa data, senza spostarla</small></span><Icon name="chevronDown" size={16} /></summary>
+        <div className="rest-day-session-list">{workoutDays.map(item => <button key={item.id} type="button" onClick={() => schedule.selectDay(item.id)}><span>{weekdays.find(weekday => weekday.code === item.label)?.name ?? item.label}<strong>{item.title}</strong></span><Icon name="chevron" size={16} /></button>)}</div>
+        </details>
+      </div></details>
   </>
 
   if (!day) return <section className="panel empty-state plan-empty">

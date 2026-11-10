@@ -15,6 +15,8 @@
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
     "test:browser": "node scripts/browser-check.mjs",
+    "test:session-order:browser": "node scripts/session-order-browser-check.mjs",
+    "test:replacement-reorder:browser": "node scripts/replacement-reorder-browser-check.mjs",
     "test:auth:browser": "node scripts/auth-browser-check.mjs",
     "test:recovery:local": "node scripts/password-recovery-local.mjs",
     "dev:auth:local": "node scripts/password-recovery-local.mjs --serve",

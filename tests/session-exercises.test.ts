@@ -43,11 +43,11 @@ test('scelta esplicita per occorrenza, inizio, fine e nomi duplicati', () => {
   assert.equal(add(s, { kind: 'after', id: 'missing' }), s)
 })
 
-test('spostamento conserva risultati e snapshot; autoreferenza esclusa; Fallo dopo non cambia ordine persistente', () => {
+test('spostamento conserva risultati e snapshot; autoreferenza esclusa; riordino locale non cambia ordine persistente', () => {
   let s = add(session(), { kind: 'end' })
   s.results[added.id]![0] = { load: '12,5', amount: '8', completed: true }
   const original = structuredClone(s.results)
-  assert.deepEqual(sessionOrder(s.day.exercises, [curl.id]).map(item => item.id), [calf.id, added.id, curl.id])
+  assert.deepEqual(sessionOrder(s.day.exercises, [calf.id, added.id, curl.id]).map(item => item.id), [calf.id, added.id, curl.id])
   s = editSessionExercises(s, { action: 'move', id: added.id, position: { kind: 'after', id: curl.id } })
   assert.deepEqual(ids(s), [curl.id, added.id, calf.id])
   assert.deepEqual(s.results, original)

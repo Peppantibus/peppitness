@@ -60,9 +60,14 @@ try {
   check(await tab.evaluate(`!document.querySelector('.session-finish') && !!document.querySelector('.session-add-button.primary') && !document.querySelector('.session-progress')`), 'Seduta vuota: aggiunta primaria, nessun completamento o avanzamento fittizio')
   if (await tab.evaluate(`!!document.querySelector('.stale-later')`)) await tab.click('.stale-later')
   await layout('seduta-vuota')
-  await route('/scheda'); await tab.until(`!!document.querySelector('.rest-day-options')`); await tab.click('.rest-day-options summary'); await tab.click('.free-workout-choice')
-  check(await tab.evaluate(`document.querySelector('.free-workout-start').textContent.includes('Riprendi')`), 'Una seduta già attiva viene ripresa')
-  await tab.click('.free-workout-start'); await tab.until(`!!document.querySelector('.session-add-button')`)
+  await route('/scheda'); await tab.until(`!!document.querySelector('.rest-active-resume')`)
+  check(await tab.evaluate(`!document.querySelector('.rest-day .day-swap-open,.workout-cancel') && document.querySelector('.rest-active-resume').textContent.includes('Riprendi')`), 'Una seduta già attiva ha una sola CTA di ripresa nel giorno di riposo')
+  await tab.click('.rest-active-heading button'); await tab.click('.rest-active-discard')
+  await tab.until(`!!document.querySelector('.workout-cancel-keep')`)
+  check((await fixture.a.client.from('workout_sessions').select('id').setHeader('X-Peppitness-Diary', 'free-v1')).data.length === 1, 'Annullamento dal menu chiede conferma senza eliminare la seduta')
+  await tab.click('.workout-cancel-keep')
+  check(await tab.evaluate(`!!document.querySelector('.rest-active-resume') && !document.querySelector('dialog[open]')`), 'Continua conserva la seduta e chiude la conferma')
+  await tab.click('.rest-active-resume'); await tab.until(`!!document.querySelector('.session-add-button')`)
   // Offline: catalogo già scaricato, aggiunta e minuti subito visibili, poi reload e sync.
   await tab.send('Fetch.enable', { patterns: [{ urlPattern: `${fixture.config.apiUrl}/*` }] })
   const offlineHandler = event => { void tab.send('Fetch.failRequest', { requestId: event.requestId, errorReason: 'InternetDisconnected' }); return true }

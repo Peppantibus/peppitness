@@ -15,7 +15,7 @@ let server, tab, fixture
 const check = (condition, name) => { assert.ok(condition, name); checks.push(name); console.log(`PASS ${name}`) }
 const textClick = async (selector, text) => {
   await tab.evaluate(`document.querySelectorAll('[data-browser-target]').forEach(el=>el.removeAttribute('data-browser-target'))`)
-  await tab.evaluate(`(() => { const el=[...document.querySelectorAll(${JSON.stringify(selector)})].find(el => el.textContent.trim()===${JSON.stringify(text)}); if(!el) throw Error('Pulsante assente: '+${JSON.stringify(text)}); el.setAttribute('data-browser-target','click'); })()`)
+  await tab.evaluate(`(() => { const el=[...document.querySelectorAll(${JSON.stringify(selector)})].find(el => el.textContent.trim()===${JSON.stringify(text)}); if(!el) throw Error('Pulsante assente: '+${JSON.stringify(text)}); if(!el.closest('dialog')){const menu=el.closest('.set-panel')?.querySelector('.exercise-menu-trigger');if(menu?.getAttribute('aria-expanded')==='false')menu.click()} el.setAttribute('data-browser-target','click'); })()`)
   await tab.click('[data-browser-target="click"]')
   await tab.evaluate(`document.querySelector('[data-browser-target="click"]')?.removeAttribute('data-browser-target')`)
 }
@@ -23,6 +23,7 @@ const input = async (selector, value) => tab.evaluate(`(() => {const el=document
 const synced = async () => tab.until(`JSON.parse(localStorage.getItem(${JSON.stringify(`peppitness:diary:v2:${fixture.a.owner}`)})||'{}').queue?.length===0`, 'coda sincronizzata')
 const replace = async name => {
   await tab.evaluate(`(() => {const el=[...document.querySelectorAll('.set-panel')].find(el=>el.querySelector('h2')?.textContent===${JSON.stringify(name)});const button=[...el.querySelectorAll('.replacement-actions button')].find(el=>el.textContent==='Sostituisci'); button.setAttribute('data-browser-target','click');})()`)
+  await tab.evaluate(`(()=>{const menu=document.querySelector('[data-browser-target="click"]').closest('.set-panel').querySelector('.exercise-menu-trigger');if(menu.getAttribute('aria-expanded')==='false')menu.click()})()`)
   await tab.click('[data-browser-target="click"]')
   await tab.until(`!!document.querySelector('dialog[open] .wz-search input')`)
   await tab.evaluate(`document.querySelectorAll('[data-browser-target]').forEach(el=>el.removeAttribute('data-browser-target'))`)

@@ -13,7 +13,7 @@ const chrome = await ensureChrome()
 let fixture, tab, server
 const check = (condition, name) => { assert.ok(condition, name); checks.push(name); console.log(`PASS ${name}`) }
 const clickText = async (selector, text) => {
-  await tab.evaluate(`document.querySelectorAll('[data-session-target]').forEach(el=>el.removeAttribute('data-session-target')); (()=>{const el=[...document.querySelectorAll(${JSON.stringify(selector)})].find(el=>el.textContent.trim()===${JSON.stringify(text)});if(!el)throw Error('Pulsante assente: '+${JSON.stringify(text)});el.setAttribute('data-session-target','click')})()`)
+  await tab.evaluate(`document.querySelectorAll('[data-session-target]').forEach(el=>el.removeAttribute('data-session-target')); (()=>{const el=[...document.querySelectorAll(${JSON.stringify(selector)})].find(el=>el.textContent.trim()===${JSON.stringify(text)});if(!el)throw Error('Pulsante assente: '+${JSON.stringify(text)});if(!el.closest('dialog')){const menu=el.closest('.set-panel')?.querySelector('.exercise-menu-trigger');if(menu?.getAttribute('aria-expanded')==='false')menu.click()}el.setAttribute('data-session-target','click')})()`)
   await tab.click('[data-session-target="click"]')
 }
 const input = async (selector, value) => {
@@ -22,6 +22,10 @@ const input = async (selector, value) => {
 }
 const synced = () => tab.until(`JSON.parse(localStorage.getItem(${JSON.stringify(`peppitness:diary:v2:${fixture.a.owner}`)})||'{}').queue?.length===0`, 'coda sincronizzata')
 const cardIds = () => tab.evaluate(`[...document.querySelectorAll('.set-panel')].map(el=>el.id)`)
+const move = async (id, destination) => {
+  await tab.evaluate(`document.getElementById(${JSON.stringify(id)}).focus()`)
+  await tab.key('Enter'); await tab.key(destination); await tab.key('Enter'); await pause(80)
+}
 const addedCard = (name, occurrence = 0) => tab.evaluate(`[...document.querySelectorAll('.set-panel')].filter(el=>el.querySelector('h2')?.textContent===${JSON.stringify(name)})[${occurrence}]?.id`)
 const choose = async name => {
   await input('dialog[open] .wz-search input', name)
@@ -108,30 +112,25 @@ try {
   check(await tab.evaluate(`!!document.getElementById(${JSON.stringify(plank)}).querySelector('input[aria-label*="secondi"]')`), 'Esercizio a tempo aggiunto alla fine in secondi')
   await input(`#${strength} .set-row input[aria-label*="carico"]`, '22,5')
   await input(`#${strength} .set-row input[aria-label*="ripetizioni"]`, '9')
-  await clickText(`#${strength} .session-added-actions button`, 'Sposta')
-  await layout('spostamento')
-  check(await tab.evaluate(`![...document.querySelectorAll('dialog select option')].some(el=>el.value===${JSON.stringify(strength.slice(-36))})`), 'Sposta esclude l’occorrenza stessa')
-  await input('dialog select', 'start'); await clickText('dialog button', 'Conferma spostamento')
+  await move(strength, 'Home')
   check((await cardIds())[0] === strength && await tab.evaluate(`document.getElementById(${JSON.stringify(strength)}).querySelector('input[aria-label*="carico"]').value==='22,5'`), 'Spostamento conserva i valori già annotati')
-  await clickText(`#${stairs} .defer-exercise`, 'Fallo dopo')
-  check((await cardIds()).at(-1) === stairs, 'Fallo dopo modifica soltanto l’ordine temporaneo')
+  await move(stairs, 'End')
+  check((await cardIds()).at(-1) === stairs, 'Riordino dalla card anche per gli esercizi prescritti')
   await beginAdd('Lat machine'); await dose(); await input('dialog select', stairs.slice(-36)); await confirmAdd()
   const lat = await addedCard('Lat machine'); ids = await cardIds()
-  check(ids.indexOf(lat) === ids.indexOf(stairs) + 1 && !await tab.evaluate(`!!document.querySelector('.exercise-later')`), 'Aggiunta per nome ripristina ordine persistente e inserisce dopo il riferimento rimandato')
-  await clickText(`#${duplicate} .session-added-actions button`, 'Sposta')
-  await input('dialog select', 'end'); await clickText('dialog button', 'Conferma spostamento')
-  await clickText(`#${stairs} .defer-exercise`, 'Fallo dopo')
+  check(ids.indexOf(lat) === ids.indexOf(stairs) + 1 && ids[0] === strength, 'Aggiunta dopo il riferimento senza azzerare il riordino scelto')
+  await move(duplicate, 'End')
+  await move(stairs, 'End')
   await clickText(`#${duplicate} .session-added-actions button`, 'Rimuovi')
   check(!await tab.evaluate(`!!document.getElementById(${JSON.stringify(duplicate)}) || !!document.querySelector('dialog[open]')`), 'Rimuovi senza valori è immediato')
-  check((await cardIds()).at(-1) === stairs, 'Rimozione conserva i rinvii Fallo dopo degli altri esercizi')
+  check((await cardIds()).at(-1) === stairs, 'Rimozione conserva il riordino degli altri esercizi')
   await clickText(`#${strength} .session-added-actions button`, 'Rimuovi')
   check(await tab.evaluate(`!!document.querySelector('dialog[open]') && !!document.getElementById(${JSON.stringify(strength)})`), 'Rimuovi con valori chiede conferma e conserva la card')
   await clickText('dialog button', 'Continua')
   await synced()
   // Offline limitato alle API, mentre l’app statica locale rimane raggiungibile anche al reload.
   await tab.send('Network.setBlockedURLs', { urls: [`${fixture.config.apiUrl}/*`] })
-  await clickText(`#${strength} .session-added-actions button`, 'Sposta')
-  await input('dialog select', 'end'); await clickText('dialog button', 'Conferma spostamento')
+  await move(strength, 'End')
   await input(`#${cardio} input[aria-label*="minuti"]`, '3,5')
   await tab.click(`#${cardio} .set-check`)
   await tab.send('Page.reload')
