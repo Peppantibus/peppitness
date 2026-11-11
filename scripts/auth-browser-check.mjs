@@ -58,6 +58,7 @@ try {
   await send('Page.reload')
   // Prima visita senza sessione: landing pubblica, nessun dato e nessuna chiamata alle API dei dati.
   await until('Boolean(document.querySelector("#landing-title"))')
+  assert.equal(await evaluate('location.href'), `${baseUrl}/`, 'La landing è la home senza frammento')
   assert.equal(await evaluate('Boolean(document.querySelector("#login-email") || document.querySelector(".meal-card"))'), false, 'Landing prima del login')
   assert.equal(mock.requests.filter(path => path.includes('/rest/v1/')).length, 0, 'Landing senza richieste ai dati')
   assert.equal(await evaluate('document.title'), 'peppitness · Un giorno alla volta')
@@ -82,8 +83,25 @@ try {
   await until('Boolean(document.querySelector("#landing-title"))')
   await click('.landing-bar-signin')
   await until('Boolean(document.querySelector("#login-email"))')
-  await click('a[href="#/benvenuto"]')
-  await until('Boolean(document.querySelector("#landing-title")) && location.hash === "#/benvenuto"')
+  await click('.auth-links a[href="/"]')
+  await until('Boolean(document.querySelector("#landing-title")) && location.hash === ""')
+  // I link pubblici precedenti convergono sulla home senza aggiungere voci alla cronologia.
+  for (const alias of ['/benvenuto', '/']) {
+    const historyLength = await evaluate('history.length')
+    await route(alias)
+    await until('Boolean(document.querySelector("#landing-title")) && location.hash === ""')
+    assert.equal(await evaluate('history.length'), historyLength + 1, 'Alias sostituito, nessuna navigazione aggiuntiva')
+  }
+  // Anche un dispositivo già usato vede la presentazione quando apre la home senza sessione.
+  await evaluate('localStorage.setItem("peppitness:returning-device", "1")')
+  await send('Page.reload')
+  await until('Boolean(document.querySelector("#landing-title")) && location.hash === ""')
+  assert.equal(mock.requests.filter(path => path.includes('/rest/v1/')).length, 0, 'Home pubblica senza richieste ai dati anche dopo reload')
+  await route('/scheda')
+  await until('Boolean(document.querySelector("#login-email")) && location.hash === "#/scheda"')
+  assert.equal(mock.requests.filter(path => path.includes('/rest/v1/')).length, 0, 'Un link privato richiede il login senza caricare dati')
+  await click('.auth-links a[href="/"]')
+  await until('Boolean(document.querySelector("#landing-title")) && location.hash === ""')
   await click('.landing-cta a')
   await until('Boolean(document.querySelector("#login-email"))')
   assert.equal(await evaluate('Boolean(document.querySelector(".meal-card"))'), false)
@@ -100,7 +118,10 @@ try {
   await login('a')
   await until('document.querySelectorAll(".meal-card").length === 4')
   assert.equal(await evaluate('location.hash'), '#/dieta', 'Dopo l’accesso la rotta pubblica lascia il posto alla Dieta')
-  assert.equal(await evaluate('localStorage.getItem("peppitness:returning-device")'), '1')
+  await route('/benvenuto')
+  await until('location.hash === "#/dieta" && document.querySelectorAll(".meal-card").length === 4')
+  await send('Page.navigate', { url: baseUrl })
+  await until('location.hash === "#/dieta" && document.querySelectorAll(".meal-card").length === 4')
   await send('Page.reload')
   await until('document.querySelectorAll(".meal-card").length === 4')
   assert.equal(mock.requests.filter(path => path === 'POST /auth/v1/token').length, 2, 'Reload riusa la sessione')
@@ -157,7 +178,7 @@ try {
   assert.equal(await evaluate('Boolean(document.querySelector(".meal-card"))'), false)
   assert.deepEqual(runtimeErrors, [])
   assert.deepEqual(mock.failures, [])
-  const report = { status: 'passed', mode: 'Auth HTTP simulato, nessuna richiesta al cloud', checks: ['landing prima visita (temi, larghezze, nessuna API dati)', 'landing ↔ accesso con indietro', 'login mobile', 'errore password', 'login A', 'sessione dopo reload', 'rinnovo SDK', 'annullamento logout con registrazione non sincronizzata', 'invio dopo ritorno della connessione', 'errore logout', 'logout e rimozione sessione', 'account B senza residui di A', 'copia locale del diario rimossa all’uscita', 'logout da altra scheda'], date: new Date().toISOString() }
+  const report = { status: 'passed', mode: 'Auth HTTP simulato, nessuna richiesta al cloud', checks: ['landing home senza hash (temi, larghezze, nessuna API dati)', 'alias pubblici reindirizzati alla home', 'home su dispositivo già usato', 'link privato richiede login', 'landing ↔ accesso con indietro', 'login mobile', 'errore password', 'login A', 'home e vecchio link con sessione attiva aprono Dieta', 'sessione dopo reload', 'rinnovo SDK', 'annullamento logout con registrazione non sincronizzata', 'invio dopo ritorno della connessione', 'errore logout', 'logout e rimozione sessione', 'account B senza residui di A', 'copia locale del diario rimossa all’uscita', 'logout da altra scheda'], date: new Date().toISOString() }
   await writeFile('artifacts/auth-browser-report.json', JSON.stringify(report, null, 2))
   console.log(JSON.stringify(report, null, 2))
 } finally {

@@ -4,7 +4,7 @@ import { BrandLogo } from '../components/BrandLogo'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { getSupabaseClient } from './client'
 import { authErrorMessage } from './errors'
-import { Landing, landingHash, signInHash } from './Landing'
+import { Landing, landingUrl, legacyLandingHash, signInHash } from './Landing'
 import { ForgotPassword, PasswordRecovery } from './PasswordRecovery'
 import { captureRecovery, recoveryActive, recoveryRevision } from './recovery-client'
 import { forgotHash } from './recovery-url'
@@ -27,12 +27,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={{ state, client, logoutUnconfirmed, reportLogoutFailure: () => setLogoutUnconfirmed(true) }}>{children}</AuthContext.Provider>
 }
 
-/** Dispositivo già usato per accedere: niente presentazione, si va dritti al modulo. Nessun dato dell'account. */
-const returningKey = 'peppitness:returning-device'
-function knownDevice() { try { return localStorage.getItem(returningKey) === '1' } catch { return false } }
-function rememberDevice() { try { localStorage.setItem(returningKey, '1') } catch { /* archivio non disponibile */ } }
-/** PWA aperta dalla schermata Home: chi l'ha installata vuole accedere, non leggere la presentazione. */
-function installedApp() { return window.matchMedia?.('(display-mode: standalone)').matches || (navigator as Navigator & { standalone?: boolean }).standalone === true }
 function subscribeHash(callback: () => void) { const handler = () => { captureRecovery(); callback() }; window.addEventListener('hashchange', handler); return () => window.removeEventListener('hashchange', handler) }
 const currentHash = () => `${window.location.hash}|${recoveryActive()}|${recoveryRevision()}`
 
@@ -43,14 +37,18 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const recovering = recoveryActive()
   const forgot = hash === forgotHash
   const signedIn = state.status === 'signed-in'
+  const home = !hash || hash === '#/' || hash === legacyLandingHash
   // Dopo l'accesso le rotte pubbliche non esistono nell'app: si apre la Dieta.
   useEffect(() => {
     if (!signedIn || recovering || forgot) return
-    rememberDevice()
-    if (hash === signInHash || hash === landingHash) window.location.replace('#/dieta')
-  }, [signedIn, hash, recovering, forgot])
-  const showLanding = state.status === 'signed-out' && Boolean(client) && hash !== signInHash
-    && !forgot && !recovering && (hash === landingHash || !(logoutUnconfirmed || knownDevice() || installedApp()))
+    if (home || hash === signInHash) window.location.replace('#/dieta')
+  }, [signedIn, hash, home, recovering, forgot])
+  useEffect(() => {
+    if (state.status !== 'signed-out' || !home || !hash || recovering) return
+    window.history.replaceState(null, '', `${window.location.pathname}${window.location.search}`)
+    window.dispatchEvent(new HashChangeEvent('hashchange'))
+  }, [state.status, home, hash, recovering])
+  const showLanding = state.status === 'signed-out' && Boolean(client) && home && !recovering
   useEffect(() => {
     if (state.status === 'signed-out') document.title = showLanding ? 'peppitness · Un giorno alla volta' : 'Accedi · peppitness'
   }, [state.status, showLanding])
@@ -93,7 +91,7 @@ function SignIn({ client }: { client: SupabaseClient }) {
     </form>
     <nav className="auth-links" aria-label="Aiuto per l’accesso">
       <a href={forgotHash}>Password dimenticata?</a>
-      <a href={landingHash}>Cos’è peppitness?</a>
+      <a href={landingUrl}>Cos’è peppitness?</a>
     </nav>
   </>
 }

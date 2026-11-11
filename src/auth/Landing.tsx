@@ -6,8 +6,9 @@ import lunch from '../assets/meals/lunch.svg'
 import legs from '../assets/muscle-groups/legs.webp'
 import './landing.css'
 
-/** Hash delle due viste pubbliche: la landing e il modulo di accesso. */
-export const landingHash = '#/benvenuto'
+/** La presentazione è la home; il vecchio hash resta compatibile con i link condivisi. */
+export const landingUrl = '/'
+export const legacyLandingHash = '#/benvenuto'
 export const signInHash = '#/accedi'
 
 const features: { icon: IconName; title: string; text: string }[] = [
