@@ -1,6 +1,8 @@
 // Modello HTTP sintetico di diario, piani seguiti e piani alimentari per i test frontend.
 // Riproduce revisioni, unicità e proprietario come il database, non verifica RLS/transazioni reali.
 const keys = {
+  workout_cycle_recaps: ['owner_id', 'recap_key'],
+  workout_cycle_interruptions: ['owner_id', 'plan_id', 'cycle_start', 'cycle_weeks'],
   workout_day_swaps: ['id'],
   workout_changes: ['id'],
   active_plans: ['owner_id'],
@@ -20,7 +22,7 @@ const insertable = {
 const updatable = {
   active_plans: ['workout_plan_id', 'meal_plan_id', 'revision'],
   meal_plans: ['name', 'document', 'archived_at', 'revision'],
-  workout_sessions: ['status', 'note', 'revision'],
+  workout_sessions: ['status', 'note', 'different_machines', 'is_trial', 'revision'],
   workout_set_logs: ['load', 'amount', 'completed', 'exercise_id', 'change_id', 'revision'],
   meal_logs: ['status', 'note', 'revision'],
   diary_days: ['day_type', 'revision'],
@@ -48,6 +50,8 @@ export function diaryFixture(request, url, state) {
   state.diary ??= { active_plans: [], meal_plans: [], workout_sessions: [], workout_set_logs: [], meal_logs: [], diary_days: [] }
   state.diary.workout_day_swaps ??= []
   state.diary.workout_changes ??= []
+  state.diary.workout_cycle_recaps ??= []
+  state.diary.workout_cycle_interruptions ??= []
   state.diaryWrites ??= []
   const owner = ownerOf(request)
   const table = url.pathname.split('/').at(-1)

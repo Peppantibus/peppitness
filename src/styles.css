@@ -865,6 +865,10 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .exercise-menu-content .text-button:hover { background: var(--color-sage); }
 .exercise-menu-content .replacement-actions > .text-button { margin: 0; }
 .exercise-menu-content .replacement-actions > .small { order: 0; flex: 0 0 auto; padding: var(--space-1) var(--space-3); margin: 0; }
+.session-checkbox { display: flex; align-items: center; gap: var(--space-3); min-height: var(--touch); cursor: pointer; }
+.exercise-machine-option { padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); font-size: var(--text-sm); }
+.exercise-machine-option:hover { background: var(--color-sage); }
+.session-machine-label { display: block; color: var(--color-text-muted); margin-top: var(--space-1); }
 .exercise-menu-content .detail-dialog { font-size: var(--text-base); }
 .session-note { display: grid; gap: var(--space-2); margin-top: var(--space-4); }
 .session-note h2, .session-note label { font-size: var(--text-md); font-weight: var(--weight-bold); }

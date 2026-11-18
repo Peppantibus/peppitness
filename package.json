@@ -31,6 +31,7 @@
     "test:diary:browser": "node scripts/diary-browser-check.mjs",
     "test:workout-changes:local": "node --experimental-strip-types scripts/workout-changes-local-check.mjs",
     "test:workout-changes:browser": "node --experimental-strip-types scripts/workout-changes-browser-check.mjs",
+    "test:workout-history:local": "node --experimental-strip-types scripts/workout-history-local-check.mjs",
     "test:free-workouts:local": "node --experimental-strip-types scripts/free-workouts-local-check.mjs",
     "test:free-workouts:browser": "node --experimental-strip-types scripts/free-workouts-browser-check.mjs",
     "test:day-swaps:local": "node --experimental-strip-types scripts/day-swaps-local-check.mjs",

@@ -12,10 +12,14 @@ const duration = (minutes: number) => minutes < 60 ? `${minutes} min` : `${Math.
 export function SessionSummaryDialog({ session, sessions, onClose }: { session: WorkoutSession; sessions: WorkoutSession[]; onClose: () => void }) {
   const summary = sessionSummary(session, sessions)
   const { previous } = summary
-  const change = previous && previous.volume > 0 && summary.volume > 0 ? Math.round((summary.volume - previous.volume) / previous.volume * 100) : null
+  const current = summary.comparisonCurrent ?? summary
+  const change = previous && previous.volume > 0 && current.volume > 0 ? Math.round((current.volume - previous.volume) / previous.volume * 100) : null
   const when = previous ? formatDate(previous.date, { day: 'numeric', month: 'long' }) : ''
-  const compare = session.kind === 'free' ? 'Allenamento extra registrato. Le sedute del programma restano invariate.' : !previous ? 'Prima volta per questa seduta: dalla prossima vedrai il confronto.'
-    : change === null ? `${summary.sets} serie completate, la volta scorsa (${when}) ${previous.sets}.`
+  const compare = session.trial ? 'Seduta di prova registrata nello storico.'
+    : session.kind === 'free' ? 'Allenamento extra registrato. Le sedute del programma restano invariate.'
+    : !previous ? summary.comparisonCurrent ? 'Il confronto con una seduta precedente apparirà quando ci saranno serie confrontabili.'
+      : 'Prima volta per questa seduta: dalla prossima vedrai il confronto.'
+    : change === null ? `${current.sets} serie completate, la volta scorsa (${when}) ${previous.sets}.`
       : change === 0 ? `Stesso volume della volta scorsa (${when}).`
         : `Volume ${change > 0 ? '+' : ''}${change}% rispetto alla volta scorsa (${when}).`
   const records = summary.records.length

@@ -1,4 +1,5 @@
 import { useState, useSyncExternalStore } from 'react'
+import type { HistoryTab } from '../domain/workout-history'
 
 export type Section = 'dieta' | 'scheda'
 
@@ -19,20 +20,27 @@ export function useRoute() {
   if (routeSection && routeSection !== lastSection) setLastSection(routeSection)
   const section = routeSection ?? lastSection
   const param = (prefix: string) => route.startsWith(prefix) ? route.split('/')[3] : undefined
+  const archived = /^\/scheda\/riepilogo\/archivio\/([a-zA-Z0-9_.-]+)(?:\/(passati))?$/.exec(route)
+  const workoutHistory = /^\/scheda\/storico(?:\/(passati|liberi))?(?:\/([^/]+))?$/.exec(route)
+  const historyTab: HistoryTab = workoutHistory?.[1] === 'passati' ? 'passati' : workoutHistory?.[1] === 'liberi' ? 'liberi' : 'attuale'
   return {
     route, section, lastSection,
     isCatalog: route === '/scheda/catalogo',
     isPrograms: programRoutes.includes(route),
     isMealPlans: route === '/dieta/piani' || route === '/dieta/piani/nuovo',
     isProgress: route === '/scheda/progressi',
+    isCycleReport: route === '/scheda/riepilogo' || route === '/scheda/riepilogo/storie' || Boolean(archived),
+    archivedCycleKey: archived?.[1],
+    archivedCycleTab: archived?.[2] === 'passati' ? 'passati' as const : 'attuale' as const,
     isImport: route === '/scheda/importa' || route === '/dieta/importa',
     importKind: route === '/dieta/importa' ? 'diet' as const : 'workout' as const,
-    isHistory: route === `/${section}/storico`,
+    isHistory: route === '/dieta/storico' || Boolean(workoutHistory && !workoutHistory[2]),
+    historyTab,
     isSettings: route === '/impostazioni',
     isSession: route === '/scheda/seduta',
     isMorning: route === '/scheda/mattino' || route === '/scheda/mattino/modifica',
     isMorningEditor: route === '/scheda/mattino/modifica',
-    historySessionId: param('/scheda/storico/'),
+    historySessionId: workoutHistory?.[2],
     mealId: param('/dieta/pasto/'),
     exerciseId: param('/scheda/esercizio/'),
   }

@@ -1,0 +1,64 @@
+.workout-history-tabs { margin-bottom: var(--space-4); }
+.workout-history-tabs button { flex: 1 0 0; justify-content: center; }
+.workout-history-cycles, .workout-history-groups { display: grid; gap: var(--space-2); }
+.workout-history-current, .workout-history-cycle > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  flex-wrap: wrap;
+}
+.workout-history-current {
+  margin-bottom: var(--space-3);
+  padding: var(--space-4);
+}
+.workout-history-current > span:first-child, .workout-history-cycle summary > span:first-child { flex: 1 1 10rem; min-width: 0; }
+.workout-history-current strong, .workout-history-cycle strong { overflow-wrap: anywhere; }
+.workout-history-current small, .workout-history-cycle small, .workout-history-group small, .workout-history-session-list small {
+  display: block;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.workout-history-status {
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+}
+.workout-history-cycle { padding: 0; }
+.workout-history-cycle > summary, .workout-history-group > summary {
+  list-style: none;
+  cursor: pointer;
+  min-height: var(--touch);
+  padding: var(--space-3) var(--space-4);
+}
+.workout-history-cycle summary::-webkit-details-marker, .workout-history-group summary::-webkit-details-marker { display: none; }
+:is(.workout-history-cycle, .workout-history-group)[open] > summary > .icon { rotate: 180deg; }
+.workout-history-wrapped { margin-bottom: var(--space-3); }
+.workout-history-cycle > .workout-history-wrapped { margin-inline: var(--space-3); }
+.workout-history-cycle > .workout-history-groups, .workout-history-earlier > .workout-history-groups {
+  margin: 0 var(--space-3) var(--space-3);
+}
+.workout-history-group {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+.workout-history-group > summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.workout-history-group > summary > small { margin-inline-start: auto; text-align: right; }
+.workout-history-group > summary > strong { overflow-wrap: anywhere; }
+.workout-history-session-list { list-style: none; margin: 0; padding: 0 var(--space-4); }
+.workout-history-session-list li { border-top: 1px solid var(--color-border); }
+.workout-history-session-list a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: var(--touch);
+  padding-block: var(--space-3);
+  color: var(--color-text);
+}
+.workout-history-session-list a:hover strong { color: var(--color-primary); }
+.workout-history-empty { padding: var(--space-4); color: var(--color-text-muted); }

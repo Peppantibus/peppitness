@@ -27,7 +27,7 @@ export function useWorkoutToday({ configured, workout, programs, catalogRows, se
 }) {
   const [dayId, setDayId] = useState<string | null>(null)
   const [dayChoice, setDayChoice] = useState<{ date: string; id: string } | null>(null)
-  const baseDays = useMemo(() => configured ? workout ? workoutDaysFromProgram(withCatalogMuscleGroups(workout.document, catalogRows)) : [] : demoWorkoutDays, [configured, workout, catalogRows])
+  const baseDays = useMemo(() => workout ? workoutDaysFromProgram(withCatalogMuscleGroups(workout.document, catalogRows)) : configured ? [] : demoWorkoutDays, [configured, workout, catalogRows])
   const workoutDays = baseDays.map(day => datedDay(day, date, workout?.version.id ?? 'local', changes))
   const weekly = isWeekly(workoutDays)
   const planned = weekly ? scheduledDay(workoutDays, date, workout?.version.id ?? 'local', swaps, workout?.plan.cycle) : undefined
@@ -54,7 +54,7 @@ export function useWorkoutToday({ configured, workout, programs, catalogRows, se
     resetDay: () => { setDayId(null); setDayChoice(null) },
     followable: programs.filter(item => item.plan.activeVersionId && !item.plan.archivedAt),
     activeSession: sessions.find(session => !session.completedAt),
-    cycleFinished: cycleNow?.status === 'finished', cycleScore, cycleSummary, programSessions,
+    cycleFinished: cycle !== null && cycleInfo(cycle, today).status === 'finished', cycleSummary, programSessions,
     // Giorni con una seduta prevista nella settimana mostrata (solo programmi settimanali).
     trainingDates: weekly && workout ? shownWeek.filter(value => scheduledDay(baseDays, value, workout.version.id, swaps, workout.plan.cycle)) : [],
     // Giorni della settimana mostrata con una seduta completata.

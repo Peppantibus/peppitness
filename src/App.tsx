@@ -18,15 +18,20 @@ import { Toast } from './components/Toast'
 import type { ToastMessage } from './components/Toast'
 import { formatDate, localDate } from './domain/dates'
 import { mealLogKey } from './domain/diary'
+import { cycleRecapKey } from './domain/cycle-recap'
 import { fitsMealWizard } from './domain/meal-plans'
 import { morningRoutineDefaultTitle } from './domain/morning-routine'
+import { cycleInfo } from './domain/progress'
 import { fitsWizard } from './domain/weekly'
 import { filledUnchecked, findPreviousExercise } from './domain/workout'
+import { historyRoute } from './domain/workout-history'
 import type { Meal, SetResult, WorkoutSession } from './domain/types'
 import type { ImportReceipt } from './import/contracts/index.ts'
 import { MealDetail } from './features/Diet'
 import { History } from './features/History'
 import { Progress } from './features/Progress'
+import { CycleReport } from './features/CycleReport'
+import './features/cycle-report.css'
 import { SessionSummaryDialog } from './features/SessionSummary'
 import { Settings } from './features/Settings'
 import { ExerciseDetail, SessionView } from './features/Workout'
@@ -48,12 +53,12 @@ const MealPlans = lazy(() => import('./features/MealPlans').then(module => ({ de
 const ImportPlan = lazy(() => import('./features/import/ImportPlan').then(module => ({ default: module.ImportPlan })))
 
 const pageTitles: [keyof ReturnType<typeof useRoute>, string][] = [
-  ['isSettings', 'Impostazioni'], ['isPrograms', 'I tuoi programmi'], ['isProgress', 'I tuoi progressi'], ['isCatalog', 'I tuoi esercizi'], ['isMealPlans', 'I tuoi piani alimentari'],
+  ['isSettings', 'Impostazioni'], ['isPrograms', 'I tuoi programmi'], ['isProgress', 'I tuoi progressi'], ['isCycleReport', 'Il tuo riepilogo'], ['isCatalog', 'I tuoi esercizi'], ['isMealPlans', 'I tuoi piani alimentari'],
 ]
 
 export function App() {
   const page = useRoute()
-  const { route, section, isCatalog, isPrograms, isMealPlans, isProgress, isImport, importKind, isHistory, isSettings, isSession, isMorning, isMorningEditor } = page
+  const { route, section, isCatalog, isPrograms, isMealPlans, isProgress, isCycleReport, isImport, importKind, isHistory, isSettings, isSession, isMorning, isMorningEditor } = page
   const settings = useSettings()
   // Il catalogo serve anche alla revisione della scheda importata (scelte esistente/comune/nuovo).
   const catalog = useExercises(route.startsWith('/scheda'))
@@ -85,6 +90,8 @@ export function App() {
   const date = selectedDate ?? today
   const setDate = (value: string) => selectDate(value === today ? null : value)
   const workout = plans.state.workout
+  const recapKey = page.archivedCycleKey ?? (workout?.plan.cycle && cycleRecapKey(workout.plan.id, workout.plan.cycle))
+  const savedRecap = recapKey ? view.cycleRecaps?.[recapKey] : undefined
   const editors = useEditors({ route, programs, plans, workout, today })
   const [online, setOnline] = useState(navigator.onLine)
   const [announcement, setAnnouncement] = useState('')
@@ -99,6 +106,9 @@ export function App() {
   }, [catalog.state.phase, catalog.state.rows, plans.store, plans.state.workout, plans.state.cached])
 
   const schedule = useWorkoutToday({ configured, workout, programs: plans.state.programs, catalogRows: catalog.state.rows, sessions: view.sessions, date, today, changes: view.changes, swaps: view.swaps })
+  useEffect(() => {
+    if (configured && isHistory && section === 'scheda') void diary.store.refresh()
+  }, [configured, diary.store, isHistory, section, workout?.plan.id])
   const menu = useDietToday({ configured, mealPlans: plans.state.mealPlans, mealPlanId: plans.state.selection?.mealPlanId, view, date, programDayType: schedule.programDayType })
   const { activeSession } = schedule
 
@@ -106,10 +116,10 @@ export function App() {
   const historySession = page.historySessionId ? view.sessions.find(session => session.id === page.historySessionId && session.completedAt) : undefined
   const meal = page.mealId ? menu.meals.find(item => item.id === page.mealId) ?? view.mealLogs[mealLogKey(date, page.mealId)]?.snapshot : undefined
   const exercise = page.exerciseId ? schedule.workoutDays.flatMap(item => item.exercises).find(item => item.id === page.exerciseId) : undefined
-  const validRoute = route === '/dieta' || route === '/scheda' || isHistory || isSettings || isSession || isCatalog || isPrograms || isMealPlans || isProgress || isImport || isMorning || Boolean(meal || exercise || historySession)
+  const validRoute = route === '/dieta' || route === '/scheda' || isHistory || isSettings || isSession || isCatalog || isPrograms || isMealPlans || isProgress || isCycleReport || isImport || isMorning || Boolean(meal || exercise || historySession)
   const inDetail = Boolean(meal || exercise)
   // Pagine secondarie: intestazione propria (← e titolo); su mobile la barra superiore si nasconde.
-  const subpage = isHistory || isProgress || isSettings || isCatalog || isPrograms || isMealPlans || isImport || isMorning
+  const subpage = isHistory || isProgress || isCycleReport || isSettings || isCatalog || isPrograms || isMealPlans || isImport || isMorning
   const showDaily = validRoute && !subpage && !isSession && !historySession
   const programDocument = programs.state.document, mealDraft = plans.state.editor.draft
   const programWizard = isPrograms && Boolean(programDocument) && editors.programMode === 'wizard'
@@ -158,13 +168,21 @@ export function App() {
   // Seduta rimasta aperta: stessa chiusura di «Termina», con le serie compilate segnate solo su richiesta.
   const finishSession = (session: WorkoutSession, markFilled: boolean) => {
     if (markFilled) filledUnchecked(session).forEach(item => diary.store.updateSet(session.id, item.exerciseId, item.index, { ...item.result, completed: true }))
-    diary.store.completeSession(session.id); navigate('/scheda/storico'); setSummarySessionId(session.id); setAnnouncement('Allenamento completato.')
+    const cycle = workout?.plan.cycle
+    const matchesCycle = session.cycle
+      ? Boolean(cycle && session.cycle.start === cycle.start && session.cycle.weeks === cycle.weeks)
+      : !cycle || (!session.cycleRecorded && cycleInfo(cycle, session.date).status === 'active')
+    const current = session.planId === (workout?.plan.id ?? 'local') && matchesCycle
+    diary.store.completeSession(session.id)
+    navigate(historyRoute(session.kind === 'free' ? 'liberi' : current ? 'attuale' : 'passati'))
+    setSummarySessionId(session.id)
+    setAnnouncement('Allenamento completato.')
   }
   const start = () => {
     if (activeSession) { navigate('/scheda/seduta'); return }
     const day = schedule.day
     if (!day || (configured && (!workout || diary.state.phase !== 'ready'))) return
-    if (diary.store.startSession({ date, day, planId: workout?.plan.id ?? 'local', versionId: workout?.version.id ?? 'local', timeZone, expectedSchedule: schedule.expectedSchedule })) navigate('/scheda/seduta')
+    if (diary.store.startSession({ date, day, planId: workout?.plan.id ?? 'local', versionId: workout?.version.id ?? 'local', timeZone, cycle: workout?.plan.cycle, expectedSchedule: schedule.expectedSchedule })) navigate('/scheda/seduta')
   }
   const startFree = () => {
     if (activeSession) { navigate('/scheda/seduta'); return }
@@ -209,18 +227,23 @@ export function App() {
         ? <DietToday configured={configured} plans={plans} diary={diary} menu={menu} date={date} today={today} onQuickFollow={quickFollow} />
         : <WorkoutToday configured={configured} plans={plans} diary={diary} schedule={schedule} date={date} today={today} workoutWeekdays={settings.state.saved?.workoutWeekdays} onStart={start} onStartFree={startFree} onDiscard={setDiscardingSessionId} timeZone={timeZone} />}
     </>}
-    {isHistory && <History section={section} state={view} onDate={setDate} />}
+    {isHistory && <History section={section} state={view} onDate={setDate} programs={plans.state.programs}
+      current={workout?.plan ?? null} today={today} tab={page.historyTab} />}
     {section === 'scheda' && (showDaily || isMorning) && <MorningRoutineStatus store={morning.store} state={morning.state} />}
     {isMorning && <Suspense fallback={<p role="status">Apertura della routine…</p>}><MorningRoutinePage store={morning.store} state={morning.state} editing={isMorningEditor} date={date} today={today} onDate={setDate} onDirty={setMorningDirty} /></Suspense>}
     {isCatalog && <Suspense fallback={<p role="status">Apertura del catalogo…</p>}><ExerciseCatalog store={catalog.store} state={catalog.state} /></Suspense>}
     {isPrograms && <Suspense fallback={<p role="status">Apertura dei programmi…</p>}><Programs store={programs.store} state={programs.state} catalog={catalog} mode={editors.programMode} setMode={editors.setProgramMode} step={editors.programStep} setStep={editors.setProgramStep}
       followedPlanId={plans.state.selection?.workoutPlanId ?? null} followedDays={workout?.document.days ?? null} onFollow={followProgram} onDeleted={async () => { await plans.store?.load() }} deletionBlocked={deletionBlocked} today={today} /></Suspense>}
     {isProgress && <Progress workout={workout} days={schedule.baseDays} sessions={schedule.programSessions} today={today} swaps={view.swaps ?? []} />}
+    {isCycleReport && <CycleReport workout={workout} days={schedule.baseDays} sessions={view.sessions} today={today}
+      savedRecap={savedRecap} archiveBack={page.archivedCycleKey ? `#${historyRoute(page.archivedCycleTab)}` : undefined} onArchive={diary.store.archiveCycle}
+      loading={diary.state.phase === 'loading' || (!page.archivedCycleKey && plans.state.phase === 'loading')} />}
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={editors.mealMode} setMode={editors.setMealMode} step={editors.mealStep} setStep={editors.setMealStep} deletionBlocked={deletionBlocked} /></Suspense>}
     {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} engine={importReview.engine} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}
     {isSettings && <Settings backSection={page.lastSection} weeklyProgram={schedule.weekly && Boolean(workout)} hasUnsavedData={hasUnsavedData} catalogBusy={editorsBusy}
       onSignedOut={() => { diary.store.clearDevice(); morning.store.clearDevice(); plans.store?.clearDevice(); catalog.store?.clearDevice(); forgetSessionOrder(); void importReview.clearDevice() }} {...settings} />}
-    {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} onNote={updateNote(activeSession.id)} syncSlot={syncIndicator}
+    {isSession && (activeSession ? <SessionView key={activeSession.id} session={activeSession} sessions={view.sessions} onChange={updateResult(activeSession.id)} onNote={updateNote(activeSession.id)}
+      onDifferentMachine={(id, checked) => diary.store.setDifferentMachine(activeSession.id, id, checked)} onTrial={checked => diary.store.setTrial(activeSession.id, checked)} syncSlot={syncIndicator}
       editing={{ store: diary.store, catalog, context: diary.state.workoutContext?.[activeSession.id] }}
       exerciseActions={exercise => <WorkoutReplacement exercise={exercise} session={activeSession} sessions={view.sessions} days={schedule.baseDays} changes={view.changes ?? []} swaps={view.swaps ?? []} catalog={catalog} store={diary.store} today={today}
         enabled={schedule.weekly && workout?.version.id === activeSession.versionId} announce={setAnnouncement}
@@ -233,9 +256,10 @@ export function App() {
           } })
         }} />}
       onDiscard={() => { diary.store.discardSession(activeSession.id); navigate('/scheda'); setAnnouncement('Seduta eliminata.') }}
-      onComplete={() => { diary.store.completeSession(activeSession.id); navigate('/scheda/storico'); setSummarySessionId(activeSession.id); setAnnouncement('Allenamento completato.') }} />
+      onComplete={() => finishSession(activeSession, false)} />
       : <section className="panel empty-state"><h1>Nessun allenamento in corso</h1><p>Seleziona una seduta dalla scheda per iniziare.</p><a href="#/scheda" className="button primary">Vai alla scheda</a></section>)}
-    {historySession && <SessionView key={historySession.id} session={historySession} sessions={view.sessions} onChange={updateResult(historySession.id)} onComplete={() => undefined} onEndCorrection={() => diary.store.discardIncomplete(historySession.id)} onNote={updateNote(historySession.id)} syncSlot={syncIndicator} />}
+    {historySession && <SessionView key={historySession.id} session={historySession} sessions={view.sessions} historyBack={`#${historyRoute(page.historyTab)}`} onChange={updateResult(historySession.id)} onComplete={() => undefined} onEndCorrection={() => diary.store.discardIncomplete(historySession.id)} onNote={updateNote(historySession.id)}
+      onDifferentMachine={(id, checked) => diary.store.setDifferentMachine(historySession.id, id, checked)} onTrial={checked => diary.store.setTrial(historySession.id, checked)} syncSlot={syncIndicator} />}
     {!validRoute && <section className="panel empty-state"><h1>Questa pagina non è disponibile</h1><a className="button primary" href={`#/${section}`}>Torna al tuo spazio</a></section>}
     {meal && <Modal label={`${meal.name}, ${formatDate(date)}`} onClose={() => navigate('/dieta')}>
       <MealDetail key={`${date}:${meal.id}`} meal={mealLog?.snapshot ?? meal} log={mealLog} onClose={() => navigate('/dieta')}

@@ -16,6 +16,7 @@ PWA mobile-first per seguire una scheda di allenamento e un piano alimentare gio
 - **Allenamento**: programmi a cicli settimanali, serie e carichi registrati durante la seduta, timer di recupero con avviso, record personali e riepilogo a fine allenamento.
 - **Alimentazione**: piano con periodo di validità, calorie stimate dagli alimenti e diario dei pasti.
 - **Progressi**: costanza settimanale e andamento di ogni esercizio.
+- **Fine programma.** Il Wrapped racconta gli esercizi del ciclo, la costanza, le pause e i record. È stampabile in PDF e si ritrova nello Storico, diviso in Attuale, Passati e Liberi.
 - **Importazione**: scheda e dieta da due modelli Word strutturati, letti sul dispositivo e confermati con un'anteprima modificabile.
 - **Offline**: le registrazioni restano sul telefono e si sincronizzano quando torna la rete.
 
@@ -47,3 +48,11 @@ npm run dev        # server di sviluppo
 npm test           # test unitari
 npm run build:pwa  # build di produzione della PWA
 ```
+
+### Come nasce la panoramica del Wrapped
+
+Il riepilogo usa la durata salvata nel programma e le sue sedute concluse. Per ogni gruppo confronta carichi a parità di ripetizioni o ripetizioni allo stesso carico. Dà precedenza a una progressione in cui almeno due settimane superano il valore iniziale, poi alla stabilità, alle variazioni e ai picchi isolati. A parità di esito valuta la presenza di serie a inizio e fine, il numero di fasi coperte, le settimane di conferma, le settimane e le sedute confrontabili e l’intervallo tra i due estremi. In caso di ulteriore parità ordina per nome e identificativo dell’esercizio.
+
+Mostra fino a tre serie registrate. La serie centrale deve cadere vicino a metà ciclo. Cerca il miglior risultato confrontabile nelle ultime tre settimane e, se lì mancano serie utili, usa l’ultima serie confrontabile. Se ha solo un risultato utile per un gruppo, mostra quella serie con la sua settimana. Le sedute di prova e le serie registrate su un macchinario diverso restano nello Storico e nei totali.
+
+Per riprodurre il collaudo con account sintetici, avvia Supabase in locale con le migrazioni applicate ed esegui `npm run test:workout-history:local`. Il test apre Chrome e verifica il percorso dalla Scheda al Wrapped salvato e il cambio di programma nello Storico.

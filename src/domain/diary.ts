@@ -1,3 +1,4 @@
+import type { CycleRecap } from './cycle-recap.ts'
 import { applyDaySwap } from './day-swaps.ts'
 import type { DaySwap, ScheduleExpectation } from './day-swaps.ts'
 import { loadLabels } from './exercises.ts'
@@ -12,6 +13,8 @@ import type { SessionEdit } from './session-exercises.ts'
 
 /** Stato del diario mostrato dalle schermate: sedute, pasti e tipo di giornata. */
 export interface DiaryData {
+  cycleRecaps?: Record<string, CycleRecap>
+  interruptedCycles?: string[]
   swaps?: DaySwap[]
   changes?: ExerciseChange[]
   sessions: WorkoutSession[]
@@ -93,6 +96,7 @@ export function setValues(result: SetResult, mode: ExercisePrescription['mode'])
 
 /** Operazioni del diario: applicate subito alla vista locale e poi inviate in ordine. */
 export type DiaryOp =
+  | { type: 'archive-cycle'; opId: string; recap: CycleRecap }
   | { type: 'swap'; opId: string; swap: DaySwap }
   | { type: 'undo-swap'; opId: string; swap: DaySwap }
   | { type: 'session-edit'; opId: string; sessionId: string; edit: SessionEdit; expectedOrder: string[] }
@@ -103,18 +107,21 @@ export type DiaryOp =
   | { type: 'complete'; opId: string; sessionId: string; at: string }
   | { type: 'discard'; opId: string; sessionId: string }
   | { type: 'note'; opId: string; sessionId: string; note: string }
+  | { type: 'different-machine'; opId: string; sessionId: string; prescriptionId: string; exerciseId: string; checked: boolean }
+  | { type: 'trial'; opId: string; sessionId: string; checked: boolean }
   | { type: 'meal'; opId: string; date: LocalDate; planId: string; meal: Meal; status: MealStatus; note: string; dayType: DayType }
   | { type: 'day'; opId: string; date: LocalDate; dayType: DayType }
 
 /** Chiave della riga server interessata: operazioni con la stessa chiave si uniscono. */
 export function opKey(op: DiaryOp): string {
   switch (op.type) {
+    case 'archive-cycle': return `cycle-recap:${op.recap.key}`
     case 'swap': case 'undo-swap': return `swap:${op.opId}`
     case 'session-edit': return `session-edit:${op.opId}`
     case 'change': return `change:${op.change.id}`
     case 'undo-change': return `change:${op.changeId}`
     // La nota sta sulla riga della seduta: stessa revisione di avvio e completamento.
-    case 'start': case 'complete': case 'discard': case 'note': return `session:${op.type === 'start' ? op.session.id : op.sessionId}`
+    case 'start': case 'complete': case 'discard': case 'note': case 'different-machine': case 'trial': return `session:${op.type === 'start' ? op.session.id : op.sessionId}`
     case 'set': return `set:${op.sessionId}:${op.prescriptionId}:${op.index}`
     case 'meal': return `meal:${op.date}:${op.meal.id}`
     case 'day': return `day:${op.date}`
@@ -123,6 +130,8 @@ export function opKey(op: DiaryOp): string {
 
 export function applyOp(data: DiaryData, op: DiaryOp): DiaryData {
   switch (op.type) {
+    case 'archive-cycle':
+      return data.cycleRecaps?.[op.recap.key] ? data : { ...data, cycleRecaps: { ...data.cycleRecaps, [op.recap.key]: op.recap } }
     case 'swap': return applyDaySwap(data, op.swap)
     case 'undo-swap': return applyDaySwap(data, { ...op.swap, cancelled: true })
     case 'session-edit': return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId ? editSessionExercises(session, op.edit) : session) }
@@ -149,6 +158,16 @@ export function applyOp(data: DiaryData, op: DiaryOp): DiaryData {
       return { ...data, changes: data.changes?.filter(change => change.sessionId !== op.sessionId), sessions: data.sessions.filter(session => session.id !== op.sessionId || Boolean(session.completedAt)) }
     case 'note':
       return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId ? { ...session, note: op.note } : session) }
+    case 'different-machine':
+      return { ...data, sessions: data.sessions.map(session => {
+        if (session.id !== op.sessionId || !session.day.exercises.some(item => item.id === op.prescriptionId && item.exerciseId === op.exerciseId)) return session
+        const differentMachines = { ...session.differentMachines }
+        if (op.checked) differentMachines[op.prescriptionId] = op.exerciseId
+        else delete differentMachines[op.prescriptionId]
+        return { ...session, differentMachines }
+      }) }
+    case 'trial':
+      return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId ? { ...session, trial: op.checked } : session) }
     case 'meal': {
       const key = mealLogKey(op.date, op.meal.id), existing = data.mealLogs[key]
       // Il contesto della prima registrazione non segue modifiche successive del piano o della giornata.

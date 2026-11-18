@@ -1,6 +1,6 @@
 import type { ExercisePrescription, LocalDate, SetResult, WorkoutDay, WorkoutSession } from './types.ts'
 import { parseNonNegativeNumber } from './validation.ts'
-import { comparable } from './workout.ts'
+import { comparable, comparisonAllowed } from './workout.ts'
 import { isTimedCardio } from './muscle-groups.ts'
 
 /**
@@ -61,7 +61,7 @@ export function bestBefore(sessions: WorkoutSession[], exercise: ExercisePrescri
   for (const session of sessions) {
     if (!before(session, ref)) continue
     for (const item of session.day.exercises) {
-      if (!comparable(exercise, item)) continue
+      if (!comparisonAllowed(session, item) || !comparable(exercise, item)) continue
       for (const set of session.results[item.id] ?? []) {
         const score = setScore(set)
         if (score && (!best || beats(score, best))) best = score
@@ -78,7 +78,7 @@ export function bestBefore(sessions: WorkoutSession[], exercise: ExercisePrescri
 export function sessionRecords(session: WorkoutSession, sessions: WorkoutSession[]): Map<string, number> {
   const records = new Map<string, number>()
   for (const exercise of session.day.exercises) {
-    if (!exercise.comparison) continue
+    if (!exercise.comparison || !comparisonAllowed(session, exercise)) continue
     const previous = bestBefore(sessions, exercise, session)
     if (!previous) continue
     const results = session.results[exercise.id] ?? []
@@ -103,7 +103,7 @@ export function personalRecords(days: WorkoutDay[], sessions: WorkoutSession[]):
   return exercises.flatMap(exercise => {
     let record: PersonalRecord | null = null
     for (const session of completed) for (const item of session.day.exercises) {
-      if (!comparable(exercise, item)) continue
+      if (!comparisonAllowed(session, item) || !comparable(exercise, item)) continue
       for (const set of session.results[item.id] ?? []) {
         const score = setScore(set)
         if (score && (!record || beats(score, record.score))) record = { exercise, score, date: session.date }
@@ -122,11 +122,13 @@ export interface SessionSummary {
   volume: number
   records: { exercise: ExercisePrescription; index: number; score: SetScore }[]
   previous: { date: LocalDate; volume: number; sets: number } | null
+  /** Sottoinsieme usato quando le sedute contengono esercizi marcati. */
+  comparisonCurrent?: { volume: number; sets: number }
 }
 
-function volumeOf(session: WorkoutSession): { volume: number; sets: number } {
+function volumeOf(session: WorkoutSession, exercises = session.day.exercises): { volume: number; sets: number } {
   let volume = 0, sets = 0
-  for (const exercise of session.day.exercises) for (const set of session.results[exercise.id] ?? []) {
+  for (const exercise of exercises) for (const set of session.results[exercise.id] ?? []) {
     const score = setScore(set)
     if (!score) continue
     sets++
@@ -147,7 +149,19 @@ export function sessionSummary(session: WorkoutSession, sessions: WorkoutSession
     return index !== undefined && score ? [{ exercise, index, score }] : []
   })
   // Confronto con l'ultima volta della stessa seduta del programma (stesso giorno o etichetta).
-  const last = sessions.filter(other => session.kind !== 'free' && other.kind !== 'free' && before(other, session) && (other.day.id === session.day.id || other.day.label === session.day.label))
+  const last = sessions.filter(other => session.kind !== 'free' && !session.trial && other.kind !== 'free' && !other.trial
+    && before(other, session) && (other.day.id === session.day.id || other.day.label === session.day.label))
     .sort((a, b) => b.date.localeCompare(a.date) || b.startedAt.localeCompare(a.startedAt))[0]
-  return { minutes, sets, requiredSets, volume, records, previous: last ? { date: last.date, ...volumeOf(last) } : null }
+  const totals = { minutes, sets, requiredSets, volume, records }
+  if (!last) return { ...totals, previous: null }
+  const allowedNow = session.day.exercises.filter(item => comparisonAllowed(session, item))
+  const allowedThen = last.day.exercises.filter(item => comparisonAllowed(last, item))
+  if (allowedNow.length === session.day.exercises.length && allowedThen.length === last.day.exercises.length) {
+    return { ...totals, previous: { date: last.date, ...volumeOf(last) } }
+  }
+  const matchedNow = allowedNow.filter(item => allowedThen.some(other => comparable(item, other)))
+  const matchedThen = allowedThen.filter(item => matchedNow.some(other => comparable(item, other)))
+  const current = volumeOf(session, matchedNow)
+  const previous = volumeOf(last, matchedThen)
+  return { ...totals, comparisonCurrent: current, previous: current.sets && previous.sets ? { date: last.date, ...previous } : null }
 }

@@ -4,7 +4,7 @@ import { shiftDate } from './dates.ts'
 import type { ProgramCycle } from './programs.ts'
 import type { ExercisePrescription, LocalDate, WorkoutDay, WorkoutSession } from './types.ts'
 import { parseNonNegativeNumber } from './validation.ts'
-import { comparable } from './workout.ts'
+import { comparable, comparisonAllowed } from './workout.ts'
 import { isWeekly, weekdayIndex, weekdayOfDate } from './weekly.ts'
 
 export const cycleDurations = [4, 6, 8, 10, 12]
@@ -97,7 +97,7 @@ export function exerciseTrends(days: WorkoutDay[], sessions: WorkoutSession[], f
   return exercises.map(exercise => {
     const points: TrendPoint[] = []
     for (const session of completed) {
-      const match = session.day.exercises.find(item => comparable(exercise, item))
+      const match = session.day.exercises.find(item => comparisonAllowed(session, item) && comparable(exercise, item))
       if (!match) continue
       const sets = (session.results[match.id] ?? []).filter(set => set.completed)
       if (!sets.length) continue

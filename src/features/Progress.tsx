@@ -75,6 +75,10 @@ export function Progress({ workout, days, sessions, today, swaps = [] }: { worko
   </li>
   return <>
     {header(workout.plan.name)}
+    {workout.plan.cycle && info.status === 'finished' && <div className="progress-section program-actions">
+      <a className="button secondary" href="#/scheda/riepilogo"><Icon name="star" size={20} />Guarda il riepilogo del programma</a>
+      <a className="text-link" href="#/scheda/programmi/rinnova">Crea dal programma concluso</a>
+    </div>}
     <div className="progress-summary">
     <section className="cycle-card" aria-label="Riepilogo del programma">
       <div><span className="eyebrow">Riepilogo del ciclo</span><h2>{score.percent === null ? '—' : `${score.percent}%`} <small>di costanza</small></h2><p>{score.done} di {score.due} sedute previste finora</p></div>

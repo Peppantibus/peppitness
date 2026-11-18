@@ -78,7 +78,9 @@ export function applyExerciseChange(data: DiaryData, change: ExerciseChange): Di
     // Il replay di una risposta persa conserva le serie già inserite (ordine JSON irrilevante).
     const identical = current.snapshot && Object.entries(raw).every(([key, value]) => current.snapshot![key as keyof SnapshotExercise] === value)
     const exercise = prescription(raw)
-    return { ...session, day: { ...session.day, exercises: session.day.exercises.map(item => item.id === raw.id ? exercise : item) },
+    const differentMachines = { ...session.differentMachines }
+    if (current.exerciseId !== exercise.exerciseId) delete differentMachines[raw.id]
+    return { ...session, ...(session.differentMachines ? { differentMachines } : {}), day: { ...session.day, exercises: session.day.exercises.map(item => item.id === raw.id ? exercise : item) },
       results: identical ? session.results : { ...session.results, [raw.id]: Array.from({ length: totalSets(exercise) }, () => ({ load: '', amount: '', completed: false })) } }
   })
   return { ...data, changes, sessions }

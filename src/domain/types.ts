@@ -1,3 +1,4 @@
+import type { ProgramCycle } from './programs.ts'
 import type { MuscleGroup } from './muscle-groups.ts'
 import type { MealEnergy } from './food-energy.ts'
 import type { SnapshotExercise } from './diary.ts'
@@ -79,6 +80,10 @@ export interface WorkoutSession {
   id: string
   planId?: string
   versionId?: string
+  /** Periodo canonico fotografato all’avvio delle sedute programmate. */
+  cycle?: ProgramCycle
+  /** Distingue una seduta senza ciclo da una seduta precedente alla registrazione del periodo. */
+  cycleRecorded?: boolean
   timeZone?: string
   date: LocalDate
   /** Snapshot della seduta: una nuova versione del programma non lo modifica. */
@@ -86,6 +91,10 @@ export interface WorkoutSession {
   startedAt: string
   completedAt?: string
   results: Record<string, SetResult[]>
+  /** Occorrenza nella seduta → esercizio del catalogo registrato su un altro macchinario. */
+  differentMachines?: Record<string, string>
+  /** La seduta è stata esplicitamente contrassegnata come prova. */
+  trial?: boolean
   /** Nota libera sull'intera seduta (colonna `note` di workout_sessions); assente = vuota. */
   note?: string
 }

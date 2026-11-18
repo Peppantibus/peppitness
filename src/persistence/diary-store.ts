@@ -1,3 +1,5 @@
+import { readCycleRecap } from '../domain/cycle-recap.ts'
+import type { CycleRecap } from '../domain/cycle-recap.ts'
 import { applyDaySwap, newDaySwap, swapAt, swapBlocked } from '../domain/day-swaps.ts'
 import type { DaySwap, ScheduleExpectation } from '../domain/day-swaps.ts'
 import type { ProgramCycle } from '../domain/programs.ts'
@@ -10,7 +12,9 @@ import { countsOf, DiaryFailure, dayFromRow, mealLogFromRow, mergeDiary, serverT
 import type { DiaryTransport, Row } from './diary-repository.ts'
 import { applyExerciseChange, canUndoChange, changeAt, intact } from '../domain/exercise-changes.ts'
 import type { ExerciseChange } from '../domain/exercise-changes.ts'
+import { cycleInfo } from '../domain/progress.ts'
 import { localDate } from '../domain/dates.ts'
+import { differentMachine } from '../domain/workout.ts'
 import { editSessionExercises } from '../domain/session-exercises.ts'
 import type { SessionEdit, WorkoutContext } from '../domain/session-exercises.ts'
 
@@ -68,6 +72,7 @@ export const CURSOR_OVERLAP_MS = 5 * 60 * 1000
 const describe = (op: DiaryOp, data: DiaryData): { label: string; value: string } => {
   const session = 'sessionId' in op ? data.sessions.find(item => item.id === op.sessionId) : op.type === 'start' ? op.session : undefined
   switch (op.type) {
+    case 'archive-cycle': return { label: 'Riepilogo del programma', value: op.recap.title }
     case 'swap': case 'undo-swap': return { label: 'Spostamento allenamento', value: `${op.swap.sourceDate} / ${op.swap.targetDate}` }
     case 'session-edit': return { label: 'Esercizi della seduta', value: op.edit.action === 'add' ? `Aggiungi ${op.edit.exercise.name}` : op.edit.action === 'move' ? 'Sposta esercizio' : 'Rimuovi esercizio' }
     case 'change': return { label: op.change.partner ? 'Scambio esercizi' : 'Sostituzione esercizio', value: `${op.change.before.name} → ${op.change.after.name}` }
@@ -85,6 +90,11 @@ const describe = (op: DiaryOp, data: DiaryData): { label: string; value: string 
     case 'complete': return { label: `Seduta ${session?.day.title ?? ''}`.trim(), value: 'Completata' }
     case 'discard': return { label: `Seduta ${session?.day.title ?? ''}`.trim(), value: 'Annullata' }
     case 'note': return { label: `Nota · seduta ${session?.day.title ?? ''}`.trim(), value: op.note || '(vuota)' }
+    case 'different-machine': {
+      const exercise = session?.day.exercises.find(item => item.id === op.prescriptionId)
+      return { label: `${exercise?.name ?? 'Esercizio'} · macchinario diverso`, value: op.checked ? 'Sì' : 'No' }
+    }
+    case 'trial': return { label: 'Seduta di prova', value: op.checked ? 'Sì' : 'No' }
     case 'meal': return { label: `${op.meal.name} · ${op.date}`, value: `${op.status}${op.note ? ` · ${op.note}` : ''}` }
     case 'day': return { label: `Giornata ${op.date}`, value: op.dayType === 'rest' ? 'Riposo' : 'Palestra' }
   }
@@ -143,6 +153,11 @@ export class DiaryStore {
     this.state = { phase: transport ? 'loading' : 'ready', view: emptyDiary(), restTimer: this.data.restTimer, pending: 0, conflicts: [], sync: 'local', refreshedAt: null, storage: true, message: '' }
     this.state = { ...this.state, ...this.derived() }
     this.hydration = this.hydrate(legacy)
+  }
+
+  archiveCycle = (recap: CycleRecap) => {
+    if (this.cleared || this.view.cycleRecaps?.[recap.key]) return
+    this.enqueue({ type: 'archive-cycle', opId: crypto.randomUUID(), recap })
   }
 
   private empty(): Persisted {
@@ -381,7 +396,7 @@ export class DiaryStore {
     this.enqueue({ type: 'start', opId: crypto.randomUUID(), session, planId: null, versionId: null, timeZone })
     return id
   }
-  startSession = (args: { date: LocalDate; day: WorkoutDay; planId: string; versionId: string; timeZone: string; expectedSchedule?: ScheduleExpectation }) => {
+  startSession = (args: { date: LocalDate; day: WorkoutDay; planId: string; versionId: string; timeZone: string; expectedSchedule?: ScheduleExpectation; cycle?: ProgramCycle | null }) => {
     this.merge(this.readLocal())
     if (this.data.conflicts.some(item => item.op.type === 'swap' || item.op.type === 'undo-swap')) return null
     const expected = args.expectedSchedule
@@ -389,7 +404,8 @@ export class DiaryStore {
       this.emit({ message: 'Il calendario è cambiato. Rileggi la Scheda prima di iniziare.' }); return null
     }
     if (this.view.sessions.some(session => !session.completedAt)) return null
-    const session: WorkoutSession = { id: crypto.randomUUID(), planId: args.planId, versionId: args.versionId, timeZone: args.timeZone, date: args.date, day: structuredClone(args.day), startedAt: new Date().toISOString(), results: emptyResults(args.day) }
+    const cycle = args.cycle && cycleInfo(args.cycle, args.date).status === 'active' ? { ...args.cycle } : undefined
+    const session: WorkoutSession = { id: crypto.randomUUID(), planId: args.planId, cycleRecorded: true, ...(cycle ? { cycle } : {}), versionId: args.versionId, timeZone: args.timeZone, date: args.date, day: structuredClone(args.day), startedAt: new Date().toISOString(), results: emptyResults(args.day) }
     this.enqueue({ type: 'start', opId: crypto.randomUUID(), session, planId: args.planId, versionId: args.versionId, timeZone: args.timeZone, expectedSchedule: args.expectedSchedule })
     return session.id
   }
@@ -484,6 +500,19 @@ export class DiaryStore {
     const session = this.view.sessions.find(item => item.id === sessionId)
     if (!session || (session.note ?? '') === note) return
     this.enqueue({ type: 'note', opId: crypto.randomUUID(), sessionId, note })
+  }
+
+  setDifferentMachine = (sessionId: string, prescriptionId: string, checked: boolean) => {
+    const session = this.view.sessions.find(item => item.id === sessionId)
+    const exercise = session?.day.exercises.find(item => item.id === prescriptionId)
+    if (!session || !exercise || differentMachine(session, exercise) === checked) return
+    this.enqueue({ type: 'different-machine', opId: crypto.randomUUID(), sessionId, prescriptionId, exerciseId: exercise.exerciseId, checked })
+  }
+
+  setTrial = (sessionId: string, checked: boolean) => {
+    const session = this.view.sessions.find(item => item.id === sessionId)
+    if (!session || Boolean(session.trial) === checked) return
+    this.enqueue({ type: 'trial', opId: crypto.randomUUID(), sessionId, checked })
   }
 
   // ------------------------------------------------------------------ conflitti
@@ -636,6 +665,19 @@ export class DiaryStore {
     const key = opKey(op)
     const known = this.data.revisions[key]
     switch (op.type) {
+      case 'archive-cycle': {
+        let row: Row | null
+        try {
+          row = await transport.insert('workout_cycle_recaps', { recap_key: op.recap.key, payload: op.recap }, signal)
+        } catch (error) {
+          if (!(error instanceof DiaryFailure) || error.kind !== 'conflict') throw error
+          row = await transport.fetch('workout_cycle_recaps', { recap_key: op.recap.key }, signal)
+        }
+        const recap = readCycleRecap(row?.payload)
+        if (!recap || recap.key !== op.recap.key) throw new DiaryFailure('unavailable')
+        this.data.server = applyOp(this.data.server, { ...op, recap })
+        return
+      }
       case 'swap': case 'undo-swap': {
         if (!transport.swap) throw new DiaryFailure('unavailable')
         this.data.server = applyDaySwap(this.data.server, await transport.swap(op, signal))
@@ -700,8 +742,7 @@ export class DiaryStore {
       case 'complete': {
         const remote = await this.write('workout_sessions', { id: op.sessionId }, { status: 'completed' }, null, known, signal,
           row => row.status === 'completed', row => row.status === 'completed' ? 'Completata' : 'In corso')
-        this.data.revisions[key] = Number(remote.revision)
-        this.data.server = applyOp(this.data.server, { ...op, at: String(remote.completed_at) })
+        this.adoptRemote('workout_sessions', remote)
         return
       }
       case 'note': {
@@ -709,8 +750,27 @@ export class DiaryStore {
         if (known === undefined) throw new DiaryFailure('unavailable')
         const remote = await this.write('workout_sessions', { id: op.sessionId }, { note: op.note }, null, known, signal,
           row => row.note === op.note, row => typeof row.note === 'string' && row.note ? row.note : '(vuota)')
-        this.data.revisions[key] = Number(remote.revision)
-        this.data.server = applyOp(this.data.server, op)
+        this.adoptRemote('workout_sessions', remote)
+        return
+      }
+      case 'different-machine': case 'trial': {
+        if (known === undefined) throw new DiaryFailure('unavailable')
+        const confirmed = this.data.server.sessions.find(item => item.id === op.sessionId)
+        if (!confirmed) throw new DiaryFailure('unavailable')
+        const assertExercise = (session: WorkoutSession) => {
+          if (op.type === 'different-machine' && !session.day.exercises.some(item => item.id === op.prescriptionId && item.exerciseId === op.exerciseId))
+            throw new RemoteValue('rejected', 'L’esercizio è cambiato o è stato rimosso.')
+        }
+        const checked = (session: WorkoutSession) => {
+          assertExercise(session)
+          return op.type === 'trial' ? Boolean(session.trial) : session.differentMachines?.[op.prescriptionId] === op.exerciseId
+        }
+        assertExercise(confirmed)
+        const updated = applyOp({ ...emptyDiary(), sessions: [confirmed] }, op).sessions[0]!
+        const values = op.type === 'trial' ? { is_trial: op.checked } : { different_machines: updated.differentMachines }
+        const remote = await this.write('workout_sessions', { id: op.sessionId }, values, null, known, signal,
+          row => checked(sessionFromRow(row).session) === op.checked, row => checked(sessionFromRow(row).session) ? 'Sì' : 'No')
+        this.adoptRemote('workout_sessions', remote)
         return
       }
       case 'set': {
@@ -781,7 +841,14 @@ export class DiaryStore {
         const { session, revision } = sessionFromRow(row)
         this.data.revisions[`session:${session.id}`] = revision
         if (session.completedAt) this.data.server = applyOp(this.data.server, { type: 'complete', opId: '', sessionId: session.id, at: session.completedAt })
-        this.data.server = applyOp(this.data.server, { type: 'note', opId: '', sessionId: session.id, note: session.note ?? '' })
+        this.data.server = { ...this.data.server, sessions: this.data.server.sessions.map(existing => {
+          if (existing.id !== session.id) return existing
+          const results = Object.fromEntries(session.day.exercises.map(exercise => [exercise.id,
+            existing.day.exercises.some(item => item.id === exercise.id && item.exerciseId === exercise.exerciseId)
+              ? session.results[exercise.id]!.map((empty, index) => existing.results[exercise.id]?.[index] ?? empty)
+              : session.results[exercise.id]!]))
+          return { ...session, note: session.note ?? '', results }
+        }) }
       }
     } catch { /* riga non interpretabile: resta il conflitto, la prossima lettura completa riallinea */ }
   }

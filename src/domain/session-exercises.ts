@@ -37,7 +37,10 @@ export function editSessionExercises(session: WorkoutSession, edit: SessionEdit)
   if (edit.action === 'remove') {
     if (!edit.confirmed && hasExerciseValues(session, edit.id)) return session
     const results = { ...session.results }; delete results[edit.id]
-    return { ...session, day: { ...session.day, exercises: current.filter(item => item.id !== edit.id) }, results }
+    const differentMachines = { ...session.differentMachines }
+    delete differentMachines[edit.id]
+    return { ...session, day: { ...session.day, exercises: current.filter(item => item.id !== edit.id) }, results,
+      ...(session.differentMachines ? { differentMachines } : {}) }
   }
   if (edit.action === 'add' && (current.length >= 200 || !edit.exercise.session_added || !edit.allowDuplicate && current.some(item => item.exerciseId === edit.exercise.exercise_id))) return session
   const item = edit.action === 'add' ? prescription(edit.exercise) : existing!

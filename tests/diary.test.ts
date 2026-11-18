@@ -1,5 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
+import { cycleRecapKey, cycleRecapsFrom } from '../src/domain/cycle-recap.ts'
+import type { CycleRecap } from '../src/domain/cycle-recap.ts'
 import { applyOp, emptyDiary, mealLogKey, replay, setValues, suggestedDay, workoutDaysFromProgram } from '../src/domain/diary.ts'
 import type { DiaryData } from '../src/domain/diary.ts'
 import type { Meal, WorkoutDay } from '../src/domain/types.ts'
@@ -21,7 +23,7 @@ const day: WorkoutDay = { id: DAY, label: 'A', title: 'Seduta A', subtitle: 'Pro
 
 /** Server simulato con le stesse regole di revisione/unicità del database. */
 function fakeServer() {
-  const tables: Record<string, Row[]> = { workout_sessions: [], workout_set_logs: [], meal_logs: [], diary_days: [] }
+  const tables: Record<string, Row[]> = { workout_sessions: [], workout_set_logs: [], meal_logs: [], diary_days: [], workout_cycle_recaps: [] }
   const calls: string[] = []
   let offline = false
   let loseNextResponse = false
@@ -30,7 +32,9 @@ function fakeServer() {
   const transport: DiaryTransport = {
     async loadAll() {
       if (offline) throw new DiaryFailure('unavailable')
-      return buildDiary(tables.workout_sessions!, tables.workout_set_logs!, tables.meal_logs!, tables.diary_days!)
+      const full = buildDiary(tables.workout_sessions!, tables.workout_set_logs!, tables.meal_logs!, tables.diary_days!)
+      if (tables.workout_cycle_recaps!.length) full.data.cycleRecaps = cycleRecapsFrom(tables.workout_cycle_recaps!.map(row => row.payload))
+      return full
     },
     async start(args) {
       calls.push('start')
@@ -45,7 +49,7 @@ function fakeServer() {
     async insert(table, values) {
       calls.push(`insert:${table}`)
       if (offline) throw new DiaryFailure('unavailable')
-      const key = table === 'workout_set_logs' ? ['session_id', 'prescription_id', 'set_index'] : table === 'meal_logs' ? ['diary_date', 'meal_id'] : ['diary_date']
+      const key = table === 'workout_set_logs' ? ['session_id', 'prescription_id', 'set_index'] : table === 'meal_logs' ? ['diary_date', 'meal_id'] : table === 'workout_cycle_recaps' ? ['recap_key'] : ['diary_date']
       if (tables[table]!.some(row => key.every(column => row[column] === values[column]))) throw new DiaryFailure('conflict')
       const row = { owner_id: OWNER, ...values, revision: 1 }
       tables[table]!.push(row)
@@ -382,4 +386,76 @@ test('nota della seduta: modifiche unite, inviata sulla riga della seduta, conse
   assert.equal(server.tables.workout_sessions![0]!.note, 'Dall’altro telefono')
   assert.equal(store.getSnapshot().conflicts[0]?.remote, 'Dall’altro telefono')
   store.stop()
+})
+
+test('macchinario e prova: correzioni, risposta persa, rilettura e nuova seduta', async () => {
+  const server = fakeServer(), storage = memoryStorage()
+  const store = new DiaryStore(server.transport, storage, OWNER)
+  await store.refresh()
+  const start = (date: string, instance = store) => instance.startSession({ date, day, planId: PLAN, versionId: PLAN, timeZone: 'Europe/Rome' })!
+  const id = start('2026-09-28')
+  await settle(store)
+  store.setDifferentMachine(id, P1, true)
+  assert.equal(store.getSnapshot().view.sessions[0]?.differentMachines?.[P1], EX)
+  store.setDifferentMachine(id, P1, false)
+  assert.equal(store.getSnapshot().view.sessions[0]?.differentMachines?.[P1], undefined)
+  store.setDifferentMachine(id, P1, true)
+  server.loseNext()
+  await settle(store)
+  await settle(store)
+  store.setTrial(id, true)
+  store.updateSet(id, P1, 0, { load: '45', amount: '8', completed: true })
+  store.completeSession(id)
+  await settle(store)
+  assert.equal(store.getSnapshot().pending, 0)
+  const reader = new DiaryStore(server.transport, memoryStorage(), OWNER)
+  await reader.refresh()
+  const saved = reader.getSnapshot().view.sessions[0]
+  assert.equal(saved?.differentMachines?.[P1], EX)
+  assert.equal(saved?.trial, true)
+  assert.equal(saved?.results[P1]?.[0]?.completed, true)
+  assert.ok(saved?.completedAt)
+  const next = start('2026-10-05', reader)
+  assert.ok(next)
+  const fresh = reader.getSnapshot().view.sessions.find(session => session.id === next)
+  assert.equal(fresh?.differentMachines, undefined)
+  assert.equal(fresh?.trial, undefined)
+  await settle(reader)
+  reader.stop()
+  store.stop()
+})
+
+
+const syntheticCycleRecap: CycleRecap = {
+  key: cycleRecapKey(PLAN, { start: '2026-09-07', weeks: 4 }), title: 'Ciclo sintetico', schema: 1,
+  report: { info: { start: '2026-09-07', end: '2026-10-04', weeks: 4 }, sessions: 4, sets: 12, weeks: [2, 0, 1, 1],
+    activeWeeks: 3, streak: 2, groups: [{ label: 'Gambe', exercise: 'Squat', points: [{ value: '40 kg × 8', week: 1 }] }],
+    pauses: [{ firstWeek: 2, lastWeek: 2, resumedIn: 3 }], record: { exercise: 'Squat', value: '50 kg × 8', date: '2026-09-28' } },
+}
+
+test('archivio ciclo: scrittura immediata, retry dopo risposta persa e copia consultabile da un altro dispositivo', async () => {
+  const backend = fakeServer()
+  const store = new DiaryStore(backend.transport, memoryStorage(), OWNER)
+  await store.refresh()
+  const recap = syntheticCycleRecap
+  store.archiveCycle(recap)
+  assert.deepEqual(store.getSnapshot().view.cycleRecaps?.[recap.key], recap)
+  backend.loseNext()
+  await settle(store)
+  assert.equal(backend.tables.workout_cycle_recaps!.length, 1)
+  await settle(store)
+  assert.equal(store.getSnapshot().pending, 0)
+
+  const second = new DiaryStore(backend.transport, memoryStorage(), OWNER)
+  await second.refresh()
+  assert.deepEqual(second.getSnapshot().view.cycleRecaps?.[recap.key], recap)
+  second.archiveCycle({ ...recap, title: 'Titolo modificato' })
+  assert.equal(second.getSnapshot().pending, 0)
+  assert.equal(second.getSnapshot().view.cycleRecaps?.[recap.key]?.title, recap.title)
+  second.archiveCycle({ ...recap, key: cycleRecapKey(PLAN, { start: recap.report.info.start, weeks: 5 }),
+    report: { ...recap.report, info: { ...recap.report.info, weeks: 5, end: '2026-10-11' }, weeks: [2, 0, 1, 1, 0] } })
+  await settle(second)
+  assert.equal(backend.tables.workout_cycle_recaps!.length, 2)
+  store.stop()
+  second.stop()
 })

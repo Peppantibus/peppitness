@@ -11,21 +11,29 @@ export interface PreviousExercise {
 export function comparable(a: ExercisePrescription, b: ExercisePrescription): boolean {
   if (!a.comparison || !b.comparison) return false
   return a.exerciseId === b.exerciseId && a.mode === b.mode
+    && (a.loadUnit ?? 'kg') === (b.loadUnit ?? 'kg')
     && a.comparison.variant === b.comparison.variant
     && a.comparison.equipment === b.comparison.equipment
     && a.comparison.loadConvention === b.comparison.loadConvention
     && a.comparison.perSide === b.comparison.perSide
 }
 
+export const differentMachine = (session: Pick<WorkoutSession, 'differentMachines'>, exercise: ExercisePrescription) =>
+  session.differentMachines?.[exercise.id] === exercise.exerciseId
+
+export const comparisonAllowed = (session: Pick<WorkoutSession, 'differentMachines' | 'trial'>, exercise: ExercisePrescription) =>
+  !session.trial && !differentMachine(session, exercise)
+
 export function findPreviousExercise(
   sessions: WorkoutSession[], exercise: ExercisePrescription,
-  before: Pick<WorkoutSession, 'id' | 'date' | 'startedAt'>,
+  before: Pick<WorkoutSession, 'id' | 'date' | 'startedAt' | 'differentMachines' | 'trial'>,
 ): PreviousExercise | undefined {
+  if (!comparisonAllowed(before, exercise)) return
   const candidates = sessions.filter(session => session.id !== before.id && session.completedAt
     && (session.date < before.date || (session.date === before.date && session.startedAt < before.startedAt)))
     .sort((a, b) => b.date.localeCompare(a.date) || b.startedAt.localeCompare(a.startedAt))
   for (const session of candidates) {
-    const match = session.day.exercises.find(item => comparable(exercise, item)
+    const match = session.day.exercises.find(item => comparisonAllowed(session, item) && comparable(exercise, item)
       && session.results[item.id]?.some(set => set.completed))
     if (match) return { session, exercise: match, results: session.results[match.id]! }
   }

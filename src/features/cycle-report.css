@@ -1,0 +1,69 @@
+.cycle-recap-invite {
+  background: var(--color-sage);
+}
+.cycle-recap-invite > .icon {
+  color: var(--color-primary);
+}
+.cycle-recap-invite .program-actions {
+  align-items: center;
+  flex-wrap: wrap;
+}
+.cycle-report-caption {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+.cycle-report-exercises {
+  list-style: none;
+  margin: var(--space-3) 0 0;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+.cycle-report-exercise {
+  padding: var(--space-3) clamp(1rem, 4vw, 1.65rem);
+}
+.cycle-report-exercise + .cycle-report-exercise {
+  border-top: 1px solid var(--color-border);
+}
+.cycle-report-exercise h3 {
+  margin: 0;
+  font-size: var(--text-md);
+}
+.cycle-report-exercise h3 span {
+  color: var(--color-primary);
+}
+.cycle-report-exercise p {
+  margin-top: var(--space-1);
+}
+.cycle-report-points {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: var(--space-2) 0 0;
+}
+.cycle-report-points li {
+  position: relative;
+  min-width: 0;
+}
+.cycle-report-points li + li {
+  padding-inline-start: clamp(1.4rem, 6.5vw, 2.35rem);
+}
+.cycle-report-points li + li::before {
+  content: '→' / '';
+  position: absolute;
+  inset-inline-start: clamp(.4rem, 1.8vw, .75rem);
+  color: var(--color-text-muted);
+}
+.cycle-report-points strong, .cycle-report-points small {
+  display: block;
+}
+.cycle-report-points strong {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.cycle-report-points small {
+  margin-top: var(--space-1);
+  color: var(--color-text-muted);
+}

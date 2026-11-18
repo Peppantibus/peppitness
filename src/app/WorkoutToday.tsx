@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Modal } from '../components/Modal'
 import { WorkoutDaySwap, WorkoutDaySwapStatus } from '../features/WorkoutDaySwap'
 import { Icon } from '../components/Icon'
+import { cycleRecapKey } from '../domain/cycle-recap'
 import { formatDate } from '../domain/dates'
 import { weekdayOfDate, weekdays } from '../domain/weekly'
 import { Workout } from '../features/Workout'
@@ -39,9 +40,14 @@ function ActiveRestSession({ title, date, onDiscard }: { title: string; date: st
   </section>
 }
 
-function CycleFinished({ done, planned }: { done: number; planned: number }) {
-  return <section className="cycle-finished"><Icon name="check" size={20} /><div><strong>Ciclo concluso</strong><p>Hai completato {done} sedute su {planned}. Guarda come è andata e prepara il prossimo.</p></div>
-    <div className="program-actions"><a className="button secondary" href="#/scheda/progressi">Progressi</a><a className="button primary" href="#/scheda/programmi/rinnova">Crea dal programma concluso</a></div></section>
+function CycleFinished({ weeks }: { weeks: number }) {
+  return <section className="cycle-finished cycle-recap-invite">
+    <Icon name="star" size={24} />
+    <div><strong>Hai finito il programma!</strong><p>{weeks === 1 ? 'Vuoi vedere come è andata questa settimana?' : `Vuoi vedere cosa hai fatto in queste ${weeks} settimane?`}</p></div>
+    <div className="program-actions">
+      <a className="button primary" href="#/scheda/riepilogo">Guarda il tuo riepilogo<Icon name="arrow" size={20} /></a>
+    </div>
+  </section>
 }
 
 /** Contenuto quotidiano della Scheda: caricamento, riposo, scelta del programma o seduta del giorno. */
@@ -51,7 +57,9 @@ export function WorkoutToday({ configured, plans, diary, schedule, date, today, 
   const { day, weekly, workoutDays, activeSession, followable } = schedule
   const swapProps = configured && weekly && workout ? { workout, days: schedule.baseDays, date, today, timeZone, store: diary.store, state: diary.state, onApplied: schedule.resetDay } : null
   const scheduleStatus = swapProps && <WorkoutDaySwapStatus key={`${workout!.version.id}:${date}`} {...swapProps} />
-  const finished = schedule.cycleFinished && <CycleFinished done={schedule.cycleScore?.done ?? 0} planned={schedule.cycleScore?.planned ?? 0} />
+  const cycle = workout?.plan.cycle
+  const archived = workout && cycle && diary.state.view.cycleRecaps?.[cycleRecapKey(workout.plan.id, cycle)]
+  const finished = schedule.cycleFinished && diary.state.phase === 'ready' && cycle && !archived && <CycleFinished weeks={cycle.weeks} />
   const cancel = activeSession && <button type="button" className="button secondary danger workout-cancel" aria-haspopup="dialog" onClick={() => onDiscard(activeSession.id)}>Annulla allenamento</button>
 
   if (configured && state.phase === 'loading') return <section className="panel empty-state" role="status"><h2>Caricamento del programma…</h2></section>
