@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Icon } from './Icon'
 import type { IconName } from './Icon'
 import { Modal } from './Modal'
+import { morningRoutineDefaultTitle } from '../domain/morning-routine'
 import type { DiaryState, DiaryStore } from '../persistence/diary-store'
 
 export const syncLabels: Record<DiaryState['sync'], string> = {
@@ -36,7 +37,7 @@ export function SyncIndicator({ store, state, localOnly = false, withLabel = fal
         <span className={`sync-details-icon sync-indicator-${sync}`}><Icon name={syncIcons[sync]} size={24} /></span>
         <h2>{syncTitles[sync]}</h2>
         <p>{syncLabels[sync]}{pending ? ` Registrazioni in attesa: ${pending}.` : ''}</p>
-        {Boolean(additional?.pending) && <p>Routine del mattino: {additional!.pending} modifiche in attesa. Trovi stato e possibili conflitti nella Scheda.</p>}
+        {Boolean(additional?.pending) && <p>{morningRoutineDefaultTitle}: {additional!.pending} modifiche in attesa. Trovi stato e possibili conflitti nella Scheda.</p>}
         {!localOnly && !state.storage && <p>Archivio del dispositivo non disponibile: tieni aperta la pagina finché le registrazioni risultano sincronizzate.</p>}
         {sync === 'conflict' && <p>Trovi le registrazioni da confrontare in cima alla pagina.</p>}
         {sync === 'synced' && <p className="muted">Le registrazioni sono salvate anche online e le ritrovi da ogni dispositivo.</p>}

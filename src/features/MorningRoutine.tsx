@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
-import { morningForDate } from '../domain/morning-routine'
+import { morningForDate, morningRoutineTitle } from '../domain/morning-routine'
 import type { MorningRoutineStore, MorningState } from '../persistence/morning-routine-store'
 import './morning-routine.css'
 
@@ -10,7 +10,7 @@ export function MorningRoutineCard({ state, date }: { state: MorningState; date:
   const schedule = routine ? morningForDate(routine, date) : null
   return <a className={`morning-entry ${completed ? 'is-done' : ''}`} href="#/scheda/mattino">
     <span className="morning-entry-icon"><Icon name={completed ? 'check' : 'sun'} size={24} /></span>
-    <span className="morning-entry-copy"><strong>{routine?.title ?? 'Routine del mattino'}</strong><small>{schedule ? `${schedule.minutes} min · ${schedule.withStrength ? 'Mobilità + rinforzo' : 'Mobilità quotidiana'}` : state.known ? 'Crea la tua routine' : 'Caricamento…'}</small></span>
+    <span className="morning-entry-copy"><strong>{morningRoutineTitle(routine?.title)}</strong><small>{schedule ? `${schedule.minutes} min · ${schedule.withStrength ? 'Mobilità + rinforzo' : 'Base quotidiana'}` : state.known ? 'Crea la tua routine' : 'Caricamento…'}</small></span>
     <span className="morning-entry-side"><small>{completed ? 'Fatta' : routine ? 'Da fare' : ''}</small><Icon name="chevron" size={16} /></span>
   </a>
 }

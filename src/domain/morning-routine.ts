@@ -2,6 +2,9 @@ import { isLocalDate } from './dates.ts'
 
 export interface MorningExercise { id: string; name: string; area: string; dose: string; minutes: number; note: string }
 export interface MorningRoutine { title: string; base: MorningExercise[]; extra: MorningExercise[]; strengthDays: number[]; note: string }
+export const morningRoutineDefaultTitle = 'Mobilità giornaliera'
+export const morningRoutineTitle = (title = morningRoutineDefaultTitle): string =>
+  title === 'Mobilità del mattino' ? morningRoutineDefaultTitle : title
 export const morningWeekdays = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom']
 const uuid = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value)
 const record = (value: unknown): value is Record<string, unknown> => Boolean(value && typeof value === 'object' && !Array.isArray(value))
@@ -33,4 +36,4 @@ export function morningForDate(routine: MorningRoutine, date: string) {
   return { withStrength, exercises, minutes: morningDuration(exercises) }
 }
 export const morningDaysLabel = (days: readonly number[]) => days.length ? morningWeekdays.filter((_, i) => days.includes(i + 1)).join(' · ') : 'Nessun giorno'
-export const emptyMorningRoutine = (): MorningRoutine => ({ title: 'Mobilità del mattino', base: [], extra: [], strengthDays: [2, 4, 6], note: '' })
+export const emptyMorningRoutine = (): MorningRoutine => ({ title: morningRoutineDefaultTitle, base: [], extra: [], strengthDays: [2, 4, 6], note: '' })

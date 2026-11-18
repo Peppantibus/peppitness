@@ -71,7 +71,7 @@ try{
  check('Editor aperto prima di una rilettura: conflitto preservato, scelta online con conferma')
  otherChrome=await ensureChrome({url:'http://127.0.0.1:9224'});other=await openTab({url:'http://127.0.0.1:9224'})
  await other.send('Storage.clearDataForOrigin',{origin:server.origin,storageTypes:'all'});await other.send('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem(${JSON.stringify(authKey)},${JSON.stringify(JSON.stringify(f.b.session))})`})
- await other.navigate(server.origin+'/#/scheda/mattino','document.querySelector("h1")?.textContent.includes("La tua routine del mattino")')
+ await other.navigate(server.origin+'/#/scheda/mattino','document.querySelector("h1")?.textContent.includes("Mobilità giornaliera")')
  assert.equal(await other.evaluate(`localStorage.getItem('peppitness:morning-routine:v1:${f.a.owner}')`),null);check('Secondo account/profilo reale: nessuna routine o cache del primo')
  await other.click('a[href="#/scheda/mattino/modifica"]');await other.until('!!document.querySelector("#save-routine")')
  await other.click('.routine-editor-section:first-of-type .routine-add');await other.click('#save-routine');await other.until('!!document.querySelector("#mark-routine-done")')

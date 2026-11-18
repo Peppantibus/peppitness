@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react'
 import { Icon } from '../components/Icon'
 import { Modal } from '../components/Modal'
-import { emptyMorningRoutine, morningDaysLabel, morningDuration, morningWeekdays, validMorningRoutine } from '../domain/morning-routine'
+import { emptyMorningRoutine, morningDaysLabel, morningDuration, morningRoutineTitle, morningWeekdays, validMorningRoutine } from '../domain/morning-routine'
 import type { MorningExercise, MorningRoutine } from '../domain/morning-routine'
 
 type Section = 'base' | 'extra'
 export function MorningRoutineEditor({ value, revision, onSave, onExit, onDirty }: {
   value: MorningRoutine | null; revision: number; onSave: (value: MorningRoutine, revision: number) => boolean; onExit: () => void; onDirty: (dirty: boolean) => void
 }) {
-  const [initial] = useState(() => structuredClone(value ?? emptyMorningRoutine()))
+  const [initial] = useState(() => value
+    ? { ...structuredClone(value), title: morningRoutineTitle(value.title) }
+    : emptyMorningRoutine())
   const [initialRevision] = useState(revision)
   const [draft, setDraft] = useState(initial), [error, setError] = useState('')
   const [removing, setRemoving] = useState<{ section: Section; item: MorningExercise } | null>(null)
@@ -35,7 +37,7 @@ export function MorningRoutineEditor({ value, revision, onSave, onExit, onDirty 
     <label className="routine-field routine-title-field">Nome della routine<input id="routine-name" maxLength={120} required value={draft.title} onChange={event => setDraft(old => ({ ...old, title: event.target.value }))} /></label>
     <fieldset className="routine-schedule"><legend>Giorni di rinforzo</legend><p>La base rimane tutti i giorni. Il rinforzo si aggiunge nei giorni selezionati.</p>
       <div className="routine-weekdays">{morningWeekdays.map((label, index) => <button type="button" key={label} aria-label={`Rinforzo ${label}`} aria-pressed={draft.strengthDays.includes(index + 1)} onClick={() => setDraft(old => ({ ...old, strengthDays: old.strengthDays.includes(index + 1) ? old.strengthDays.filter(day => day !== index + 1) : [...old.strengthDays, index + 1].sort((a, b) => a - b) }))}>{label}</button>)}</div>
-      <span>{morningDuration(draft.base)} min ogni mattina · {morningDuration([...draft.base, ...draft.extra])} min con rinforzo</span>
+      <span>{morningDuration(draft.base)} min ogni giorno · {morningDuration([...draft.base, ...draft.extra])} min con rinforzo</span>
     </fieldset>
     {(['base', 'extra'] as const).map(section => <section className="routine-editor-section" key={section}>
       <div className="morning-section-heading"><h2>{section === 'base' ? 'Base quotidiana' : 'Rinforzo'}</h2><span>{section === 'base' ? 'Ogni giorno' : morningDaysLabel(draft.strengthDays)} · {morningDuration(draft[section])} min</span></div>

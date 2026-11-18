@@ -19,6 +19,7 @@ import type { ToastMessage } from './components/Toast'
 import { formatDate, localDate } from './domain/dates'
 import { mealLogKey } from './domain/diary'
 import { fitsMealWizard } from './domain/meal-plans'
+import { morningRoutineDefaultTitle } from './domain/morning-routine'
 import { fitsWizard } from './domain/weekly'
 import { filledUnchecked, findPreviousExercise } from './domain/workout'
 import type { Meal, SetResult, WorkoutSession } from './domain/types'
@@ -129,7 +130,7 @@ export function App() {
     return () => { window.removeEventListener('online', updateNetwork); window.removeEventListener('offline', updateNetwork) }
   }, [])
 
-  const pageTitle = isMorning ? (isMorningEditor ? 'Modifica routine' : 'Routine del mattino') : isImport ? (importKind === 'diet' ? 'Importa un piano alimentare' : 'Importa una scheda')
+  const pageTitle = isMorning ? (isMorningEditor ? 'Modifica routine' : morningRoutineDefaultTitle) : isImport ? (importKind === 'diet' ? 'Importa un piano alimentare' : 'Importa una scheda')
     : pageTitles.find(([key]) => page[key])?.[1] ?? (section === 'dieta' ? 'Dieta' : 'Scheda')
   useEffect(() => {
     document.title = `${pageTitle} · peppitness`
