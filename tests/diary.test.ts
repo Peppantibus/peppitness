@@ -1,12 +1,12 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { cycleRecapKey, cycleRecapsFrom } from '../src/domain/cycle-recap.ts'
+import { cycleRecapKey } from '../src/domain/cycle-recap.ts'
 import type { CycleRecap } from '../src/domain/cycle-recap.ts'
 import { applyOp, emptyDiary, mealLogKey, replay, setValues, suggestedDay, workoutDaysFromProgram } from '../src/domain/diary.ts'
 import type { DiaryData } from '../src/domain/diary.ts'
 import type { Meal, WorkoutDay } from '../src/domain/types.ts'
 import type { ProgramDocument } from '../src/domain/programs.ts'
-import { buildDiary, DiaryFailure } from '../src/persistence/diary-repository.ts'
+import { buildDiary, DiaryFailure, recapFromRow } from '../src/persistence/diary-repository.ts'
 import type { DiaryTransport, Row, RowKey } from '../src/persistence/diary-repository.ts'
 import { DiaryStore, memoryStorage } from '../src/persistence/diary-store.ts'
 
@@ -33,7 +33,18 @@ function fakeServer() {
     async loadAll() {
       if (offline) throw new DiaryFailure('unavailable')
       const full = buildDiary(tables.workout_sessions!, tables.workout_set_logs!, tables.meal_logs!, tables.diary_days!)
-      if (tables.workout_cycle_recaps!.length) full.data.cycleRecaps = cycleRecapsFrom(tables.workout_cycle_recaps!.map(row => row.payload))
+      if (tables.workout_cycle_recaps!.length) full.data.cycleRecaps = Object.fromEntries(tables.workout_cycle_recaps!.map(row => {
+        const recap = recapFromRow(row)!
+        return [recap.key, recap]
+      }))
+      return full
+    },
+    async viewRecap(key) {
+      if (offline) throw new DiaryFailure('unavailable')
+      const row = tables.workout_cycle_recaps!.find(item => item.recap_key === key)
+      if (!row) return null
+      row.viewed = true
+      return reply({ ...row })
       return full
     },
     async start(args) {
@@ -456,6 +467,29 @@ test('archivio ciclo: scrittura immediata, retry dopo risposta persa e copia con
     report: { ...recap.report, info: { ...recap.report.info, weeks: 5, end: '2026-10-11' }, weeks: [2, 0, 1, 1, 0] } })
   await settle(second)
   assert.equal(backend.tables.workout_cycle_recaps!.length, 2)
+  store.stop()
+  second.stop()
+})
+
+test('la chiusura conserva un Wrapped da vedere e la visione resta registrata anche dopo una risposta persa', async () => {
+  const backend = fakeServer()
+  const store = new DiaryStore(backend.transport, memoryStorage(), OWNER)
+  const second = new DiaryStore(backend.transport, memoryStorage(), OWNER)
+  const recap = syntheticCycleRecap
+  await store.refresh()
+  store.archiveCycle({ ...recap, unseen: true })
+  await settle(store)
+  await second.refresh()
+  assert.equal(second.getSnapshot().view.cycleRecaps?.[recap.key]?.unseen, true)
+  second.markCycleViewed(recap.key)
+  assert.deepEqual(second.getSnapshot().view.cycleRecaps?.[recap.key], recap)
+  backend.loseNext()
+  await settle(second)
+  await settle(second)
+  assert.equal(second.getSnapshot().pending, 0)
+  await store.refresh()
+  assert.deepEqual(store.getSnapshot().view.cycleRecaps?.[recap.key], recap)
+  assert.equal(backend.tables.workout_cycle_recaps!.length, 1)
   store.stop()
   second.stop()
 })

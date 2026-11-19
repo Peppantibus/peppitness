@@ -16,7 +16,7 @@ PWA mobile-first per seguire una scheda di allenamento e un piano alimentare gio
 - **Allenamento**: programmi a cicli settimanali, serie e carichi registrati durante la seduta, timer di recupero con avviso, record personali e riepilogo a fine allenamento.
 - **Alimentazione**: piano con periodo di validità, calorie stimate dagli alimenti e diario dei pasti.
 - **Progressi**: costanza settimanale e andamento di ogni esercizio.
-- **Fine programma.** Il Wrapped racconta gli esercizi del ciclo, la costanza, le pause e i record. È stampabile in PDF e si ritrova nello Storico, diviso in Attuale, Passati e Liberi.
+- **Fine programma.** Alla scadenza puoi estendere il ciclo o chiuderlo per salvare il Wrapped in **Storico → Passati**. Puoi creare il ciclo successivo da zero o ripartire dalla struttura del precedente.
 - **Importazione**: scheda e dieta da due modelli Word strutturati, letti sul dispositivo e confermati con un'anteprima modificabile.
 - **Offline**: le registrazioni restano sul telefono e si sincronizzano quando torna la rete.
 
@@ -55,4 +55,4 @@ Il riepilogo usa la durata salvata nel programma e le sue sedute concluse. Per o
 
 Mostra fino a tre serie registrate. La serie centrale deve cadere vicino a metà ciclo. Cerca il miglior risultato confrontabile nelle ultime tre settimane e, se lì mancano serie utili, usa l’ultima serie confrontabile. Se ha solo un risultato utile per un gruppo, mostra quella serie con la sua settimana. Le sedute di prova e le serie registrate su un macchinario diverso restano nello Storico e nei totali.
 
-Per riprodurre il collaudo con account sintetici, avvia Supabase in locale con le migrazioni applicate ed esegui `npm run test:workout-history:local`. Il test apre Chrome e verifica il percorso dalla Scheda al Wrapped salvato e il cambio di programma nello Storico.
+Per riprodurre il collaudo con account sintetici, avvia Supabase in locale con le migrazioni applicate ed esegui `npm run test:workout-history:local`. Il test apre Chrome e verifica la chiusura, l’estensione, il Wrapped salvato, la copia del programma e l’allenamento libero prima del ciclo successivo.

@@ -7,6 +7,7 @@ import type { KeyValueStorage } from './diary-store.ts'
 import { PlansFailure } from './plans-repository.ts'
 import type { ActiveSelection, PlansRepository } from './plans-repository.ts'
 import type { ProgramsRepository } from './programs-repository.ts'
+import { ProgramsFailure } from './programs-repository.ts'
 
 export interface MealEditorState {
   phase: 'closed' | 'editing' | 'saving' | 'checking' | 'uncertain' | 'conflict'
@@ -137,6 +138,25 @@ export class PlansStore {
     } catch {
       if (this.writing === controller) this.emit({ selecting: false, message: 'Selezione non confermata. Controlla la connessione e riprova.' })
     }
+  }
+
+  extendWorkoutCycle = async (weeks: number) => {
+    const workout = this.state.workout
+    if (!workout || this.state.phase !== 'ready' || this.state.selecting || !this.programs.extendCycle) return false
+    const controller = new AbortController(); this.writing = controller
+    this.emit({ selecting: true, message: '' })
+    try {
+      const plan = await this.programs.extendCycle(workout.plan, weeks, AbortSignal.any([controller.signal, AbortSignal.timeout(15_000)]))
+      if (this.writing !== controller) return false
+      this.emit({ workout: { ...workout, plan }, programs: this.state.programs.map(item => item.plan.id === plan.id ? { ...item, plan } : item),
+        cached: false, message: `Ciclo esteso a ${weeks} settimane.` })
+      return true
+    } catch (error) {
+      if (this.writing !== controller) return false
+      if (error instanceof ProgramsFailure && error.kind === 'conflict') await this.load()
+      this.emit({ message: 'Estensione non confermata. Controlla il programma e riprova.' })
+      return false
+    } finally { if (this.writing === controller) { this.writing = null; this.emit({ selecting: false }) } }
   }
 
   // ------------------------------------------------------------------ editor piani alimentari

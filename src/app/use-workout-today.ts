@@ -38,6 +38,7 @@ export function useWorkoutToday({ configured, workout, programs, catalogRows, se
 
   // Ciclo del programma seguito: settimana corrente e sedute fatte su quelle previste finora.
   const cycle = workout?.plan.cycle ?? null
+  const cycleStatus = cycle ? cycleInfo(cycle, today).status : null
   const cycleNow = cycle ? cycleInfo(cycle, date) : null
   const programSessions = sessions.filter(session => session.planId === workout?.plan.id || session.kind === 'free')
   const cycleScore = cycle && workoutDays.length ? adherence(weeklyProgress(workoutDays, programSessions, cycle, today, swaps, workout?.version.id)) : null
@@ -54,7 +55,7 @@ export function useWorkoutToday({ configured, workout, programs, catalogRows, se
     resetDay: () => { setDayId(null); setDayChoice(null) },
     followable: programs.filter(item => item.plan.activeVersionId && !item.plan.archivedAt),
     activeSession: sessions.find(session => !session.completedAt),
-    cycleFinished: cycle !== null && cycleInfo(cycle, today).status === 'finished', cycleSummary, programSessions,
+    cycleFinished: cycleStatus === 'finished', cycleUpcoming: cycleStatus === 'upcoming', cycleSummary, programSessions,
     // Giorni con una seduta prevista nella settimana mostrata (solo programmi settimanali).
     trainingDates: weekly && workout ? shownWeek.filter(value => scheduledDay(baseDays, value, workout.version.id, swaps, workout.plan.cycle)) : [],
     // Giorni della settimana mostrata con una seduta completata.

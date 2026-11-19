@@ -8,12 +8,12 @@ import { Icon } from '../components/Icon'
 import { SubpageHeader } from '../components/SubpageHeader'
 import { Modal } from '../components/Modal'
 import { loadLabels, searchExercises } from '../domain/exercises'
-import { withCatalogMuscleGroups, duplicateDay, moveItem, newDay, newPrescription } from '../domain/programs'
+import { withCatalogMuscleGroups, duplicateDay, moveItem, newDay, newPrescription, sameCycle } from '../domain/programs'
 import type { CatalogExercise } from '../domain/exercises'
 import type { ProgramDocument, PrescriptionDraft, ProgramDay, ProgramIndex } from '../domain/programs'
 import { fitsWizard, weeklySummary } from '../domain/weekly'
 import { cycleInfo } from '../domain/progress'
-import { formatDate } from '../domain/dates'
+import { formatDate, isLocalDate } from '../domain/dates'
 import { ProgramWizard } from './ProgramWizard'
 import type { WizardStep } from './ProgramWizard'
 import type { ExercisesState, ExercisesStore } from '../persistence/exercises-store'
@@ -73,21 +73,44 @@ function PrescriptionFields({ item, onChange }: { item: PrescriptionDraft; onCha
 
 export function ProgramEditor({ store, state, catalog }: { store: ProgramsStore; state: ProgramsState; catalog: { store: ExercisesStore | null; state: ExercisesState } }) {
   const [confirm, setConfirm] = useState<{ title: string; text: string; action: () => void } | null>(null)
+  const [savingCycle, setSavingCycle] = useState(false)
+  const [cycleWarning, setCycleWarning] = useState(false)
   const editor = useRef<HTMLElement>(null)
   const document = state.document ? withCatalogMuscleGroups(state.document, catalog.state.rows) : null!
   useEffect(() => { editor.current?.focus({ preventScroll: true }); editor.current?.scrollIntoView({ block: 'start' }) }, [document.id])
   const readonly = (state.base?.version.status === 'published' && !state.revising) || Boolean(state.base?.plan.archivedAt)
-  const busy = ['saving', 'publishing', 'checking'].includes(state.phase)
+  const busy = savingCycle || ['saving', 'publishing', 'checking'].includes(state.phase)
+  const cycle = state.revising ? null : state.cycleDraft
+  const cycleDirty = cycle && !sameCycle(cycle, state.base?.plan.cycle)
   const blocked = readonly || busy || state.phase === 'uncertain' || (state.phase === 'conflict' && state.intent === 'publish')
+  const save = async () => {
+    if (state.revising) { await store.saveRevision(); return }
+    if (store.dirty || !state.base) await store.save()
+    const current = store.getSnapshot()
+    if (!cycleDirty || current.phase !== 'ready' || !current.base || store.dirty) return
+    setSavingCycle(true)
+    setCycleWarning(!(await store.saveCycle()))
+    setSavingCycle(false)
+  }
   const updateDay = (value: ProgramDay) => store.edit({ ...document, days: document.days.map(day => day.id === value.id ? value : day) })
   const remove = (title: string, action: () => void) => setConfirm({ title, text: 'La rimozione riguarda questa bozza. Le versioni pubblicate rimangono invariate.', action })
   return <>
     <section ref={editor} tabIndex={-1} className="panel program-editor" aria-labelledby="program-editor-title">
       <div className="section-heading"><h2 id="program-editor-title">{state.revising ? 'Modifica programma' : state.base ? `Versione ${state.base.version.number} · ${state.base.version.status === 'published' ? 'Pubblicata' : 'Bozza'}` : 'Nuova bozza'}</h2></div>
       {state.base?.plan.archivedAt && <p role="status">Questo programma è archiviato e può essere soltanto consultato.</p>}
-      {readonly ? <ProgramPreview document={document} /> : <form className="program-form" onSubmit={event => { event.preventDefault(); void (state.revising ? store.saveRevision() : store.save()) }}>
+      {readonly ? <ProgramPreview document={document} /> : <form className="program-form" onSubmit={event => { event.preventDefault(); void save() }}>
         <fieldset disabled={blocked}>
           <label htmlFor="program-title">{state.revising || !state.base ? 'Nome del programma' : 'Titolo della versione'}<input id="program-title" maxLength={160} required value={document.title} onChange={event => store.edit({ ...document, title: event.target.value })} /></label>
+          {cycle && <div className="program-cycle-fields">
+            <label>Data di inizio<input type="date" value={cycle.start} min="2000-01-01" max="2199-12-31" onChange={event => {
+              const start = event.target.value
+              if (isLocalDate(start)) store.setCycleDraft({ ...cycle, start })
+            }} /></label>
+            <label>Durata del ciclo<select value={cycle.weeks} onChange={event => store.setCycleDraft({ ...cycle, weeks: Number(event.target.value) })}>
+              {Array.from({ length: 52 }, (_, index) => <option key={index} value={index + 1}>{index + 1} {index === 0 ? 'settimana' : 'settimane'}</option>)}
+            </select></label>
+          </div>}
+          {cycleWarning && cycleDirty && <p role="alert">Non sono riuscito a salvare la durata e la data di inizio. Riprova.</p>}
           <label htmlFor="program-guidance">Istruzioni generali (facoltative)<textarea id="program-guidance" rows={3} maxLength={16000} value={document.guidance} onChange={event => store.edit({ ...document, guidance: event.target.value })} /></label>
           <div className="program-catalog-status">
             <a className="text-link" href="#/scheda/catalogo">Apri il catalogo esercizi</a>
@@ -121,7 +144,7 @@ export function ProgramEditor({ store, state, catalog }: { store: ProgramsStore;
           <button className="button secondary program-add-day" type="button" disabled={document.days.length >= 50} onClick={() => store.edit({ ...document, days: [...document.days, newDay(document.days)] })}><Icon name="plus" size={16} />Aggiungi seduta</button>
           <p className="small muted">Le serie facoltative restano separate. Nessun esercizio o numero di serie viene aggiunto automaticamente.</p>
         </fieldset>
-        {state.phase === 'ready' && <div className="meal-editor-bar program-editor-bar" aria-label="Salvataggio del programma"><div className="program-actions meal-editor-bar-inner"><button className="button primary program-save" type="submit" disabled={!store.dirty && Boolean(state.base)}>{state.revising ? 'Salva programma' : 'Salva bozza'}{store.dirty && <span className="program-dirty-dot" aria-hidden="true" />}</button>{!state.revising && <button className="button secondary program-publish" type="button" disabled={store.dirty || !state.base} title={store.dirty ? 'Salva la bozza prima di pubblicare' : undefined} onClick={() => setConfirm({ title: 'Pubblicare questa versione?', text: 'La versione diventerà corrente per questo programma e non sarà più modificabile. Potrai crearne una nuova; le precedenti rimarranno disponibili.', action: () => { void store.publish() } })}>Pubblica versione</button>}</div></div>}
+        {state.phase === 'ready' && <div className="meal-editor-bar program-editor-bar" aria-label="Salvataggio del programma"><div className="program-actions meal-editor-bar-inner"><button className="button primary program-save" type="submit" disabled={busy || (!store.dirty && !cycleDirty && Boolean(state.base))}>{state.revising ? 'Salva programma' : 'Salva bozza'}{(store.dirty || cycleDirty) && <span className="program-dirty-dot" aria-hidden="true" />}</button>{!state.revising && <button className="button secondary program-publish" type="button" disabled={busy || store.dirty || Boolean(cycleDirty) || !state.base} title={store.dirty || cycleDirty ? 'Salva la bozza prima di pubblicare' : undefined} onClick={() => setConfirm({ title: 'Pubblicare questa versione?', text: 'La versione diventerà corrente per questo programma e non sarà più modificabile. Potrai crearne una nuova; le precedenti rimarranno disponibili.', action: () => { void store.publish() } })}>Pubblica versione</button>}</div></div>}
       </form>}
       {state.phase === 'conflict' && <section className="preferences-conflict program-conflict" aria-label="Confronto programma"><h3>Versione attualmente online</h3>{state.remote ? <><p>{state.remote.version.status === 'published' ? 'Pubblicata' : 'Bozza'} · Versione {state.remote.version.number}</p><ProgramPreview document={state.remote.document} /></> : <p>Questa versione non risulta online.</p>}
         <div className="program-actions">{state.revising ? <button className="button secondary" onClick={store.restartRevision}>Riparti dalla versione online</button> : <><button className="button secondary" onClick={store.useRemote}>{state.remote ? 'Usa la versione online' : 'Scarta la bozza locale'}</button>{store.canReplace && <button className="button primary" onClick={() => void store.save(true)}>Salva le mie modifiche</button>}{state.remote?.version.status === 'published' && !state.remote.plan.archivedAt && <button className="button secondary" onClick={store.fork}>Crea bozza dalle mie modifiche</button>}</>}</div>

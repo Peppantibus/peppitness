@@ -1,4 +1,3 @@
-import { readCycleRecap } from '../domain/cycle-recap.ts'
 import type { CycleRecap } from '../domain/cycle-recap.ts'
 import { applyDaySwap, newDaySwap, swapAt, swapBlocked } from '../domain/day-swaps.ts'
 import type { DaySwap, ScheduleExpectation } from '../domain/day-swaps.ts'
@@ -8,7 +7,7 @@ import type { DiaryData, DiaryOp } from '../domain/diary.ts'
 import type { DayType, LocalDate, Meal, MealStatus, RestTimerState, SetResult, WorkoutDay, WorkoutSession } from '../domain/types.ts'
 import { keyValueArchive } from './diary-archive.ts'
 import type { ServerArchive, ServerCopy } from './diary-archive.ts'
-import { countsOf, DiaryFailure, dayFromRow, mealLogFromRow, mergeDiary, serverTime, sessionFromRow, setFromRow } from './diary-repository.ts'
+import { countsOf, DiaryFailure, dayFromRow, mealLogFromRow, mergeDiary, recapFromRow, serverTime, sessionFromRow, setFromRow } from './diary-repository.ts'
 import type { DiaryTransport, Row } from './diary-repository.ts'
 import { applyExerciseChange, canUndoChange, changeAt, intact } from '../domain/exercise-changes.ts'
 import type { ExerciseChange } from '../domain/exercise-changes.ts'
@@ -73,6 +72,7 @@ const describe = (op: DiaryOp, data: DiaryData): { label: string; value: string 
   const session = 'sessionId' in op ? data.sessions.find(item => item.id === op.sessionId) : op.type === 'start' ? op.session : undefined
   switch (op.type) {
     case 'archive-cycle': return { label: 'Riepilogo del programma', value: op.recap.title }
+    case 'view-cycle': return { label: 'Riepilogo del programma', value: 'Visto' }
     case 'swap': case 'undo-swap': return { label: 'Spostamento allenamento', value: `${op.swap.sourceDate} / ${op.swap.targetDate}` }
     case 'session-edit': return { label: 'Esercizi della seduta', value: op.edit.action === 'add' ? `Aggiungi ${op.edit.exercise.name}` : op.edit.action === 'move' ? 'Sposta esercizio' : 'Rimuovi esercizio' }
     case 'change': return { label: op.change.partner ? 'Scambio esercizi' : 'Sostituzione esercizio', value: `${op.change.before.name} → ${op.change.after.name}` }
@@ -158,6 +158,11 @@ export class DiaryStore {
   archiveCycle = (recap: CycleRecap) => {
     if (this.cleared || this.view.cycleRecaps?.[recap.key]) return
     this.enqueue({ type: 'archive-cycle', opId: crypto.randomUUID(), recap })
+  }
+
+  markCycleViewed = (recapKey: string) => {
+    if (this.cleared || !this.view.cycleRecaps?.[recapKey]?.unseen) return
+    this.enqueue({ type: 'view-cycle', opId: crypto.randomUUID(), recapKey })
   }
 
   private empty(): Persisted {
@@ -668,14 +673,22 @@ export class DiaryStore {
       case 'archive-cycle': {
         let row: Row | null
         try {
-          row = await transport.insert('workout_cycle_recaps', { recap_key: op.recap.key, payload: op.recap }, signal)
+          const { schema, key, title, report, unseen } = op.recap
+          row = await transport.insert('workout_cycle_recaps', { recap_key: key, payload: { schema, key, title, report }, viewed: !unseen }, signal)
         } catch (error) {
           if (!(error instanceof DiaryFailure) || error.kind !== 'conflict') throw error
           row = await transport.fetch('workout_cycle_recaps', { recap_key: op.recap.key }, signal)
         }
-        const recap = readCycleRecap(row?.payload)
+        const recap = recapFromRow(row)
         if (!recap || recap.key !== op.recap.key) throw new DiaryFailure('unavailable')
         this.data.server = applyOp(this.data.server, { ...op, recap })
+        return
+      }
+      case 'view-cycle': {
+        if (!transport.viewRecap) throw new DiaryFailure('unavailable')
+        const recap = recapFromRow(await transport.viewRecap(op.recapKey, signal))
+        if (!recap || recap.key !== op.recapKey || recap.unseen) throw new DiaryFailure('unavailable')
+        this.data.server = { ...this.data.server, cycleRecaps: { ...this.data.server.cycleRecaps, [recap.key]: recap } }
         return
       }
       case 'swap': case 'undo-swap': {

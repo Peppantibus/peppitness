@@ -11,6 +11,10 @@ const first = { start: '2026-09-01', weeks: 8 }
 const next = { start: '2026-10-20', weeks: 10 }
 const program: ProgramRoot = { id: 'full-body', name: 'Ciclo attuale', revision: 1, activeVersionId: 'v1', archivedAt: null, cycle: next }
 const firstKey = cycleRecapKey(program.id, first)
+const recap: CycleRecap = { schema: 1, key: firstKey, title: 'Ciclo salvato', report: {
+  info: { ...first, end: '2026-10-26' }, sessions: 1, sets: 4, weeks: [1, 0, 0, 0, 0, 0, 0, 0],
+  activeWeeks: 1, streak: 1, groups: [], pauses: [], record: null,
+} }
 
 function session(id: string, date: string, metadata: Partial<WorkoutSession> = {}): WorkoutSession {
   return { id, date, planId: program.id, startedAt: `${date}T16:00:00Z`, completedAt: `${date}T17:00:00Z`,
@@ -34,10 +38,6 @@ test('cicli sovrapposti dello stesso programma: mantiene lo snapshot e lascia la
 })
 
 test('mantiene il Wrapped di un ciclo senza programma e raggruppa per mese le libere', () => {
-  const recap: CycleRecap = { schema: 1, key: firstKey, title: 'Ciclo salvato', report: {
-    info: { ...first, end: '2026-10-26' }, sessions: 1, sets: 4, weeks: [1, 0, 0, 0, 0, 0, 0, 0],
-    activeWeeks: 1, streak: 1, groups: [], pauses: [], record: null,
-  } }
   const history = workoutHistory({ ...emptyDiary(), cycleRecaps: { [firstKey]: recap }, sessions: [
     session('una', '2026-10-18', { kind: 'free', planId: undefined }),
     session('due', '2026-11-12', { kind: 'free', planId: undefined }),
@@ -48,4 +48,29 @@ test('mantiene il Wrapped di un ciclo senza programma e raggruppa per mese le li
   assert.equal(history.past[0]?.status, 'Concluso')
   assert.equal(historySessionGroups(history.past[0]!.sessions, first)[0]?.key, '1')
   assert.deepEqual(historySessionGroups(history.free).map(item => item.key), ['2026-11', '2026-10'])
+})
+
+test('un ciclo concluso ancora selezionato compare solo nei Passati prima e dopo la visione del Wrapped', () => {
+  const selected = { ...program, cycle: first }
+  const sessions = [session('ultima-seduta', first.start, { cycle: first, cycleRecorded: true })]
+  for (const saved of [undefined, recap]) {
+    const cycleRecaps = saved ? { [firstKey]: saved } : {}
+    const history = workoutHistory({ ...emptyDiary(), sessions, cycleRecaps }, [selected], selected, '2026-10-27')
+    assert.equal(history.current, undefined)
+    assert.equal(history.past.length, 1)
+    assert.equal(history.past[0]?.status, saved ? 'Concluso' : 'Da chiudere')
+    assert.equal(history.expiredSelection?.status, history.past[0]?.status)
+    assert.equal(history.past[0]?.sessions[0]?.id, 'ultima-seduta')
+    assert.equal(history.past[0]?.recap, saved)
+  }
+})
+
+test('un periodo scaduto da chiudere conserva lo stato quando si seleziona un ciclo futuro', () => {
+  const expired = { ...program, cycle: first }
+  const future = { ...program, id: 'nuovo', cycle: { start: '2026-11-30', weeks: 8 } }
+  const sessions = [session('precedente', first.start, { cycle: first, cycleRecorded: true })]
+  const history = workoutHistory({ ...emptyDiary(), sessions }, [expired, future], future, '2026-11-19')
+  assert.equal(history.current?.status, 'In partenza')
+  assert.equal(history.past[0]?.status, 'Da chiudere')
+  assert.equal(history.past[0]?.sessions[0]?.id, 'precedente')
 })

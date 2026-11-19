@@ -83,20 +83,21 @@ export function WorkoutHistory({ state, programs, current, today, tab }: {
   state: DiaryData; programs: ProgramRoot[]; current: ProgramRoot | null; today: string; tab: HistoryTab
 }) {
   const history = workoutHistory(state, programs, current, today)
+  const emptyCurrent = history.expiredSelection?.recap ? 'Il programma selezionato è concluso. Trovi le sedute in Passati.'
+    : history.expiredSelection ? 'Il ciclo è arrivato alla fine. Puoi terminarlo o estenderlo dalla Scheda.' : 'Nessun programma attivo.'
   return <>
     <SubpageHeader back="#/scheda" backLabel="Torna alla scheda" title="Storico allenamenti" />
     <Segmented value={tab} options={tabs} onChange={value => navigate(historyRoute(value))} label="Storico allenamenti" className="workout-history-tabs" />
     {tab === 'attuale' && (history.current ? <section aria-label="Programma attuale">
       <div className="workout-history-current panel"><CycleLabel entry={history.current} today={today} actual /></div>
-      {history.current.recap && <a className="button secondary workout-history-wrapped" href={cycleRecapHref(history.current.recap.key)}><Icon name="star" size={16} />Rivedi il Wrapped</a>}
       {history.current.sessions.length > 0
         ? <SessionGroups key={history.current.key} sessions={history.current.sessions} cycle={history.current.cycle} tab={tab} openLatest />
         : <p className="panel workout-history-empty">Le sedute del programma compariranno qui appena le registri.</p>}
-    </section> : <p className="panel workout-history-empty">Nessun programma attivo.</p>)}
+    </section> : <p className="panel workout-history-empty">{emptyCurrent}</p>)}
     {tab === 'passati' && (history.past.length ? <div className="workout-history-cycles">
       {history.past.map(entry => <HistoryDisclosure className="panel workout-history-cycle" key={entry.key}
         label={<CycleLabel entry={entry} today={today} />}>
-        {entry.recap && <a className="button secondary workout-history-wrapped" href={cycleRecapHref(entry.recap.key, 'passati')}><Icon name="star" size={16} />Rivedi il Wrapped</a>}
+        {entry.recap && <a className="button secondary workout-history-wrapped" href={cycleRecapHref(entry.recap.key)}><Icon name="star" size={16} />{entry.recap.unseen ? 'Apri il Wrapped' : 'Rivedi il Wrapped'}</a>}
         <SessionGroups sessions={entry.sessions} cycle={entry.cycle} tab={tab} openLatest />
       </HistoryDisclosure>)}
     </div> : <p className="panel workout-history-empty">I programmi precedenti compariranno qui.</p>)}

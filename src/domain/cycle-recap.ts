@@ -21,6 +21,7 @@ export interface CycleRecap {
   key: string
   title: string
   report: CycleRecapReport
+  unseen?: true
 }
 
 /** Una modifica del nome o della versione della scheda non cambia l'identità del ciclo. */
@@ -28,8 +29,8 @@ export function cycleRecapKey(planId: string, cycle: ProgramCycle) {
   return `${planId}.${cycle.start}.${cycle.weeks}`
 }
 
-export const cycleRecapHref = (key: string, tab: 'attuale' | 'passati' = 'attuale') =>
-  `#/scheda/riepilogo/archivio/${key}${tab === 'passati' ? '/passati' : ''}`
+export const cycleRecapHref = (key: string) => `#/scheda/riepilogo/archivio/${key}/passati`
+export const createWorkoutProgramHref = '#/scheda/programmi/riparti'
 
 function object(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
@@ -40,6 +41,7 @@ const date = (value: unknown): value is string => typeof value === 'string' && i
 
 export function readCycleRecap(value: unknown): CycleRecap | null {
   if (!object(value) || value.schema !== 1 || typeof value.key !== 'string' || typeof value.title !== 'string') return null
+  if (value.unseen !== undefined && value.unseen !== true) return null
   const { report } = value
   if (!object(report) || !object(report.info) || !date(report.info.start) || !date(report.info.end) || !integer(report.info.weeks)) return null
   if (!/^[a-zA-Z0-9_-]+\.\d{4}-\d{2}-\d{2}\.\d+$/.test(value.key) || !value.key.endsWith(`.${report.info.start}.${report.info.weeks}`)) return null

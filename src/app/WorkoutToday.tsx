@@ -5,8 +5,12 @@ import { WorkoutDaySwap, WorkoutDaySwapStatus } from '../features/WorkoutDaySwap
 import { Icon } from '../components/Icon'
 import { cycleRecapKey } from '../domain/cycle-recap'
 import { formatDate } from '../domain/dates'
+import { cycleInfo } from '../domain/progress'
+import { cycleReport } from '../domain/cycle-report'
 import { weekdayOfDate, weekdays } from '../domain/weekly'
 import { Workout } from '../features/Workout'
+import { WorkoutCycleEnd } from '../features/WorkoutCycleEnd'
+import { cycleRecapReport } from '../features/CycleReportDetails'
 import type { DiaryState, DiaryStore } from '../persistence/diary-store'
 import type { PlansState, PlansStore } from '../persistence/plans-store'
 import type { WorkoutToday as Schedule } from './use-workout-today'
@@ -40,16 +44,6 @@ function ActiveRestSession({ title, date, onDiscard }: { title: string; date: st
   </section>
 }
 
-function CycleFinished({ weeks }: { weeks: number }) {
-  return <section className="cycle-finished cycle-recap-invite">
-    <Icon name="star" size={24} />
-    <div><strong>Hai finito il programma!</strong><p>{weeks === 1 ? 'Vuoi vedere come è andata questa settimana?' : `Vuoi vedere cosa hai fatto in queste ${weeks} settimane?`}</p></div>
-    <div className="program-actions">
-      <a className="button primary" href="#/scheda/riepilogo">Guarda il tuo riepilogo<Icon name="arrow" size={20} /></a>
-    </div>
-  </section>
-}
-
 /** Contenuto quotidiano della Scheda: caricamento, riposo, scelta del programma o seduta del giorno. */
 export function WorkoutToday({ configured, plans, diary, schedule, date, today, workoutWeekdays, onStart, onStartFree, onDiscard, timeZone }: Props) {
   const { state } = plans
@@ -59,14 +53,46 @@ export function WorkoutToday({ configured, plans, diary, schedule, date, today, 
   const scheduleStatus = swapProps && <WorkoutDaySwapStatus key={`${workout!.version.id}:${date}`} {...swapProps} />
   const cycle = workout?.plan.cycle
   const archived = workout && cycle && diary.state.view.cycleRecaps?.[cycleRecapKey(workout.plan.id, cycle)]
-  const finished = schedule.cycleFinished && diary.state.phase === 'ready' && cycle && !archived && <CycleFinished weeks={cycle.weeks} />
   const cancel = activeSession && <button type="button" className="button secondary danger workout-cancel" aria-haspopup="dialog" onClick={() => onDiscard(activeSession.id)}>Annulla allenamento</button>
+  const selector = configured && followable.length > 1 && <section className="plan-selectors"><label className="plan-selector">Programma seguito
+    <select value={workout?.plan.id ?? ''} disabled={state.selecting} onChange={event => { schedule.resetDay(); void plans.store?.choose({ workoutPlanId: event.target.value }) }}>
+      {followable.map(item => <option key={item.plan.id} value={item.plan.id}>{item.plan.name}</option>)}
+    </select></label></section>
 
   if (configured && state.phase === 'loading') return <section className="panel empty-state" role="status"><h2>Caricamento del programma…</h2></section>
   if (configured && state.phase === 'error') return <section className="panel empty-state"><h2>Programma non disponibile</h2><p role="alert">{state.message}</p><RetryPlans store={plans.store} /></section>
 
+  if (workout && cycle && (schedule.cycleFinished || archived)) return <>
+    {activeSession && <ActiveRestSession key={activeSession.id} title={activeSession.day.title} date={activeSession.date} onDiscard={() => onDiscard(activeSession.id)} />}
+    {diary.state.phase === 'error' ? <section className="panel"><p role="alert">{diary.state.message}</p><button className="button secondary" onClick={() => void diary.store.refresh()}>Riprova</button></section> :
+      <WorkoutCycleEnd key={cycleRecapKey(workout.plan.id, cycle)} info={cycleInfo(cycle, today)} name={workout.plan.name} today={today}
+        recap={archived ?? undefined} waiting={diary.state.phase === 'loading'} blocked={activeSession?.planId === workout.plan.id}
+        onFinish={() => {
+          const report = cycleReport(workout.plan.id, diary.store.getSnapshot().view.sessions, cycle, today, schedule.baseDays)
+          diary.store.archiveCycle({ schema: 1, key: cycleRecapKey(workout.plan.id, cycle), title: workout.plan.name, report: cycleRecapReport(report), unseen: true })
+        }}
+        onExtend={plans.store ? async weeks => {
+          const success = await plans.store?.extendWorkoutCycle(weeks)
+          if (success) { schedule.resetDay(); await diary.store.refresh() }
+          return Boolean(success)
+        } : undefined} />}
+    {selector}
+  </>
+
+  if (workout && cycle && schedule.cycleUpcoming) return <>
+    {activeSession && <ActiveRestSession key={activeSession.id} title={activeSession.day.title} date={activeSession.date} onDiscard={() => onDiscard(activeSession.id)} />}
+    <section className="rest-day cycle-upcoming" aria-labelledby="cycle-upcoming-title">
+      <span className="rest-day-icon" aria-hidden="true"><Icon name="calendar" size={24} /></span>
+      <div className="rest-day-copy">
+        <span className="eyebrow">{workout.plan.name}</span>
+        <h2 id="cycle-upcoming-title">Il tuo programma inizia {formatDate(cycle.start, { weekday: 'long', day: 'numeric', month: 'long' })}</h2>
+      </div>
+    </section>
+    {selector}
+    {!activeSession && <FreeWorkoutEntry date={date} onStart={onStartFree} disabled={diary.state.phase !== 'ready'} />}
+  </>
+
   if (!day && weekly && workout) return <>
-    {finished}
     {activeSession && <ActiveRestSession key={activeSession.id} title={activeSession.day.title} date={activeSession.date} onDiscard={() => onDiscard(activeSession.id)} />}
     <section className="rest-day" aria-labelledby="rest-day-title">
       <span className="rest-day-icon" aria-hidden="true"><Icon name="moon" size={24} /></span>
@@ -98,11 +124,7 @@ export function WorkoutToday({ configured, plans, diary, schedule, date, today, 
   </section>
 
   return <>
-    {finished}
-    {configured && followable.length > 1 && <section className="plan-selectors"><label className="plan-selector">Programma seguito
-      <select value={workout?.plan.id ?? ''} disabled={state.selecting} onChange={event => { schedule.resetDay(); void plans.store?.choose({ workoutPlanId: event.target.value }) }}>
-        {followable.map(item => <option key={item.plan.id} value={item.plan.id}>{item.plan.name}</option>)}
-      </select></label></section>}
+    {selector}
     {configured && diary.state.phase === 'loading' && <p className="small muted" role="status">Caricamento del diario…</p>}
     {configured && diary.state.phase === 'error' && <section className="panel"><p role="alert">{diary.state.message}</p><button className="button secondary" onClick={() => void diary.store.refresh()}>Riprova</button></section>}
     <Workout scheduleStatus={scheduleStatus} scheduleActions={swapProps ? onChooseDay => <WorkoutDaySwap key={`${workout!.version.id}:${date}`} {...swapProps} variant="menu" onChooseDay={onChooseDay} /> : undefined} day={day} days={workoutDays} planTitle={workout ? workout.plan.name : 'Full body'} planGuidance={workout?.version.guidance || undefined} date={date} today={today}

@@ -97,6 +97,7 @@ export function setValues(result: SetResult, mode: ExercisePrescription['mode'])
 /** Operazioni del diario: applicate subito alla vista locale e poi inviate in ordine. */
 export type DiaryOp =
   | { type: 'archive-cycle'; opId: string; recap: CycleRecap }
+  | { type: 'view-cycle'; opId: string; recapKey: string }
   | { type: 'swap'; opId: string; swap: DaySwap }
   | { type: 'undo-swap'; opId: string; swap: DaySwap }
   | { type: 'session-edit'; opId: string; sessionId: string; edit: SessionEdit; expectedOrder: string[] }
@@ -116,6 +117,7 @@ export type DiaryOp =
 export function opKey(op: DiaryOp): string {
   switch (op.type) {
     case 'archive-cycle': return `cycle-recap:${op.recap.key}`
+    case 'view-cycle': return `cycle-view:${op.recapKey}`
     case 'swap': case 'undo-swap': return `swap:${op.opId}`
     case 'session-edit': return `session-edit:${op.opId}`
     case 'change': return `change:${op.change.id}`
@@ -132,6 +134,12 @@ export function applyOp(data: DiaryData, op: DiaryOp): DiaryData {
   switch (op.type) {
     case 'archive-cycle':
       return data.cycleRecaps?.[op.recap.key] ? data : { ...data, cycleRecaps: { ...data.cycleRecaps, [op.recap.key]: op.recap } }
+    case 'view-cycle': {
+      const recap = data.cycleRecaps?.[op.recapKey]
+      if (!recap?.unseen) return data
+      const { schema, key, title, report } = recap
+      return { ...data, cycleRecaps: { ...data.cycleRecaps, [key]: { schema, key, title, report } } }
+    }
     case 'swap': return applyDaySwap(data, op.swap)
     case 'undo-swap': return applyDaySwap(data, { ...op.swap, cancelled: true })
     case 'session-edit': return { ...data, sessions: data.sessions.map(session => session.id === op.sessionId ? editSessionExercises(session, op.edit) : session) }

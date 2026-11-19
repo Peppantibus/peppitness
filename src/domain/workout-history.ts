@@ -23,6 +23,8 @@ const newestSession = (a: WorkoutSession, b: WorkoutSession) => b.date.localeCom
 
 export function workoutHistory(view: DiaryData, programs: ProgramRoot[], current: ProgramRoot | null, today: string) {
   const names = new Map(programs.map(program => [program.id, program.name]))
+  const followableCycles = new Set(programs.flatMap(program => program.cycle && program.activeVersionId && !program.archivedAt
+    ? [cycleRecapKey(program.id, program.cycle)] : []))
   const periods = new Map<string, Map<string, ProgramCycle>>()
   function remember(planId: string, cycle: ProgramCycle) {
     const known = periods.get(planId) ?? new Map<string, ProgramCycle>()
@@ -50,11 +52,12 @@ export function workoutHistory(view: DiaryData, programs: ProgramRoot[], current
     cycles.set(recap.key, { key: recap.key, title: recap.title, cycle, recap, sessions: [], status: 'Concluso' })
   }
 
-  const currentKey = current?.cycle ? cycleRecapKey(current.id, current.cycle) : current ? planKey(current.id) : null
-  if (current && currentKey && !cycles.has(currentKey)) {
-    const info = current.cycle ? cycleInfo(current.cycle, today) : null
-    cycles.set(currentKey, { key: currentKey, title: current.name, cycle: current.cycle ?? undefined, sessions: [],
-      status: info?.status === 'finished' ? 'Concluso' : info?.status === 'upcoming' ? 'In partenza' : 'In corso' })
+  const selectedKey = current?.cycle ? cycleRecapKey(current.id, current.cycle) : current ? planKey(current.id) : null
+  const selectedStatus = current?.cycle ? cycleInfo(current.cycle, today).status : null
+  const currentKey = selectedKey && selectedStatus !== 'finished' && !cycles.has(selectedKey) ? selectedKey : null
+  if (current && selectedKey && !cycles.has(selectedKey)) {
+    cycles.set(selectedKey, { key: selectedKey, title: current.name, cycle: current.cycle ?? undefined, sessions: [],
+      status: selectedStatus === 'finished' ? 'Da chiudere' : selectedStatus === 'upcoming' ? 'In partenza' : 'In corso' })
   }
 
   const free: WorkoutSession[] = []
@@ -70,7 +73,7 @@ export function workoutHistory(view: DiaryData, programs: ProgramRoot[], current
     let entry = cycles.get(key)
     if (!entry) {
       const status = interruptions.has(key) ? 'Interrotto'
-        : cycle && cycleInfo(cycle, today).status === 'finished' ? 'Concluso' : 'Archiviato'
+        : cycle && followableCycles.has(key) && cycleInfo(cycle, today).status === 'finished' ? 'Da chiudere' : 'Archiviato'
       entry = { key, cycle, title: session.day.subtitle || names.get(planId) || 'Sedute precedenti', sessions: [], status }
       cycles.set(key, entry)
     }
@@ -80,6 +83,7 @@ export function workoutHistory(view: DiaryData, programs: ProgramRoot[], current
   const activityDate = (entry: HistoryCycle) => entry.cycle ? cycleInfo(entry.cycle, today).end : entry.sessions[0]?.date ?? ''
   return {
     current: currentKey ? cycles.get(currentKey) : undefined,
+    expiredSelection: selectedKey && !currentKey ? cycles.get(selectedKey) : undefined,
     past: [...cycles.values()].filter(entry => entry.key !== currentKey)
       .sort((a, b) => activityDate(b).localeCompare(activityDate(a)) || a.title.localeCompare(b.title, 'it')),
     free,

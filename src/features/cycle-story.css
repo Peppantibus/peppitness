@@ -341,6 +341,12 @@
   font-size: .9rem;
   padding-block: .35rem;
 }
+.cycle-story-end-actions .cycle-story-next-program {
+  width: 100%;
+  min-height: 2.9rem;
+  background: var(--deck-accent);
+  color: var(--deck-paper);
+}
 .cycle-story-feedback {
   flex-basis: 100%;
 }

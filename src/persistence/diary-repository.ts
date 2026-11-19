@@ -1,4 +1,4 @@
-import { cycleRecapKey, cycleRecapsFrom } from '../domain/cycle-recap.ts'
+import { cycleRecapKey, readCycleRecap } from '../domain/cycle-recap.ts'
 import type { DaySwap, ScheduleExpectation } from '../domain/day-swaps.ts'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { isMealEnergy } from '../domain/food-energy.ts'
@@ -34,6 +34,7 @@ export function countsOf(revisions: Record<string, number>): DiaryCounts {
 }
 
 export interface DiaryTransport {
+  viewRecap?(key: string, signal: AbortSignal): Promise<Row | null>
   startFree?(args: { sessionId: string; date: string; timeZone: string }, signal: AbortSignal): Promise<Row>
   swap?(op: Extract<DiaryOp, { type: 'swap' | 'undo-swap' }>, signal: AbortSignal): Promise<DaySwap>
   editSession?(op: Extract<DiaryOp, { type: 'session-edit' }>, setRevisions: Record<string, number>, signal: AbortSignal): Promise<Row>
@@ -62,6 +63,14 @@ export class DiaryFailure extends Error {
 
 const bad = (): never => { throw new DiaryFailure('unavailable') }
 function record(value: unknown): Row { return value && typeof value === 'object' && !Array.isArray(value) ? value as Row : bad() }
+export function recapFromRow(value: unknown) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return null
+  const row = value as Row
+  const payload = readCycleRecap(row.payload)
+  if (!payload || payload.key !== row.recap_key) return null
+  const { schema, key, title, report } = payload
+  return { schema, key, title, report, ...(row.viewed === false ? { unseen: true as const } : {}) }
+}
 function string(value: unknown): string { return typeof value === 'string' ? value : bad() }
 function id(value: unknown): string { const key = string(value); return isExerciseId(key) ? key : bad() }
 function revision(value: unknown): number { return typeof value === 'number' && Number.isSafeInteger(value) && value > 0 ? value : bad() }
@@ -243,7 +252,7 @@ export function buildDiary(sessions: unknown[], sets: unknown[], meals: unknown[
 }
 
 const columns: Record<DiaryTable, string> = {
-  workout_cycle_recaps: 'owner_id,recap_key,payload',
+  workout_cycle_recaps: 'owner_id,recap_key,payload,viewed',
   workout_cycle_interruptions: 'owner_id,plan_id,cycle_start,cycle_weeks',
   workout_day_swaps: 'id,owner_id,plan_id,version_id,source_date,target_date,source_day_id,target_day_id,time_zone,cancelled,updated_at',
   workout_changes: 'id,owner_id,change_doc,updated_at',
@@ -293,12 +302,19 @@ export function createDiaryTransport(client: SupabaseClient, owner: string): Dia
     }
   }
   const loadCycleRecaps = async (signal: AbortSignal) =>
-    cycleRecapsFrom((await pages('workout_cycle_recaps', 'recap_key', signal)).map(row => row.payload))
+    Object.fromEntries((await pages('workout_cycle_recaps', 'recap_key', signal)).map(recapFromRow).flatMap(recap => recap ? [[recap.key, recap]] : []))
   const loadInterruptedCycles = async (signal: AbortSignal) =>
     (await pages('workout_cycle_interruptions', 'plan_id,cycle_start,cycle_weeks', signal))
       .map(row => cycleRecapKey(id(row.plan_id), { start: date(row.cycle_start), weeks: Number(row.cycle_weeks) }))
 
   return {
+    async viewRecap(key, signal) {
+      const auth = await token(signal)
+      const { data, error } = await client.from('workout_cycle_recaps').update({ viewed: true }).eq('owner_id', owner).eq('recap_key', key).select(columns.workout_cycle_recaps)
+        .setHeader('Authorization', `Bearer ${auth}`).abortSignal(signal).retry(false).maybeSingle()
+      if (error) throw failure(error)
+      return data === null ? null : owned(data)
+    },
     async startFree(args, signal) {
       const auth = await token(signal)
       const { data, error } = await client.rpc('start_free_workout_session', { p_session_id: args.sessionId, p_diary_date: args.date, p_time_zone: args.timeZone })

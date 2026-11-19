@@ -18,6 +18,7 @@ export interface ProgramsRepository {
   revise(input: RevisionInput, signal: AbortSignal): Promise<RevisionResult>
   /** Inizio e durata del ciclo, con revisione letta + 1 del programma. */
   setCycle(plan: ProgramRoot, cycle: ProgramCycle | null, signal: AbortSignal): Promise<ProgramRoot>
+  extendCycle?(plan: ProgramRoot, weeks: number, signal: AbortSignal): Promise<ProgramRoot>
   deletePlans(planId: string | null, signal: AbortSignal): Promise<number>
 }
 export class ProgramsFailure extends Error {
@@ -166,6 +167,17 @@ export function createProgramsRepository(client: SupabaseClient, owner: string):
       if (error) throw failure(error)
       if (!data) throw new ProgramsFailure('conflict')
       return root(owned(data, owner))
+    },
+    async extendCycle(plan, weeks, signal) {
+      if (!plan.cycle || !Number.isInteger(weeks) || weeks <= plan.cycle.weeks || weeks > 52) throw new ProgramsFailure('invalid')
+      const token = await access(signal)
+      const { data, error } = await client.rpc('extend_workout_cycle', { p_plan_id: plan.id, p_cycle_start: plan.cycle.start,
+        p_cycle_weeks: plan.cycle.weeks, p_new_weeks: weeks, p_expected_revision: plan.revision })
+        .setHeader('Authorization', `Bearer ${token}`).abortSignal(signal).retry(false)
+      if (error) throw failure(error)
+      const updated = root(owned(Array.isArray(data) && data.length === 1 ? data[0] : data, owner))
+      if (updated.id !== plan.id || updated.cycle?.start !== plan.cycle.start || updated.cycle.weeks !== weeks || updated.revision !== plan.revision + 1) fail()
+      return updated
     },
     async deletePlans(planId, signal) {
       if (planId !== null && !isExerciseId(planId)) throw new ProgramsFailure('invalid')

@@ -30,6 +30,8 @@ import type { ImportReceipt } from './import/contracts/index.ts'
 import { MealDetail } from './features/Diet'
 import { History } from './features/History'
 import { Progress } from './features/Progress'
+import { FreeWorkoutEntry } from './features/FreeWorkout'
+import { ProgramStartChoice } from './features/ProgramStartChoice'
 import { CycleReport } from './features/CycleReport'
 import './features/cycle-report.css'
 import { SessionSummaryDialog } from './features/SessionSummary'
@@ -53,6 +55,7 @@ const MealPlans = lazy(() => import('./features/MealPlans').then(module => ({ de
 const ImportPlan = lazy(() => import('./features/import/ImportPlan').then(module => ({ default: module.ImportPlan })))
 
 const pageTitles: [keyof ReturnType<typeof useRoute>, string][] = [
+  ['isProgramStarter', 'Crea un nuovo programma'],
   ['isSettings', 'Impostazioni'], ['isPrograms', 'I tuoi programmi'], ['isProgress', 'I tuoi progressi'], ['isCycleReport', 'Il tuo riepilogo'], ['isCatalog', 'I tuoi esercizi'], ['isMealPlans', 'I tuoi piani alimentari'],
 ]
 
@@ -122,7 +125,7 @@ export function App() {
   const subpage = isHistory || isProgress || isCycleReport || isSettings || isCatalog || isPrograms || isMealPlans || isImport || isMorning
   const showDaily = validRoute && !subpage && !isSession && !historySession
   const programDocument = programs.state.document, mealDraft = plans.state.editor.draft
-  const programWizard = isPrograms && Boolean(programDocument) && editors.programMode === 'wizard'
+  const programWizard = isPrograms && !page.isProgramStarter && Boolean(programDocument) && editors.programMode === 'wizard'
     && (editors.programStep === 'done' || programs.state.revising || (fitsWizard(programDocument!) && programs.state.base?.version.status !== 'published'))
   const mealWizard = isMealPlans && Boolean(mealDraft) && editors.mealMode === 'wizard' && (editors.mealStep === 'done' || fitsMealWizard(mealDraft!.document))
 
@@ -173,6 +176,7 @@ export function App() {
       ? Boolean(cycle && session.cycle.start === cycle.start && session.cycle.weeks === cycle.weeks)
       : !cycle || (!session.cycleRecorded && cycleInfo(cycle, session.date).status === 'active')
     const current = session.planId === (workout?.plan.id ?? 'local') && matchesCycle
+      && (!cycle || cycleInfo(cycle, today).status !== 'finished')
     diary.store.completeSession(session.id)
     navigate(historyRoute(session.kind === 'free' ? 'liberi' : current ? 'attuale' : 'passati'))
     setSummarySessionId(session.id)
@@ -180,6 +184,7 @@ export function App() {
   }
   const start = () => {
     if (activeSession) { navigate('/scheda/seduta'); return }
+    if (schedule.cycleFinished || schedule.cycleUpcoming || savedRecap) return
     const day = schedule.day
     if (!day || (configured && (!workout || diary.state.phase !== 'ready'))) return
     if (diary.store.startSession({ date, day, planId: workout?.plan.id ?? 'local', versionId: workout?.version.id ?? 'local', timeZone, cycle: workout?.plan.cycle, expectedSchedule: schedule.expectedSchedule })) navigate('/scheda/seduta')
@@ -211,6 +216,9 @@ export function App() {
   }
   const deletionBlocked = diary.store.hasPending || diary.store.hasVolatileData
   const mealLog = meal ? view.mealLogs[mealLogKey(date, meal.id)] : undefined
+  const showCycleEnd = section === 'scheda' && (schedule.cycleFinished || Boolean(savedRecap))
+  const workoutToday = section === 'scheda' && showDaily && <WorkoutToday configured={configured} plans={plans} diary={diary} schedule={schedule} date={date} today={today}
+    workoutWeekdays={settings.state.saved?.workoutWeekdays} onStart={start} onStartFree={startFree} onDiscard={setDiscardingSessionId} timeZone={timeZone} />
 
   return <Layout userName={settings.state.saved?.displayName} section={isSettings ? null : section} hasTimer={Boolean(diary.state.restTimer)} focus={programWizard || mealWizard || isMorningEditor} session={isSession || Boolean(historySession)} subpage={subpage}
     status={syncIndicator} sidebarStatus={<SyncIndicator store={diary.store} state={diary.state} localOnly={!configured} additional={morningSync} withLabel />}>
@@ -220,23 +228,26 @@ export function App() {
     {configured && (showDaily || isSession) && <SyncStatus store={diary.store} state={diary.state} />}
     {showDaily && <>
       <div className="day-header"><h1>{section === 'dieta' ? 'La tua dieta' : 'La tua scheda'}<span className="heading-dot">.</span></h1><SectionMenu section={section} full={configured} current={section === 'scheda' ? workout?.plan.name : menu.mealPlan?.name} /></div>
+      {showCycleEnd && workoutToday}
       <DatePicker date={date} onChange={setDate} today={today} planned={section === 'scheda' ? schedule.trainingDates : []} done={section === 'scheda' ? schedule.sessionDates : menu.mealDates} doneLabel={section === 'scheda' ? value => view.sessions.some(session => session.date === value && session.completedAt && session.kind !== 'free') ? 'seduta completata' : 'allenamento libero completato' : 'pasti registrati'} />
       <DateContext date={date} today={today} onToday={() => setDate(today)} />
       {section === 'scheda' && <MorningRoutineCard state={morning.state} date={date} />}
+      {showCycleEnd && !activeSession && <FreeWorkoutEntry date={date} onStart={startFree} disabled={diary.state.phase !== 'ready'} />}
       {section === 'dieta'
         ? <DietToday configured={configured} plans={plans} diary={diary} menu={menu} date={date} today={today} onQuickFollow={quickFollow} />
-        : <WorkoutToday configured={configured} plans={plans} diary={diary} schedule={schedule} date={date} today={today} workoutWeekdays={settings.state.saved?.workoutWeekdays} onStart={start} onStartFree={startFree} onDiscard={setDiscardingSessionId} timeZone={timeZone} />}
+        : !showCycleEnd && workoutToday}
     </>}
     {isHistory && <History section={section} state={view} onDate={setDate} programs={plans.state.programs}
       current={workout?.plan ?? null} today={today} tab={page.historyTab} />}
     {section === 'scheda' && (showDaily || isMorning) && <MorningRoutineStatus store={morning.store} state={morning.state} />}
     {isMorning && <Suspense fallback={<p role="status">Apertura della routine…</p>}><MorningRoutinePage store={morning.store} state={morning.state} editing={isMorningEditor} date={date} today={today} onDate={setDate} onDirty={setMorningDirty} /></Suspense>}
     {isCatalog && <Suspense fallback={<p role="status">Apertura del catalogo…</p>}><ExerciseCatalog store={catalog.store} state={catalog.state} /></Suspense>}
-    {isPrograms && <Suspense fallback={<p role="status">Apertura dei programmi…</p>}><Programs store={programs.store} state={programs.state} catalog={catalog} mode={editors.programMode} setMode={editors.setProgramMode} step={editors.programStep} setStep={editors.setProgramStep}
+    {page.isProgramStarter && <ProgramStartChoice previousTitle={savedRecap && workout?.plan.cycle ? workout.plan.name : undefined} />}
+    {isPrograms && !page.isProgramStarter && <Suspense fallback={<p role="status">Apertura dei programmi…</p>}><Programs store={programs.store} state={programs.state} catalog={catalog} mode={editors.programMode} setMode={editors.setProgramMode} step={editors.programStep} setStep={editors.setProgramStep}
       followedPlanId={plans.state.selection?.workoutPlanId ?? null} followedDays={workout?.document.days ?? null} onFollow={followProgram} onDeleted={async () => { await plans.store?.load() }} deletionBlocked={deletionBlocked} today={today} /></Suspense>}
     {isProgress && <Progress workout={workout} days={schedule.baseDays} sessions={schedule.programSessions} today={today} swaps={view.swaps ?? []} />}
-    {isCycleReport && <CycleReport workout={workout} days={schedule.baseDays} sessions={view.sessions} today={today}
-      savedRecap={savedRecap} archiveBack={page.archivedCycleKey ? `#${historyRoute(page.archivedCycleTab)}` : undefined} onArchive={diary.store.archiveCycle}
+    {isCycleReport && <CycleReport workout={workout} today={today}
+      savedRecap={savedRecap} archiveBack={page.archivedCycleKey ? `#${historyRoute('passati')}` : undefined} onViewed={diary.store.markCycleViewed}
       loading={diary.state.phase === 'loading' || (!page.archivedCycleKey && plans.state.phase === 'loading')} />}
     {isMealPlans && <Suspense fallback={<p role="status">Apertura dei piani…</p>}><MealPlans store={plans.store} state={plans.state} mode={editors.mealMode} setMode={editors.setMealMode} step={editors.mealStep} setStep={editors.setMealStep} deletionBlocked={deletionBlocked} /></Suspense>}
     {isImport && <Suspense fallback={<p role="status">Apertura dell’importazione…</p>}><ImportPlan key={importKind} kind={importKind} engine={importReview.engine} loadFailed={importReview.loadFailed} onRetryLoad={importReview.retryLoad} context={importContext} /></Suspense>}

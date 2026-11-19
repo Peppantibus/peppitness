@@ -151,13 +151,15 @@ export function ProgramWizard({ store, state, catalog, step, setStep, onAdvanced
 
   // ------------------------------------------------------------------ nome
   if (step === 'name') {
+    const durations = state.cycleDraft && !cycleDurations.includes(state.cycleDraft.weeks)
+      ? [...cycleDurations, state.cycleDraft.weeks].sort((a, b) => a - b) : cycleDurations
     return shell(<>
       <div className="wizard-intro"><span className="wizard-count">Passo 1 di 8</span><h1 id="wizard-heading" ref={heading} tabIndex={-1}>{state.revising ? 'Nome e durata' : 'Come si chiama il programma?'}</h1><p>{state.revising ? 'Poi potrai rivedere la settimana tipo, da lunedì a domenica.' : 'Poi imposterai la settimana tipo, da lunedì a domenica.'}</p></div>
       {state.revising && state.base && <p className="wz-revise-note">Stai modificando «{state.base.plan.name}». Salvando aggiorni questo programma: le sedute già registrate restano nello storico così come le hai fatte. Puoi anche rinominarlo.</p>}
       <form id="wizard-name-form" className="wizard-form" onSubmit={event => { event.preventDefault(); if (document.title.trim() && (state.cycleDraft || state.revising)) setStep(0) }}>
         <label htmlFor="wizard-name">Nome del programma<input id="wizard-name" autoFocus maxLength={160} placeholder="Es. Forza settembre–novembre" value={document.title} onChange={event => store.edit({ ...document, title: event.target.value })} /></label>
         {state.cycleDraft && <>
-          <fieldset className="wz-groups"><legend>Per quante settimane?</legend><div className="chip-row">{cycleDurations.map(weeks => <button key={weeks} type="button" className="chip wz-weeks" aria-pressed={state.cycleDraft!.weeks === weeks} onClick={() => store.setCycleDraft({ ...state.cycleDraft!, weeks })}>{weeks} settimane</button>)}</div></fieldset>
+          <fieldset className="wz-groups"><legend>Per quante settimane?</legend><div className="chip-row">{durations.map(weeks => <button key={weeks} type="button" className="chip wz-weeks" aria-pressed={state.cycleDraft!.weeks === weeks} onClick={() => store.setCycleDraft({ ...state.cycleDraft!, weeks })}>{weeks} {weeks === 1 ? 'settimana' : 'settimane'}</button>)}</div></fieldset>
           <fieldset className="wz-groups"><legend>Da quando?</legend><div className="chip-row">
             <button type="button" className="chip" aria-pressed={state.cycleDraft.start === today} onClick={() => store.setCycleDraft({ ...state.cycleDraft!, start: today })}>Oggi</button>
             {mondayOf(today, true) !== today && <button type="button" className="chip" aria-pressed={state.cycleDraft.start === mondayOf(today, true)} onClick={() => store.setCycleDraft({ ...state.cycleDraft!, start: mondayOf(today, true) })}>Lunedì {formatDate(mondayOf(today, true), { day: 'numeric', month: 'short' })}</button>}

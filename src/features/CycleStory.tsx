@@ -2,7 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 import type { PointerEvent, ReactNode } from 'react'
 import { Icon } from '../components/Icon'
 import type { CycleRecapReport } from '../domain/cycle-recap'
+import { createWorkoutProgramHref } from '../domain/cycle-recap'
 import { formatDate } from '../domain/dates'
+import { historyRoute } from '../domain/workout-history'
 import { CycleExerciseList } from './CycleReportDetails'
 import { saveCycleStoryCard } from './cycle-story-card'
 import './cycle-story.css'
@@ -103,8 +105,8 @@ function startStoryTimer(duration: number, advance: () => void) {
   }
 }
 
-export function CycleStory({ report, programName, back, onCompleted }: {
-  report: CycleRecapReport; programName: string; back: string; onCompleted?: () => void
+export function CycleStory({ report, programName, back, nextProgram, onCompleted }: {
+  report: CycleRecapReport; programName: string; back: string; nextProgram?: boolean; onCompleted?: () => void
 }) {
   const range = `${shortDate(report.info.start)} – ${shortDate(report.info.end)}`
   const stories = storiesFor(report, programName, range)
@@ -222,8 +224,9 @@ export function CycleStory({ report, programName, back, onCompleted }: {
           {current === last && <div className="cycle-story-end-actions">
             <button type="button" className="cycle-deck-button" onClick={saveCard}><Icon name="arrowDown" size={20} />Scarica la card</button>
             <button type="button" className="cycle-deck-button cycle-deck-print" onClick={() => window.print()}>Salva PDF</button>
+            {nextProgram && <a className="cycle-deck-button cycle-story-next-program" href={createWorkoutProgramHref}>Crea un nuovo programma<Icon name="arrow" size={20} /></a>}
             {message && <p className="cycle-story-feedback" role="status">{message}</p>}
-            {!onCompleted && <a className="cycle-story-history-link" href={back.startsWith('#/scheda/storico') ? back : '#/scheda/storico'}>Apri lo Storico</a>}
+            {!onCompleted && <a className="cycle-story-history-link" href={`#${historyRoute('passati')}`}>Apri lo Storico</a>}
           </div>}
         </div>
       </section>

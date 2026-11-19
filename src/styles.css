@@ -356,6 +356,12 @@ a.meal-card-link:hover, .exercise-card:hover, a.history-card:hover, button.histo
 .plan-empty > p { margin: 0 0 var(--space-3); }
 .plan-empty > .text-link { margin-top: var(--space-2); padding: var(--space-2) 0; }
 .plan-choices { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-3); }
+.program-start-choices { display: grid; gap: var(--space-3); }
+.panel.program-start-choice { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-3); margin: 0; text-decoration: none; }
+.program-start-choice > svg:first-child { color: var(--color-primary); }
+.program-start-choice small { display: block; margin-top: var(--space-1); color: var(--color-text-muted); overflow-wrap: anywhere; }
+.program-start-choice:hover { border-color: var(--color-border-strong); }
+.program-cycle-fields { display: grid; gap: var(--space-3); }
 .plan-choice { max-width: 100%; overflow-wrap: anywhere; }
 .detail-note, .detail-facts { margin: var(--space-4) 0; padding: var(--space-4); border-radius: var(--radius-md); background: var(--color-sage); font-size: var(--text-md); line-height: var(--leading-normal); overflow-wrap: anywhere; }
 .detail-note strong { font-size: var(--text-md); }
@@ -714,9 +720,6 @@ main { max-width: var(--content-width); margin: 0 auto; padding-top: var(--space
 .resume-banner strong, .resume-banner small { display: block; }
 .resume-banner strong { color: var(--color-text); }
 .resume-banner small { margin-top: 2px; font-size: var(--text-sm); color: var(--color-text-muted); }
-.cycle-finished { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: var(--space-3); margin: var(--space-3) 0; padding: var(--space-4); border: 1px solid var(--success-border); border-radius: var(--radius-lg); background: var(--success-bg); color: var(--success-fg); }
-.cycle-finished p { margin-top: 2px; font-size: var(--text-md); color: var(--color-text); }
-.cycle-finished .program-actions { grid-column: 1 / -1; margin-bottom: 0; }
 .rest-day { display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: start; gap: var(--space-4); margin-top: var(--space-2); padding: var(--space-6) var(--space-5); border: 1px solid var(--color-border); border-radius: var(--radius-xl); background: var(--color-sage); }
 .rest-day-icon { display: grid; place-items: center; flex-shrink: 0; width: 2.75rem; height: 2.75rem; border-radius: var(--radius-md); background: var(--color-surface); color: var(--color-primary); }
 .rest-day-copy { min-width: 0; }
