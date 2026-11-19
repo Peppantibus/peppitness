@@ -1,4 +1,4 @@
-import type { CycleRecapReport } from '../domain/cycle-recap'
+import type { CycleRecapGroup, CycleRecapReport } from '../domain/cycle-recap'
 import type { cycleReport } from '../domain/cycle-report'
 import { formatDecimal } from '../domain/diary'
 import type { ExercisePrescription, SetResult } from '../domain/types'
@@ -25,7 +25,7 @@ function pointValue(set: SetResult, exercise: ExercisePrescription) {
 }
 
 export function cycleRecapReport(report: Report): CycleRecapReport {
-  const { info, groups, record, sessions, sets, weeks, activeWeeks, streak, pauses } = report
+  const { info, groups, featuredGroup, record, sessions, sets, weeks, activeWeeks, streak, pauses } = report
   return {
     info: { start: info.start, end: info.end, weeks: info.weeks }, sessions, sets, weeks, activeWeeks, streak, pauses,
     groups: groups.map(({ label, exercise, points, trend }) => ({
@@ -34,6 +34,7 @@ export function cycleRecapReport(report: Report): CycleRecapReport {
       ...(trend && trend !== 'progress' ? { caption: trendLabels[trend] } : {}),
       ...(exercise.comparison?.perSide ? { perSide: true } : {}),
     })),
+    ...(featuredGroup ? { featuredGroup } : {}),
     record: record ? {
       exercise: record.exercise.name, date: record.date,
       value: formatResult({
@@ -44,19 +45,25 @@ export function cycleRecapReport(report: Report): CycleRecapReport {
   }
 }
 
+export function CycleExercisePoints({ points, perSide }: Pick<CycleRecapGroup, 'points' | 'perSide'>) {
+  return <>
+    <ol className="cycle-report-points" aria-label="Serie registrate">
+      {points.map(({ value, week }) => <li key={week}>
+        <strong>{value}</strong>
+        <small>Settimana {week}</small>
+      </li>)}
+    </ol>
+    {perSide && <p className="cycle-report-caption">Ripetizioni per lato</p>}
+  </>
+}
+
 export function CycleExerciseList({ groups }: Pick<CycleRecapReport, 'groups'>) {
   if (!groups.length) return null
   return <ul className="cycle-report-exercises" aria-label="Panoramica per gruppo muscolare">
     {groups.map(({ label, exercise, points, caption, perSide }) => <li className="cycle-report-exercise" key={label}>
       <h3><span>{label}</span> · {exercise}</h3>
       {caption && <p className="cycle-report-caption">{caption}</p>}
-      <ol className="cycle-report-points">
-        {points.map(({ value, week }) => <li key={week}>
-          <strong>{value}</strong>
-          <small>Settimana {week}</small>
-        </li>)}
-      </ol>
-      {perSide && <p className="cycle-report-caption">Ripetizioni per lato</p>}
+      <CycleExercisePoints points={points} perSide={perSide} />
     </li>)}
   </ul>
 }

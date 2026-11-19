@@ -32,6 +32,11 @@
   --deck-ink: #242032;
   --deck-accent: #564480;
 }
+.cycle-deck--progression {
+  --deck-paper: #a5e4d0;
+  --deck-ink: #142f29;
+  --deck-accent: #246151;
+}
 .cycle-deck--rhythm {
   --deck-paper: #1a473e;
   --deck-ink: #fff7e7;
@@ -266,6 +271,41 @@
 .cycle-deck .cycle-report-points li + li::before {
   inset-inline-start: .28rem;
 }
+.cycle-deck .cycle-story-progression h1 {
+  max-width: 15ch;
+  margin-top: .65rem;
+  font-size: clamp(2.5rem, 9.5vw, 4.5rem);
+  line-height: .95;
+}
+.cycle-deck .cycle-story-progression .cycle-story-lead {
+  margin-top: .8rem;
+}
+.cycle-deck .cycle-story-progression .cycle-report-points {
+  display: grid;
+  margin-top: 1.4rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--deck-ink) 35%, transparent);
+}
+.cycle-deck .cycle-story-progression .cycle-report-points li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: .25rem 1rem;
+  min-height: 3rem;
+  border-top: 1px solid color-mix(in srgb, var(--deck-ink) 35%, transparent);
+  padding: .62rem 0;
+}
+.cycle-deck .cycle-story-progression .cycle-report-points li::before {
+  content: none;
+}
+.cycle-deck .cycle-story-progression .cycle-report-points strong {
+  font-size: clamp(1.25rem, 5.5vw, 1.75rem);
+  line-height: 1.12;
+}
+.cycle-deck .cycle-story-progression :is(.cycle-report-points small, .cycle-report-caption) {
+  color: var(--deck-accent);
+}
+.cycle-deck .cycle-story-progression .cycle-report-caption { margin-top: .5rem; }
 .cycle-deck-content .cycle-story-number {
   display: grid;
   gap: .15rem;
@@ -400,6 +440,7 @@
   .cycle-story-print .cycle-story-stats { margin-top: .65rem; }
   .cycle-story-print .cycle-story-stats dd { font-size: 1.35rem; }
   .cycle-story-print .cycle-report-exercise { padding-block: .35rem; break-inside: avoid; }
+  .cycle-story-print .cycle-story-progression { break-inside: avoid; }
   .cycle-story-print .cycle-story-number strong { font-size: inherit; margin-inline-end: .25ch; }
   .cycle-story-print .cycle-story-track { margin-top: .5rem; }
   .cycle-story-print .cycle-story-track .has-workout strong { background: none; color: var(--deck-ink); }

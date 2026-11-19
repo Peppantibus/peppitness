@@ -5,7 +5,7 @@ import type { CycleRecapReport } from '../domain/cycle-recap'
 import { createWorkoutProgramHref } from '../domain/cycle-recap'
 import { formatDate } from '../domain/dates'
 import { historyRoute } from '../domain/workout-history'
-import { CycleExerciseList } from './CycleReportDetails'
+import { CycleExerciseList, CycleExercisePoints } from './CycleReportDetails'
 import { saveCycleStoryCard } from './cycle-story-card'
 import './cycle-story.css'
 
@@ -38,6 +38,16 @@ function storiesFor(report: CycleRecapReport, program: string, range: string): S
       </dl>
     </> },
   ]
+
+  const featured = groups.find(group => group.label === report.featuredGroup)
+  if (featured) stories.push({
+    id: 'progression', label: 'La tua progressione', duration: 12000, content: <div className="cycle-story-progression">
+      <small className="cycle-story-kicker">La tua progressione più chiara</small>
+      <h1>{featured.exercise}<span>.</span></h1>
+      <p className="cycle-story-lead">{featured.label}</p>
+      <CycleExercisePoints points={featured.points} perSide={featured.perSide} />
+    </div>,
+  })
 
   if (groups.length) stories.push({
     id: 'exercises', label: 'Gli esercizi', duration: 18000, content: <>

@@ -13,6 +13,7 @@ export interface CycleRecapGroup {
 export type CycleRecapReport = Pick<ReturnType<typeof cycleReport>, 'sessions' | 'sets' | 'weeks' | 'activeWeeks' | 'streak' | 'pauses'> & {
   info: Pick<ReturnType<typeof cycleReport>['info'], 'start' | 'end' | 'weeks'>
   groups: CycleRecapGroup[]
+  featuredGroup?: string
   record: { exercise: string; value: string; date: string } | null
 }
 
@@ -39,6 +40,12 @@ function object(value: unknown): value is Record<string, unknown> {
 const integer = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value >= 0
 const date = (value: unknown): value is string => typeof value === 'string' && isLocalDate(value)
 
+function isRecapGroup(group: unknown): group is CycleRecapGroup {
+  return object(group) && typeof group.label === 'string' && typeof group.exercise === 'string'
+    && (group.caption === undefined || typeof group.caption === 'string') && (group.perSide === undefined || typeof group.perSide === 'boolean')
+    && Array.isArray(group.points) && group.points.every(point => object(point) && typeof point.value === 'string' && integer(point.week))
+}
+
 export function readCycleRecap(value: unknown): CycleRecap | null {
   if (!object(value) || value.schema !== 1 || typeof value.key !== 'string' || typeof value.title !== 'string') return null
   if (value.unseen !== undefined && value.unseen !== true) return null
@@ -47,9 +54,9 @@ export function readCycleRecap(value: unknown): CycleRecap | null {
   if (!/^[a-zA-Z0-9_-]+\.\d{4}-\d{2}-\d{2}\.\d+$/.test(value.key) || !value.key.endsWith(`.${report.info.start}.${report.info.weeks}`)) return null
   if (!integer(report.sessions) || !integer(report.sets) || !integer(report.activeWeeks) || !integer(report.streak)) return null
   if (!Array.isArray(report.weeks) || report.weeks.length !== report.info.weeks || !report.weeks.every(integer)) return null
-  if (!Array.isArray(report.groups) || !report.groups.every(group => object(group) && typeof group.label === 'string' && typeof group.exercise === 'string'
-    && (group.caption === undefined || typeof group.caption === 'string') && (group.perSide === undefined || typeof group.perSide === 'boolean')
-    && Array.isArray(group.points) && group.points.every(point => object(point) && typeof point.value === 'string' && integer(point.week)))) return null
+  if (!Array.isArray(report.groups) || !report.groups.every(isRecapGroup)) return null
+  if (report.featuredGroup !== undefined && (typeof report.featuredGroup !== 'string'
+    || !report.groups.some(group => group.label === report.featuredGroup && !group.caption && group.points.length >= 2))) return null
   if (!Array.isArray(report.pauses) || !report.pauses.every(pause => object(pause) && integer(pause.firstWeek) && integer(pause.lastWeek)
     && (pause.resumedIn === null || integer(pause.resumedIn)))) return null
   const record = report.record

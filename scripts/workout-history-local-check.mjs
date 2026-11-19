@@ -164,6 +164,9 @@ try {
   check(await tab.evaluate(`document.querySelector('.cycle-deck button[aria-pressed]').getAttribute('aria-pressed') === 'true'`), 'Il Wrapped parte in automatico')
   await tab.click('.cycle-deck-slide h1')
   check(await tab.evaluate(`document.querySelector('.cycle-deck button[aria-pressed]').getAttribute('aria-pressed') === 'false'`), 'Il tocco mette in pausa la storia')
+  await tab.click('.cycle-deck-progress button[aria-label$="La tua progressione"]')
+  await ready('.cycle-deck--progression')
+  check(await tab.evaluate(`(()=>{const t=document.querySelector('.cycle-deck-slide').innerText;return t.includes('Chest press') && t.includes('60 kg × 6') && t.includes('Settimana 7')})()`), 'La storia della progressione mostra gli stessi dati reali della panoramica')
   await tab.click('.cycle-deck-progress button[aria-label$="Gli esercizi"]')
   await ready('.cycle-deck--exercises')
   check(await tab.evaluate(`(()=>{const t=document.querySelector('.cycle-deck-slide').innerText;return t.includes('60 kg × 6') && t.includes('Settimana 7') && !t.includes('140 kg') && !t.includes('60 kg × 4')})()`), 'Confronto con 60 × 6 della settimana 7, senza macchinario diverso')
@@ -176,6 +179,7 @@ try {
     if (saved?.unseen) await pause(100)
   }
   check(saved && !saved.unseen && saved.report.sessions === 5 && saved.report.record?.value.includes('60 kg') && !saved.report.record?.value.includes('140'), 'Visione salvata con totali e record del macchinario abituale')
+  check(saved?.report.featuredGroup === 'Petto', 'La progressione in evidenza resta nel Wrapped salvato')
   check(Object.keys((await createDiaryTransport(b.client, b.owner).loadAll(signal())).data.cycleRecaps).length === 0, 'Un altro account non legge il riepilogo')
   await tab.click('.cycle-deck-header a')
   await ready('.plan-selector select')

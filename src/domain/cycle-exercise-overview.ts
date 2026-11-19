@@ -127,11 +127,16 @@ export function cycleExerciseOverview(days: WorkoutDay[], sessions: WorkoutSessi
     const evidence = evidenceFor(exercise, sessions, cycle)
     return evidence ? [evidence] : []
   }).sort(compareEvidence)
+  const plannedGroups = groupExercises(planned)
+  const labels = new Map(plannedGroups.map(({ group, label }) => [group, label]))
+  const strongest = comparisons.find(item => item.trend === 'progress' && labels.has(exerciseMuscleGroup(item.exercise)))
+  const featuredGroup = strongest ? labels.get(exerciseMuscleGroup(strongest.exercise)) : undefined
   const latest = latestGroupPoints(sessions, cycle)
-  return groupExercises(planned).flatMap<{ label: string; exercise: ExercisePrescription; points: Pick<Sample, 'set' | 'week'>[]; trend?: Trend }>(({ group, label }) => {
+  const groups = plannedGroups.flatMap<{ label: string; exercise: ExercisePrescription; points: Pick<Sample, 'set' | 'week'>[]; trend?: Trend }>(({ group, label }) => {
     const comparison = comparisons.find(item => exerciseMuscleGroup(item.exercise) === group)
     if (comparison) return [{ label, exercise: comparison.exercise, points: comparison.points, trend: comparison.trend }]
     const point = latest.get(group)
     return point ? [{ label, exercise: point.exercise, points: [{ set: point.set, week: point.week }] }] : []
   })
+  return { groups, featuredGroup }
 }

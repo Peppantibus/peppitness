@@ -55,4 +55,6 @@ Il riepilogo usa la durata salvata nel programma e le sue sedute concluse. Per o
 
 Mostra fino a tre serie registrate. La serie centrale deve cadere vicino a metà ciclo. Cerca il miglior risultato confrontabile nelle ultime tre settimane e, se lì mancano serie utili, usa l’ultima serie confrontabile. Se ha solo un risultato utile per un gruppo, mostra quella serie con la sua settimana. Le sedute di prova e le serie registrate su un macchinario diverso restano nello Storico e nei totali.
 
+La storia «La tua progressione» usa la stessa regola tra i vincitori dei gruppi e compare quando almeno un esercizio ha una progressione confermata.
+
 Per riprodurre il collaudo con account sintetici, avvia Supabase in locale con le migrazioni applicate ed esegui `npm run test:workout-history:local`. Il test apre Chrome e verifica la chiusura, l’estensione, il Wrapped salvato, la copia del programma e l’allenamento libero prima del ciclo successivo.

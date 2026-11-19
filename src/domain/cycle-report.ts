@@ -67,7 +67,7 @@ function longestStreak(weeks: number[]) {
 
 export function cycleReport(planId: string, sessions: WorkoutSession[], cycle: ProgramCycle, today: string, days: WorkoutDay[] = []) {
   const info = cycleInfo(cycle, today)
-  if (info.status !== 'finished') return { info, weeks: [], sessions: 0, sets: 0, activeWeeks: 0, streak: 0, groups: [], pauses: [], record: null }
+  if (info.status !== 'finished') return { info, weeks: [], sessions: 0, sets: 0, activeWeeks: 0, streak: 0, groups: [], featuredGroup: undefined, pauses: [], record: null }
 
   const history = sessions.filter(session => session.completedAt && session.date <= info.end).sort(chronological)
   const key = cycleRecapKey(planId, cycle)
@@ -84,6 +84,6 @@ export function cycleReport(planId: string, sessions: WorkoutSession[], cycle: P
   }
   const sets = completed.reduce((sum, session) => sum + Object.values(session.results).flat().filter(set => setScore(set)).length, 0)
   return { info, weeks, sessions: completed.length, sets, activeWeeks: weeks.filter(count => count > 0).length,
-    streak: longestStreak(weeks), groups: cycleExerciseOverview(days, completed, cycle),
+    streak: longestStreak(weeks), ...cycleExerciseOverview(days, completed, cycle),
     pauses: cyclePauses(weeks), record: bestCycleRecord(exercises, history, new Set(completed.map(session => session.id))) }
 }

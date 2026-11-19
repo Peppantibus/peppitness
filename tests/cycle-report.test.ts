@@ -132,6 +132,7 @@ test('panoramica: le croci battono il picco isolato e un gruppo può restare sta
   const result = cycleReport('plan', sessions, cycle, weekDate(9), [trainingDay])
   assert.equal(result.groups[0]?.exercise.name, fly.name)
   assert.equal(result.groups[0]?.trend, 'progress')
+  assert.equal(result.featuredGroup, 'Petto')
   assert.equal(result.groups[1]?.trend, 'stable')
   assert.deepEqual(result.groups[1]?.points.map(point => point.week), [1, 8])
 })
@@ -146,4 +147,26 @@ test('panoramica: mostra una singola serie utile e omette i gruppi senza registr
     ['Schiena', undefined, [['20', 2]]],
   ])
   assert.deepEqual(report([otherEquipment]).groups, [])
+  assert.equal(result.featuredGroup, undefined)
+})
+
+test('la storia della progressione sceglie il gruppo con più copertura a parità di miglioramento confermato', () => {
+  const sessions = Array.from({ length: 8 }, (_, index) => session(String(index), index + 1, {
+    bench: [set(String(20 + 2 * index))],
+    ...(index === 0 ? { row: [set('30')] } : index >= 6 ? { row: [set(String(50 + 10 * index))] } : {}),
+  }))
+  const result = report(sessions)
+  assert.equal(result.groups.find(group => group.label === 'Schiena')?.trend, 'progress')
+  assert.equal(result.featuredGroup, 'Petto')
+  assert.deepEqual(result.groups.find(group => group.label === result.featuredGroup)?.points.map(point => point.week), [1, 4, 8])
+})
+
+test('la storia della progressione compare solo con miglioramenti confermati', () => {
+  const result = report([
+    session('a', 1, { bench: [set('40')], row: [set('25')] }),
+    session('b', 4, { bench: [set('40')], row: [set('25')] }),
+    session('c', 7, { bench: [set('60')], row: [set('25')] }),
+  ])
+  assert.equal(result.groups.length, 2)
+  assert.equal(result.featuredGroup, undefined)
 })
